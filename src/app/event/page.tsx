@@ -10,6 +10,7 @@ import EventHero from "@/components/event/EventHero";
 import EventInfo from "@/components/event/EventInfo";
 import EventFaq from "@/components/event/EventFaq";
 import EventRaffle from "@/components/event/EventRaffle";
+import EventCoupon from "@/components/event/EventCoupon";
 
 function EventPageContent() {
   const router = useRouter();
@@ -194,6 +195,9 @@ function EventPageContent() {
 
         {/* 래플 섹션 */}
         {featuredData.raffle && <EventRaffle raffle={featuredData.raffle} />}
+
+        {/* 쿠폰 섹션 */}
+        {featuredData.coupons && <EventCoupon coupons={featuredData.coupons} />}
 
         {/* 추가 섹션들을 위한 공간 */}
         <div className="h-96 bg-gray-900 bg-opacity-30 flex items-center justify-center">
