@@ -63,7 +63,7 @@ export default function EventCoupon({ coupons }: EventCouponProps) {
     <section className="py-8 px-6">
       {/* 섹션 헤더 */}
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-white mb-2">쿠폰</h2>
+        <h2 className="text-xl font-bold text-white mb-2">이벤트 쿠폰</h2>
         <p className="text-sm text-white" style={{ opacity: 0.7 }}>
           이벤트에서 제공하는 다양한 쿠폰을 확인해보세요
         </p>
@@ -80,53 +80,30 @@ export default function EventCoupon({ coupons }: EventCouponProps) {
           {coupons.map((coupon, index) => (
             <div
               key={coupon.id}
-              className="flex-shrink-0 w-64 rounded-xl p-4 transition-all duration-300 hover:scale-105"
+              className="flex-shrink-0 w-64 rounded-xl p-4 transition-all duration-300"
               style={{ 
                 scrollSnapAlign: 'start',
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.1)'
+                backgroundColor: 'rgba(255, 255, 255, 0.1)'
               }}
             >
                              {/* 쿠폰 정보 */}
                <div className="space-y-2">
-                 <h3 className="text-white font-semibold text-sm line-clamp-2">
+                 <h3 className="text-white font-semibold text-xl line-clamp-2">
                    {coupon.title}
+                   {coupon.discountType === 'PERCENTAGE' && ' 할인권'}
+                   {coupon.discountType === 'FIXED_AMOUNT' && ' 쿠폰'}
+                   {coupon.discountType === 'EXCHANGE' && ' 교환권'}
                  </h3>
                  
                  {coupon.description && (
-                   <p className="text-xs text-white" style={{ opacity: 0.7 }}>
+                   <p className="text-sm text-white font-regular" style={{ opacity: 0.7 }}>
                      {coupon.description}
                    </p>
                  )}
 
-                 {/* 쿠폰 할인 정보 */}
-                 {coupon.discountType && coupon.discountValue && (
-                   <div className="flex items-center space-x-2">
-                     <span className="text-purple-400 text-sm font-bold">
-                       {coupon.discountType === 'percentage' 
-                         ? `${coupon.discountValue}% 할인`
-                         : `${coupon.discountValue.toLocaleString()}원 할인`
-                       }
-                     </span>
-                   </div>
-                 )}
-
-                 {/* 쿠폰 상태 */}
-                 <div className="flex items-center justify-between">
-                   <span className="text-xs text-green-400 font-medium">
-                     {coupon.status === 'active' ? '사용 가능' : '사용 불가'}
-                   </span>
-                   
-                   {coupon.endDate && (
-                     <span className="text-xs text-white" style={{ opacity: 0.6 }}>
-                       ~{new Date(coupon.endDate).toLocaleDateString()}
-                     </span>
-                   )}
-                 </div>
-
                  {/* 쿠폰 사용 버튼 */}
                  <button
-                   className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                   className={`w-full py-2 mt-4 px-4 rounded-lg text-sm font-medium transition-colors ${
                      coupon.status === 'active'
                        ? 'bg-purple-600 text-white hover:bg-purple-700'
                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
