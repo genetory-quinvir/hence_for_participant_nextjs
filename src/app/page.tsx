@@ -1,103 +1,173 @@
+"use client";
+
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import CommonNavigationBar from "@/components/CommonNavigationBar";
+import { useAuth } from "@/contexts/AuthContext";
 
-export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+export default function HomePage() {
+  const router = useRouter();
+  const { isAuthenticated, user, logout } = useAuth();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleMenuClick = () => {
+    console.log("메뉴 버튼 클릭");
+  };
+
+  const handleProfileClick = () => {
+    if (isAuthenticated && user) {
+      console.log("프로필 버튼 클릭 - 프로필 페이지로 이동");
+      router.push("/profile");
+    } else {
+      console.log("프로필 버튼 클릭 - 로그인 페이지로 이동");
+      router.push("/sign");
+    }
+  };
+
+  const handleEntryClick = () => {
+    console.log("입장하기 버튼 클릭");
+    
+    // 로그인 상태 확인
+    if (!isAuthenticated || !user) {
+      console.log("로그인이 필요합니다 - 로그인 페이지로 이동");
+      router.push("/sign");
+      return;
+    }
+    
+    console.log("로그인된 사용자 - QR 페이지로 이동");
+    router.push("/qr");
+  };
+
+  // 로그인 상태에 따른 프로필 버튼 렌더링
+  const renderProfileButton = () => {
+    if (isAuthenticated && user) {
+      // 로그인된 경우: 사용자 아바타 또는 프로필 아이콘
+      const userName = user.nickname || user.email || '사용자';
+      const userInitial = userName.charAt(0).toUpperCase();
+      
+      return (
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+            <span className="text-white text-sm font-semibold">
+              {userInitial}
+            </span>
+          </div>
+          <span className="text-white text-sm hidden sm:block" style={{ opacity: 0.8 }}>
+            {userName}
+          </span>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      );
+    } else {
+      // 로그인되지 않은 경우: 투명 배경에 하얀색 보더
+      return (
+        <div 
+          className="rounded-lg px-4 py-1 transition-colors hover:bg-white hover:bg-opacity-10"
+          style={{ 
+            border: '1px solid rgba(255, 255, 255, 0.6)',
+            backgroundColor: 'transparent'
+          }}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <span className="text-white text-sm font-medium">
+            로그인
+          </span>
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 w-full h-full bg-black text-white overflow-hidden">
+      {/* 백그라운드 이미지 - 전체 화면 */}
+      <div className="absolute inset-0 w-full h-full">
+        <Image
+          src="/images/bg_entrance.png"
+          alt="Background"
+          fill
+          className="object-cover"
+          priority
+          sizes="100vw"
+        />
+      </div>
+
+      {/* 딤 뷰 */}
+      <div className="absolute inset-0 bg-black" style={{ opacity: 0.7 }}></div>
+
+      {/* 컨텐츠 레이어 */}
+      <div className="relative z-10 w-full h-full flex flex-col">
+        {/* 네비게이션바 */}
+        <CommonNavigationBar
+          rightButton={renderProfileButton()}
+          onRightClick={handleProfileClick}
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
+        />
+
+        {/* 메인 컨텐츠 */}
+        <main className="flex-1 flex flex-col">
+          {/* 히어로 섹션 */}
+          <section className="flex-1 flex flex-col pt-10 px-6">
+            <h1 className="text-6xl font-bold text-white mb-4 tracking-wider text-left">
+              HENCE
+            </h1>
+            <p className="text-lg text-white text-left" style={{ opacity: 0.6 }}>
+              이벤트의 시작과 끝.
+            </p>
+          </section>
+
+          {/* 정보 및 액션 섹션 */}
+          <section className="px-6 pb-8">
+            {/* 정보 섹션 */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold text-white mb-1">
+                이벤트 입장하기
+              </h2>
+              <p className="text-white" style={{ opacity: 0.6 }}>
+                QR 스캔 또는 코드 입력으로 참여하세요
+              </p>
+            </div>
+
+            {/* 액션 버튼 */}
+            <button
+              onClick={handleEntryClick}
+              className="w-full bg-purple-700 hover:bg-purple-700 active:bg-purple-800 rounded-xl p-4 flex items-center justify-between transition-colors"
+            >
+              <div className="flex items-center">
+                {/* QR코드 아이콘 */}
+                <div className="bg-purple-600 p-3 rounded-lg mr-3 flex items-center justify-center w-16 h-16">
+                  <svg
+                    className="w-10 h-10 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M3 11V3h8v8H3zm2-6v4h4V5H5zM3 21v-8h8v8H3zm2-6v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM19 19h2v2h-2v-2zM13 13h2v2h-2v-2zM15 15h2v2h-2v-2zM13 17h2v2h-2v-2zM15 19h2v2h-2v-2zM17 13h2v2h-2v-2zM19 15h2v2h-2v-2zM17 17h2v2h-2v-2z"/>
+                  </svg>
+                </div>
+
+                <div className="text-left pl-2">
+                  <div className="text-white text-xl font-bold pb-1">입장하기</div>
+                  <div className="text-white" style={{ opacity: 0.6 }}>QR 스캔ㆍ코드 입력</div>
+                </div>
+              </div>
+
+              <svg
+                className="w-5 h-5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </section>
+
+          {/* 하단 안내 텍스트 */}
+          <section className="px-6 pb-10">
+            <p className="text-white text-xs text-left" style={{ opacity: 0.6 }}>
+              문제가 있으시면 현장 스태프에게 문의해주세요
+            </p>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }
