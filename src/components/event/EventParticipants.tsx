@@ -64,7 +64,7 @@ export default function EventParticipants({ participants }: EventParticipantsPro
       {/* 참여자 리스트 컨테이너 */}
       <div 
         className="rounded-xl p-3"
-        style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+        style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
       >
         <div className="space-y-1">
           {displayParticipants.map((participant, index) => (

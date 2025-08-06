@@ -50,86 +50,88 @@ export default function EventCommunity({ freeBoard }: EventCommunityProps) {
         </p>
       </div>
 
-      {/* 커뮤니티 리스트 */}
-      <div 
-        className="rounded-xl p-3"
-        style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-      >
-        <div className="space-y-3">
-          {displayPosts.map((post) => (
-            <div
-              key={post.id}
-              className="p-3 rounded-lg transition-all duration-300 hover:bg-white hover:bg-opacity-5"
-            >
-              {/* 작성자 정보 */}
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">
-                    {post.user?.nickname ? post.user.nickname.charAt(0).toUpperCase() : '?'}
-                  </span>
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-white font-semibold text-sm">
-                      {post.user?.nickname || '익명'}
-                    </span>
-                    <span className="text-xs text-white" style={{ opacity: 0.6 }}>
-                      {post.createdAt ? getRelativeTime(post.createdAt) : ''}
-                    </span>
-                  </div>
-                </div>
+      {/* 커뮤니티 피드 */}
+      <div className="space-y-4">
+        {displayPosts.map((post) => (
+          <div
+            key={post.id}
+            className="rounded-xl overflow-hidden transition-all duration-300 hover:bg-white hover:bg-opacity-5"
+            style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+          >
+            {/* 게시글 헤더 */}
+            <div className="flex items-center space-x-3 p-4 pb-3">
+              <div className="flex-shrink-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-bold">
+                  {post.user?.nickname ? post.user.nickname.charAt(0).toUpperCase() : '?'}
+                </span>
               </div>
               
-              {/* 게시글 내용 */}
-              <p className="text-sm text-white mb-3" style={{ opacity: 0.9 }}>
-                {post.content || '내용 없음'}
-              </p>
-
-              {/* 이미지가 있는 경우 */}
-              {post.images && post.images.length > 0 && (
-                <div className="mb-3">
-                  <img 
-                    src={post.images[0]} 
-                    alt="게시글 이미지"
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center">
+                  <span className="text-white font-semibold text-sm mr-2">
+                    {post.user?.nickname || '익명'}
+                  </span>
+                  <span className="text-sm text-white" style={{ opacity: 0.6 }}>
+                    {post.createdAt ? getRelativeTime(post.createdAt) : ''}
+                  </span>
                 </div>
-              )}
-              
-              {/* 좋아요, 댓글 수 */}
+              </div>
+            </div>
+            
+            {/* 게시글 내용 */}
+            {post.content && (
+              <div className="px-4 pb-5">
+                <p className="text-md text-white" style={{ opacity: 0.9 }}>
+                  {post.content}
+                </p>
+              </div>
+            )}
+
+            {/* 이미지가 있는 경우 */}
+            {post.images && post.images.length > 0 && (
+              <div className="px-4 pb-3">
+                <img 
+                  src={post.images[0]} 
+                  alt="게시글 이미지"
+                  className="w-full h-64 object-cover rounded-lg"
+                />
+              </div>
+            )}
+            
+            {/* 액션 버튼 */}
+            <div className="px-4 pb-5">
               <div className="flex items-center space-x-4">
                 <div className="flex items-center">
-                  <svg className="w-4 h-4 text-white mr-1" style={{ opacity: 0.6 }} fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-white mr-2" style={{ opacity: 0.6 }} fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                   </svg>
-                  <span className="text-xs text-white" style={{ opacity: 0.6 }}>
+                  <span className="text-sm font-regular text-white" style={{ opacity: 0.8 }}>
                     {post.likeCount || 0}
                   </span>
                 </div>
                 
                 <div className="flex items-center">
-                  <svg className="w-4 h-4 text-white mr-1" style={{ opacity: 0.6 }} fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M21.99 4c0-1.1-.89-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
-                  </svg>
-                  <span className="text-xs text-white" style={{ opacity: 0.6 }}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white mr-2" style={{ opacity: 0.6 }}>
+                  <path fill-rule="evenodd" d="M5.337 21.718a6.707 6.707 0 0 1-.533-.074.75.75 0 0 1-.44-1.223 3.73 3.73 0 0 0 .814-1.686c.023-.115-.022-.317-.254-.543C3.274 16.587 2.25 14.41 2.25 12c0-5.03 4.428-9 9.75-9s9.75 3.97 9.75 9c0 5.03-4.428 9-9.75 9-.833 0-1.643-.097-2.417-.279a6.721 6.721 0 0 1-4.246.997Z" clip-rule="evenodd" />
+                </svg>
+                  <span className="text-sm font-regular text-white" style={{ opacity: 0.8 }}>
                     {post.commentCount || 0}
                   </span>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* 더 많은 게시글이 있는 경우 표시 */}
-        {freeBoard.length > 5 && (
-          <div className="mt-3 pt-3 border-t border-white border-opacity-10 text-center">
-            <p className="text-xs text-white" style={{ opacity: 0.6 }}>
-              외 {freeBoard.length - 5}개의 게시글이 더 있습니다
-            </p>
           </div>
-        )}
+        ))}
       </div>
+
+      {/* 더 많은 게시글이 있는 경우 표시 */}
+      {freeBoard.length > 5 && (
+        <div className="mt-6 pt-4 border-t border-white border-opacity-10 text-center">
+          <p className="text-xs text-white" style={{ opacity: 0.6 }}>
+            외 {freeBoard.length - 5}개의 게시글이 더 있습니다
+          </p>
+        </div>
+      )}
     </section>
   );
 } 

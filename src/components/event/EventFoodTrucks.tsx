@@ -41,7 +41,7 @@ export default function EventFoodTrucks({ vendors }: EventFoodTrucksProps) {
               className="flex-shrink-0 w-72 rounded-xl overflow-hidden transition-all duration-300"
               style={{ 
                 scrollSnapAlign: 'start',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                backgroundColor: 'rgba(255, 255, 255, 0.05)'
               }}
             >
               {/* 썸네일 이미지 */}

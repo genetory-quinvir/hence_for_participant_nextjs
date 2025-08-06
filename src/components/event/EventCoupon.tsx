@@ -35,10 +35,10 @@ export default function EventCoupon({ coupons }: EventCouponProps) {
           {coupons.map((coupon) => (
             <div
               key={coupon.id}
-              className="flex-shrink-0 w-64 rounded-xl p-4 transition-all duration-300"
+              className="flex-shrink-0 w-64 rounded-xl p-5 transition-all duration-300"
               style={{ 
                 scrollSnapAlign: 'start',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                backgroundColor: 'rgba(255, 255, 255, 0.05)'
               }}
             >
               {/* 쿠폰 정보 */}

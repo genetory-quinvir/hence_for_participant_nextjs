@@ -16,6 +16,7 @@ import EventParticipants from "@/components/event/EventParticipants";
 import EventTimeline from "@/components/event/EventTimeline";
 import EventFoodTrucks from "@/components/event/EventFoodTrucks";
 import EventCommunity from "@/components/event/EventCommunity";
+import EventHelp from "@/components/event/EventHelp";
 
 function EventPageContent() {
   const router = useRouter();
@@ -232,14 +233,9 @@ function EventPageContent() {
         {/* 커뮤니티 섹션 */}
         {featuredData.freeBoard && <EventCommunity freeBoard={featuredData.freeBoard} />}
 
-        {/* 추가 섹션들을 위한 공간 */}
-        <div className="h-96 bg-gray-900 bg-opacity-30 flex items-center justify-center">
-          <span className="text-white" style={{ opacity: 0.5 }}>다음 섹션 영역</span>
-        </div>
+        {/* 도움말 섹션 */}
+        <EventHelp />
 
-        <div className="h-96 bg-gray-800 bg-opacity-30 flex items-center justify-center">
-          <span className="text-white" style={{ opacity: 0.5 }}>또 다른 섹션 영역</span>
-        </div>
       </main>
 
       {/* 네비게이션바 - 오버레이 */}

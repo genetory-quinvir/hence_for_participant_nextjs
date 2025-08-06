@@ -67,7 +67,7 @@ export default function EventNotice({ notices }: EventNoticeProps) {
               className="flex-shrink-0 w-80 rounded-xl p-4 transition-all duration-300"
               style={{ 
                 scrollSnapAlign: 'start',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                backgroundColor: 'rgba(255, 255, 255, 0.05)'
               }}
             >
               {/* 공지사항 정보 */}

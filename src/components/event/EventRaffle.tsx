@@ -19,7 +19,7 @@ export default function EventRaffle({ raffle }: EventRaffleProps) {
       
       <div 
         className="rounded-xl p-6 mb-4"
-        style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+        style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
       >
         {/* 래플 제목 */}
         <h4 className="text-white font-bold text-xl mb-1">
