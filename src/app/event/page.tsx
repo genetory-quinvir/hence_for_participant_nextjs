@@ -11,6 +11,11 @@ import EventInfo from "@/components/event/EventInfo";
 import EventFaq from "@/components/event/EventFaq";
 import EventRaffle from "@/components/event/EventRaffle";
 import EventCoupon from "@/components/event/EventCoupon";
+import EventNotice from "@/components/event/EventNotice";
+import EventParticipants from "@/components/event/EventParticipants";
+import EventTimeline from "@/components/event/EventTimeline";
+import EventFoodTrucks from "@/components/event/EventFoodTrucks";
+import EventCommunity from "@/components/event/EventCommunity";
 
 function EventPageContent() {
   const router = useRouter();
@@ -183,21 +188,49 @@ function EventPageContent() {
   return (
     <div className="min-h-screen bg-black text-white relative">
       {/* 메인 컨텐츠 - 스크롤 가능 */}
-      <main className="w-full min-h-screen overflow-y-auto">
+      <main 
+        className="w-full min-h-screen overflow-y-auto"
+        style={{
+          scrollbarWidth: 'none', /* Firefox */
+          msOverflowStyle: 'none', /* Internet Explorer 10+ */
+        }}
+      >
+        <style jsx>{`
+          main::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+          }
+        `}</style>
+        
         {/* 이벤트 히어로 섹션 */}
         <EventHero event={featuredData.event} />
 
         {/* 이벤트 정보 섹션 */}
         <EventInfo event={featuredData.event} />
 
+        {/* 공지사항 섹션 */}
+        {featuredData.notices && <EventNotice notices={featuredData.notices} />}
+
+
         {/* FAQ 섹션 */}
-        {featuredData.faqs && <EventFaq faqs={featuredData.faqs} />}
+        {/* {featuredData.faqs && <EventFaq faqs={featuredData.faqs} />} */}
 
         {/* 래플 섹션 */}
         {featuredData.raffle && <EventRaffle raffle={featuredData.raffle} />}
 
         {/* 쿠폰 섹션 */}
         {featuredData.coupons && <EventCoupon coupons={featuredData.coupons} />}
+
+        {/* 참여자 섹션 */}
+        {featuredData.participants && <EventParticipants participants={featuredData.participants} />}
+
+        {/* 타임라인 섹션 */}
+        {featuredData.timelines && <EventTimeline timelines={featuredData.timelines} />}
+
+        {/* 푸드트럭 섹션 */}
+        {featuredData.vendors && <EventFoodTrucks vendors={featuredData.vendors} />}
+
+        {/* 커뮤니티 섹션 */}
+        {featuredData.freeBoard && <EventCommunity freeBoard={featuredData.freeBoard} />}
 
         {/* 추가 섹션들을 위한 공간 */}
         <div className="h-96 bg-gray-900 bg-opacity-30 flex items-center justify-center">

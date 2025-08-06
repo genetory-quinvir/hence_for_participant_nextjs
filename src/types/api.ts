@@ -8,11 +8,12 @@ export interface BaseApiResponse {
 export interface User {
   id: string;
   email: string;
-  name?: string;
+  nickname?: string;
   phone?: string;
-  profileImage?: string;
+  profileImageUrl?: string;
   createdAt?: string;
   updatedAt?: string;
+  role?: string;
   [key: string]: any;
 }
 
@@ -231,9 +232,7 @@ export interface CouponItem {
 export interface ParticipantItem {
   id?: string;
   eventId?: string;
-  userId?: string;
-  name?: string;
-  email?: string;
+  user?: User;
   status?: string;
   joinedAt?: string;
   createdAt?: string;
@@ -244,11 +243,11 @@ export interface ParticipantItem {
 export interface TimelineItem {
   id?: string;
   eventId?: string;
+  time?: string;
   title?: string;
   description?: string;
-  startTime?: string;
-  endTime?: string;
   location?: string;
+  status?: string;
   sortOrder?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -261,6 +260,7 @@ export interface VendorItem {
   name?: string;
   description?: string;
   logoUrl?: string;
+  imageUrl?: string;
   website?: string;
   location?: string;
   createdAt?: string;
@@ -295,13 +295,20 @@ export interface NoticeItem {
 
 // 자유게시판 타입
 export interface FreeBoardItem {
-  id?: string;
-  eventId?: string;
-  title?: string;
+  id: string;
+  eventId: string;
+  type: string;
+  title?: string | null;
+  user?: {
+    id: string;
+    nickname: string;
+    profileImageUrl?: string | null;
+  };
+  images?: string[];
+  likeCount?: number;
+  commentCount?: number;
+  isLiked?: boolean;
   content?: string;
-  authorId?: string;
-  authorName?: string;
-  viewCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }

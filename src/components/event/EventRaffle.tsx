@@ -9,28 +9,32 @@ interface EventRaffleProps {
 export default function EventRaffle({ raffle }: EventRaffleProps) {
   return (
     <section className="px-4 py-8">
-      <h3 className="text-white font-semibold mb-4 text-lg" style={{ opacity: 0.9 }}>
-        래플 이벤트
-      </h3>
+      {/* 섹션 헤더 */}
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-white mb-1">경품 이벤트</h2>
+        <p className="text-sm text-white" style={{ opacity: 0.7 }}>
+          이벤트 참여자만을 위한 특별한 경품을 확인해보세요
+        </p>
+      </div>
       
       <div 
         className="rounded-xl p-6 mb-4"
         style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
       >
         {/* 래플 제목 */}
-        <h4 className="text-white font-bold text-xl mb-3">
-          {raffle.title || '래플 이벤트'}
+        <h4 className="text-white font-bold text-xl mb-1">
+          {raffle.title || '경품 이벤트'}
         </h4>
         
         {/* 래플 설명 */}
         {raffle.description && (
-          <p className="text-white text-sm mb-4" style={{ opacity: 0.7 }}>
+          <p className="text-white text-sm mb-5" style={{ opacity: 0.7 }}>
             {raffle.description}
           </p>
         )}
         
         {/* 래플 기간 */}
-        <div className="space-y-2 mb-4">
+        <div className="space-y-1">
           {raffle.startDate && (
             <div className="flex items-center">
               <span className="text-white text-sm pr-3" style={{ opacity: 0.6 }}>시작일</span>
@@ -64,8 +68,8 @@ export default function EventRaffle({ raffle }: EventRaffleProps) {
           <button
             className="w-full px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-lg"
             onClick={() => {
-              console.log('래플 응모하러가기 버튼 클릭');
-              alert('래플 응모 페이지로 이동합니다.');
+              console.log('경품 이벤트 응모하러가기 버튼 클릭');
+              alert('경품 이벤트 응모 페이지로 이동합니다.');
             }}
           >
             응모 하러 가기
