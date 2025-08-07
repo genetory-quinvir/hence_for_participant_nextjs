@@ -9,8 +9,12 @@ import {
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
-// API 기본 설정 - /api/v1 제거
-const API_BASE_URL = 'http://127.0.0.1:8000';
+// API 기본 설정 - 환경 변수로 관리
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://api-participant.hence.events'
+    : 'http://127.0.0.1:8000'
+  );
 
 // 로그인 API 호출
 export async function loginUser(email: string, password: string): Promise<LoginResponse> {

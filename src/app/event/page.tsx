@@ -1,14 +1,13 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { checkEventCode, getFeaturedEvent } from "@/lib/api";
 import { FeaturedItem } from "@/types/api";
 import EventHero from "@/components/event/EventHero";
 import EventInfo from "@/components/event/EventInfo";
-import EventFaq from "@/components/event/EventFaq";
 import EventRaffle from "@/components/event/EventRaffle";
 import EventCoupon from "@/components/event/EventCoupon";
 import EventNotice from "@/components/event/EventNotice";
@@ -235,7 +234,6 @@ function EventPageContent() {
 
         {/* 도움말 섹션 */}
         <EventHelp />
-
       </main>
 
       {/* 네비게이션바 - 오버레이 */}
@@ -263,7 +261,23 @@ function EventPageContent() {
   );
 }
 
+// 로딩 컴포넌트
+function EventPageLoading() {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <p className="text-sm" style={{ opacity: 0.7 }}>이벤트 페이지를 불러오는 중...</p>
+      </div>
+    </div>
+  );
+}
+
 // 직접 내보내기 (ProtectedRoute 제거)
 export default function EventPage() {
-  return <EventPageContent />;
+  return (
+    <Suspense fallback={<EventPageLoading />}>
+      <EventPageContent />
+    </Suspense>
+  );
 } 

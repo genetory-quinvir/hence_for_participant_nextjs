@@ -56,8 +56,8 @@ export default function SignPage() {
           login(
             {
               id: response.data.id || '1',
-              name: response.data.name || '사용자',
-              nickname: response.data.nickname || response.data.name || '사용자',
+              name: response.data.nickname || '사용자',
+              nickname: response.data.nickname || '사용자',
               email: response.data.email || email,
             },
             response.access_token,
@@ -66,7 +66,7 @@ export default function SignPage() {
         }
 
         // 성공 메시지 표시 후 메인 페이지로 이동
-        alert(`환영합니다, ${response.data?.name || '사용자'}님!`);
+        alert(`환영합니다, ${response.data?.nickname || '사용자'}님!`);
         router.push("/");
       } else {
         setError(response.error || "로그인에 실패했습니다.");

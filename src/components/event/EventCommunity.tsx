@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { FreeBoardItem } from "@/types/api";
 
 interface EventCommunityProps {
@@ -90,9 +91,11 @@ export default function EventCommunity({ freeBoard }: EventCommunityProps) {
             {/* 이미지가 있는 경우 */}
             {post.images && post.images.length > 0 && (
               <div className="px-4 pb-3">
-                <img 
+                <Image 
                   src={post.images[0]} 
                   alt="게시글 이미지"
+                  width={500}
+                  height={300}
                   className="w-full h-64 object-cover rounded-lg"
                 />
               </div>
@@ -112,7 +115,7 @@ export default function EventCommunity({ freeBoard }: EventCommunityProps) {
                 
                 <div className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white mr-2" style={{ opacity: 0.6 }}>
-                  <path fill-rule="evenodd" d="M5.337 21.718a6.707 6.707 0 0 1-.533-.074.75.75 0 0 1-.44-1.223 3.73 3.73 0 0 0 .814-1.686c.023-.115-.022-.317-.254-.543C3.274 16.587 2.25 14.41 2.25 12c0-5.03 4.428-9 9.75-9s9.75 3.97 9.75 9c0 5.03-4.428 9-9.75 9-.833 0-1.643-.097-2.417-.279a6.721 6.721 0 0 1-4.246.997Z" clip-rule="evenodd" />
+                  <path fillRule="evenodd" d="M5.337 21.718a6.707 6.707 0 0 1-.533-.074.75.75 0 0 1-.44-1.223 3.73 3.73 0 0 0 .814-1.686c.023-.115-.022-.317-.254-.543C3.274 16.587 2.25 14.41 2.25 12c0-5.03 4.428-9 9.75-9s9.75 3.97 9.75 9c0 5.03-4.428 9-9.75 9-.833 0-1.643-.097-2.417-.279a6.721 6.721 0 0 1-4.246.997Z" clipRule="evenodd" />
                 </svg>
                   <span className="text-sm font-regular text-white" style={{ opacity: 0.8 }}>
                     {post.commentCount || 0}

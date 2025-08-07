@@ -6,10 +6,15 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "clean": "rm -rf .next node_modules package-lock.json",
+    "clean:cache": "rm -rf .next",
+    "clean:modules": "rm -rf node_modules package-lock.json",
+    "fresh": "npm run clean && npm install",
+    "export": "next build && next export",
+    "build:static": "npm run build && next export -o out"
   },
   "dependencies": {
-    "@next/font": "^14.2.15",
     "next": "15.4.5",
     "react": "19.1.0",
     "react-dom": "19.1.0"

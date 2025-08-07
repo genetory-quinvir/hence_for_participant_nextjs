@@ -7,8 +7,8 @@ import { logger } from '@/utils/logger';
 // 사용자 정보 타입
 interface User {
   id: string;
-  name: string;
-  nickname: string;
+  name?: string;
+  nickname?: string;
   email: string;
   // 필요한 다른 사용자 정보들
 }

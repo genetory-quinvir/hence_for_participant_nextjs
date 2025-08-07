@@ -14,7 +14,7 @@ export interface User {
   createdAt?: string;
   updatedAt?: string;
   role?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // 토큰 정보 타입
@@ -73,7 +73,7 @@ export interface ApiError {
   error: string;
   message?: string;
   code?: string | number;
-  details?: any;
+  details?: unknown;
 }
 
 // 페이지네이션 타입
