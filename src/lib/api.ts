@@ -11,14 +11,8 @@ import {
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
-// API 기본 설정 - 환경 변수로 관리
-// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
-//   (process.env.NODE_ENV === 'production' 
-//     ? 'https://api-participant.hence.events'
-//     : 'http://127.0.0.1:8000'
-//   );
-
-const API_BASE_URL = 'https://api-participant.hence.events';
+// API 기본 설정 - 통일된 API 주소
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-participant.hence.events';
 
 
 // 로그인 API 호출
