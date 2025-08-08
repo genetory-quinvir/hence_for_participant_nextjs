@@ -1,13 +1,13 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { loginUser, saveTokens } from "@/lib/api";
 import { SocialProvider } from "@/types/api";
 import { useAuth } from "@/contexts/AuthContext";
 
-export default function SignPage() {
+function SignContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -267,4 +267,25 @@ export default function SignPage() {
       </main>
     </div>
   );
-} 
+}
+
+// 로딩 컴포넌트
+function SignLoading() {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <p className="text-sm" style={{ opacity: 0.7 }}>로그인 페이지를 불러오는 중...</p>
+      </div>
+    </div>
+  );
+}
+
+// 메인 컴포넌트 (Suspense로 감싸기)
+export default function SignPage() {
+  return (
+    <Suspense fallback={<SignLoading />}>
+      <SignContent />
+    </Suspense>
+  );
+}
