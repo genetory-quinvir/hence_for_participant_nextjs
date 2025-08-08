@@ -5,10 +5,10 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true
   },
-  // 정적 배포를 위한 설정 - 개발 환경에서는 비활성화
+  // 정적 배포를 위한 설정
   ...(process.env.NODE_ENV === 'production' && {
-    assetPrefix: process.env.NEXT_PUBLIC_ASSET_PREFIX || 'https://participant.hence.events',
-    basePath: process.env.NEXT_PUBLIC_BASE_PATH || '/event',
+    output: 'export',
+    assetPrefix: process.env.NEXT_PUBLIC_ASSET_PREFIX || '',
   }),
 };
 
