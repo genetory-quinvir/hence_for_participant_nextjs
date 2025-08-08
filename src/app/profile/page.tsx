@@ -44,10 +44,7 @@ function ProfilePageContent() {
     // 프로필 수정 페이지로 이동
   };
 
-  const handleChangePassword = () => {
-    console.log("비밀번호 변경 클릭");
-    // 비밀번호 변경 페이지로 이동
-  };
+
 
   return (
     <div className="fixed inset-0 w-full h-full bg-black text-white overflow-hidden">

@@ -10,7 +10,7 @@ export default function CommentList({ comments, getRelativeTime }: CommentListPr
   return (
     <div className="space-y-4">
       {Array.isArray(comments) && comments.length > 0 ? (
-        comments.map((comment, index) => (
+        comments.map((comment) => (
           <CommentItem 
             key={comment.id} 
             comment={comment} 

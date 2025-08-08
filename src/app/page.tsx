@@ -7,11 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomePage() {
   const router = useRouter();
-  const { isAuthenticated, user, logout } = useAuth();
-
-  const handleMenuClick = () => {
-    console.log("메뉴 버튼 클릭");
-  };
+  const { isAuthenticated, user } = useAuth();
 
   const handleProfileClick = () => {
     if (isAuthenticated && user) {

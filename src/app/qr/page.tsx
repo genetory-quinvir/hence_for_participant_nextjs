@@ -34,10 +34,7 @@ export default function QRPage() {
     router.back();
   };
 
-  const handleScanQR = () => {
-    console.log("QR 스캔 시작");
-    // QR 스캔 로직 구현 예정
-  };
+
 
   const handleManualEntry = async () => {
     console.log("수동 입력");

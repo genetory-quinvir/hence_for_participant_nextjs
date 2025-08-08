@@ -213,7 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initializeAuth();
-  }, []);
+  }, [checkAuthStatus]);
 
   const contextValue: AuthContextType = {
     ...authState,

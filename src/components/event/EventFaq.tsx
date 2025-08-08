@@ -16,8 +16,6 @@ export default function EventFaq({ faqs }: EventFaqProps) {
     if (carouselRef.current) {
       const container = carouselRef.current;
       const scrollLeft = container.scrollLeft;
-      const containerWidth = container.clientWidth;
-      const scrollWidth = container.scrollWidth;
 
       // 각 슬라이드의 너비 (카드 288px + 간격 16px)
       const slideWidth = 288 + 16;
@@ -61,7 +59,7 @@ export default function EventFaq({ faqs }: EventFaqProps) {
         carousel.removeEventListener('scroll', handleScroll);
       };
     }
-  }, [faqs.length]);
+  }, [faqs.length, handleScroll]);
 
   if (!faqs || faqs.length === 0) {
     return null;
