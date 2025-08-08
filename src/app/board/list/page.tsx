@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { BoardItem } from "@/types/api";
@@ -8,7 +8,7 @@ import { getFeaturedEvent } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import PostHeader from "@/components/common/PostHeader";
 
-export default function BoardListPage() {
+function BoardListContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [freeBoard, setFreeBoard] = useState<BoardItem[]>([]);
@@ -263,4 +263,25 @@ export default function BoardListPage() {
       </button>
     </div>
   );
-} 
+}
+
+// 로딩 컴포넌트
+function BoardListLoading() {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <p className="text-sm" style={{ opacity: 0.7 }}>게시글 목록을 불러오는 중...</p>
+      </div>
+    </div>
+  );
+}
+
+// 메인 컴포넌트 (Suspense로 감싸기)
+export default function BoardListPage() {
+  return (
+    <Suspense fallback={<BoardListLoading />}>
+      <BoardListContent />
+    </Suspense>
+  );
+}

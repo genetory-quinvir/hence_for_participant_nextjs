@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { BoardItem, CommentItem } from "@/types/api";
 import { getBoardDetail, getComments, createComment, getAccessToken } from "@/lib/api";
@@ -8,7 +8,7 @@ import CommonNavigationBar from "@/components/CommonNavigationBar";
 import PostDetail from "@/components/board/PostDetail";
 import CommentSection from "@/components/board/CommentSection";
 
-export default function BoardDetailPage() {
+function BoardDetailContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -282,4 +282,25 @@ export default function BoardDetailPage() {
       </div>
     </div>
   );
-} 
+}
+
+// 로딩 컴포넌트
+function BoardDetailLoading() {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <p className="text-sm" style={{ opacity: 0.7 }}>게시글을 불러오는 중...</p>
+      </div>
+    </div>
+  );
+}
+
+// 메인 컴포넌트 (Suspense로 감싸기)
+export default function BoardDetailPage() {
+  return (
+    <Suspense fallback={<BoardDetailLoading />}>
+      <BoardDetailContent />
+    </Suspense>
+  );
+}
