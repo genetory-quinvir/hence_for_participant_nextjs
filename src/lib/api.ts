@@ -12,7 +12,7 @@ import {
 import { apiDebugger, logger } from '@/utils/logger';
 
 // API 기본 설정 - 통일된 API 주소
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-participant.hence.events';
+const API_BASE_URL = 'https://api-participant.hence.events';
 
 
 // 로그인 API 호출
