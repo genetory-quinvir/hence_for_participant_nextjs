@@ -158,6 +158,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 실제로는 서버에 토큰 유효성 검증 요청
       // 예: GET /auth/me 또는 /auth/validate
       const API_BASE_URL = 'https://api-participant.hence.events';
+      console.log('🔍 API URL 확인:', API_BASE_URL);
+      console.log('🔍 환경 변수 확인:', process.env.NEXT_PUBLIC_API_URL);
       const response = await fetch(`${API_BASE_URL}/auth/me`, {
         method: 'GET',
         headers: {
