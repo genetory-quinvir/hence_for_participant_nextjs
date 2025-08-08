@@ -233,7 +233,15 @@ function EventPageContent() {
         {featuredData.vendors && <EventFoodTrucks vendors={featuredData.vendors} />}
 
         {/* 커뮤니티 섹션 */}
-        {featuredData.freeBoard && <EventCommunity freeBoard={featuredData.freeBoard} />}
+        {featuredData.freeBoard && (
+          <EventCommunity 
+            freeBoard={featuredData.freeBoard} 
+            showViewAllButton={true}
+            onViewAllClick={() => {
+              router.push(`/board/list?eventId=${featuredData.event.id || 'default-event'}`);
+            }}
+          />
+        )}
 
         {/* 도움말 섹션 */}
         <EventHelp />

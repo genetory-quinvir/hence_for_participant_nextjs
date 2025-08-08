@@ -1,13 +1,13 @@
-import { FreeBoardItem, NoticeItem } from '@/types/api';
+import { BoardItem } from '@/types/api';
 
 interface PostContentProps {
-  post: FreeBoardItem | NoticeItem;
+  post: BoardItem;
   isFreeBoardPost: boolean;
 }
 
 export default function PostContent({ post, isFreeBoardPost }: PostContentProps) {
   return (
-    <div className="mb-8 mt-8">
+    <div className="mb-8 mt-4">
       {isFreeBoardPost && 'images' in post && post.images && post.images.length > 0 && (
         <div className="mb-6">
           <div className="flex flex-col space-y-3">
@@ -23,8 +23,8 @@ export default function PostContent({ post, isFreeBoardPost }: PostContentProps)
         </div>
       )}
 
-      <div className="text-2xl leading-relaxed whitespace-pre-wrap">
-        {isFreeBoardPost ? post.content : (post as NoticeItem).content}
+      <div className="text-md leading-relaxed whitespace-pre-wrap text-white">
+        {post.content}
       </div>
     </div>
   );

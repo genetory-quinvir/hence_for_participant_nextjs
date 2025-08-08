@@ -282,23 +282,14 @@ export interface AdItem {
   updatedAt?: string;
 }
 
-// 공지사항 타입
-export interface NoticeItem {
-  id?: string;
-  eventId?: string;
-  title?: string;
-  content?: string;
-  priority?: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// 자유게시판 타입
-export interface FreeBoardItem {
+// 게시판 아이템 타입 (자유게시판과 공지사항 통합)
+export interface BoardItem {
   id: string;
   eventId: string;
-  type: string;
+  type: string; // 'FREE' | 'NOTICE'
   title?: string | null;
+  content?: string;
+  priority?: number; // 공지사항 우선순위
   user?: {
     id: string;
     nickname: string;
@@ -308,10 +299,13 @@ export interface FreeBoardItem {
   likeCount?: number;
   commentCount?: number;
   isLiked?: boolean;
-  content?: string;
   createdAt?: string;
   updatedAt?: string;
 }
+
+// 기존 타입과의 호환성을 위한 별칭
+export type FreeBoardItem = BoardItem;
+export type NoticeItem = BoardItem;
 
 // 댓글 타입
 export interface CommentItem {
@@ -330,7 +324,7 @@ export interface CommentItem {
 // 커뮤니티/공지사항 상세 응답 타입
 export interface PostDetailResponse {
   success: boolean;
-  data?: FreeBoardItem | NoticeItem;
+  data?: BoardItem;
   error?: string;
 }
 
@@ -348,12 +342,12 @@ export interface FeaturedItem {
   participants: ParticipantItem[];
   timelines: TimelineItem[];
   vendors: VendorItem[];
-  notices: NoticeItem[];
+  notices: BoardItem[];
   lastUpdated: string;
   contact?: ContactInfo;
   faqs?: FaqItem[];
   emergencyInfo?: EmergencyInfo;
-  freeBoard?: FreeBoardItem[];
+  freeBoard?: BoardItem[];
   advertisements?: AdItem[];
 }
 

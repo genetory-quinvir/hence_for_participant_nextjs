@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { FreeBoardItem, NoticeItem, CommentItem } from "@/types/api";
-import { getBoardDetail, getComments } from "@/lib/api";
+import { BoardItem, CommentItem } from "@/types/api";
+import { getBoardDetail, getComments, createComment, getAccessToken } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import PostDetail from "@/components/board/PostDetail";
 import CommentSection from "@/components/board/CommentSection";
@@ -12,10 +12,11 @@ export default function BoardDetailPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [post, setPost] = useState<FreeBoardItem | NoticeItem | null>(null);
+  const [post, setPost] = useState<BoardItem | null>(null);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // URL에서 타입 확인 (free 또는 notice)
   const postType = searchParams.get('type') || 'free';
@@ -34,6 +35,12 @@ export default function BoardDetailPage() {
         const result = await getBoardDetail(eventId, postType, postId);
         
         if (result.success && result.data) {
+          console.log('🔍 게시글 상세 정보 로드:', {
+            id: result.data.id,
+            isLiked: result.data.isLiked,
+            likeCount: result.data.likeCount,
+            type: result.data.type
+          });
           setPost(result.data);
           
           // 자유게시판인 경우 댓글도 가져오기
@@ -118,6 +125,48 @@ export default function BoardDetailPage() {
     return '게시글';
   };
 
+  const handleSubmitComment = async (content: string) => {
+    try {
+      // 인증 상태 확인
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+        // 현재 페이지 URL을 쿼리 파라미터로 전달
+        const currentUrl = window.location.pathname + window.location.search;
+        router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+        return;
+      }
+
+      setIsSubmitting(true);
+      const eventId = searchParams.get('eventId') || 'default-event';
+      const postId = params.id as string;
+      
+      const result = await createComment(eventId, postType, postId, content);
+      
+      if (result.success) {
+        // 댓글 작성 성공 시 댓글 목록 새로고침
+        const commentsResult = await getComments(eventId, postType, postId);
+        if (commentsResult.success && commentsResult.data) {
+          setComments(commentsResult.data);
+        }
+      } else {
+        if (result.error?.includes('로그인이 만료')) {
+          alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+          // 현재 페이지 URL을 쿼리 파라미터로 전달
+          const currentUrl = window.location.pathname + window.location.search;
+          router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+        } else {
+          alert(result.error || '댓글 작성에 실패했습니다.');
+        }
+      }
+    } catch (error) {
+      console.error('댓글 작성 오류:', error);
+      alert('댓글 작성 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white">
@@ -191,12 +240,44 @@ export default function BoardDetailPage() {
         <PostDetail 
           post={post} 
           isFreeBoardPost={isFreeBoardPost} 
-          formatDate={formatDate} 
+          formatDate={formatDate}
+          eventId={searchParams.get('eventId') || 'default-event'}
+          boardType={postType}
+          onLikeToggle={async (newLikeCount, isLiked) => {
+            // 좋아요 상태 변경 후 게시글 상세 정보 새로고침
+            try {
+              const eventId = searchParams.get('eventId') || 'default-event';
+              const postId = params.id as string;
+              
+              const result = await getBoardDetail(eventId, postType, postId);
+              if (result.success && result.data) {
+                setPost(result.data);
+              }
+            } catch (error) {
+              console.error('게시글 새로고침 오류:', error);
+              // 새로고침 실패 시 로컬 상태로 업데이트
+              setPost(prevPost => {
+                if (prevPost) {
+                  return {
+                    ...prevPost,
+                    likeCount: newLikeCount,
+                    isLiked: isLiked
+                  };
+                }
+                return prevPost;
+              });
+            }
+          }}
         />
 
         {/* 댓글 섹션 (자유게시판인 경우만) */}
         {isFreeBoardPost && (
-          <CommentSection comments={comments} getRelativeTime={getRelativeTime} />
+          <CommentSection 
+            comments={comments} 
+            getRelativeTime={getRelativeTime} 
+            onSubmitComment={handleSubmitComment}
+            isSubmitting={isSubmitting}
+          />
         )}
       </div>
     </div>

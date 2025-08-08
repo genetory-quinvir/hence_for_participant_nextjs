@@ -1,0 +1,93 @@
+"use client";
+
+interface PostHeaderProps {
+  nickname?: string;
+  createdAt?: string;
+  size?: 'sm' | 'md';
+  className?: string;
+  showMoreButton?: boolean;
+  onMoreClick?: () => void;
+}
+
+// 상대적 시간 표시 함수
+const getRelativeTime = (dateString: string): string => {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) {
+    return `${diffInSeconds}초 전`;
+  }
+
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes}분 전`;
+  }
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `${diffInHours}시간 전`;
+  }
+
+  return date.toLocaleDateString('ko-KR');
+};
+
+export default function PostHeader({ 
+  nickname, 
+  createdAt, 
+  size = 'md',
+  className = '',
+  showMoreButton = false,
+  onMoreClick
+}: PostHeaderProps) {
+  const displayName = nickname || '익명';
+  const initial = displayName.charAt(0).toUpperCase();
+  
+  const isSmall = size === 'sm';
+  
+  return (
+    <div className={`flex items-center space-x-3 ${className}`}>
+      <div className={`flex-shrink-0 bg-purple-600 rounded-full flex items-center justify-center ${
+        isSmall ? 'w-6 h-6' : 'w-8 h-8'
+      }`}>
+        <span className={`text-white font-bold ${
+          isSmall ? 'text-xs' : 'text-sm'
+        }`}>
+          {initial}
+        </span>
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-col">
+          <span className={`text-white font-semibold ${
+            isSmall ? 'text-xs' : 'text-sm'
+          }`}>
+            {displayName}
+          </span>
+          <span className={`text-white ${
+            isSmall ? 'text-xs' : 'text-xs'
+          }`} style={{ opacity: 0.6 }}>
+            {createdAt ? getRelativeTime(createdAt) : ''}
+          </span>
+        </div>
+      </div>
+      
+      {/* 더보기 버튼 */}
+      {showMoreButton && (
+        <button
+          onClick={onMoreClick}
+          className="flex-shrink-0 p-1 rounded-full transition-colors cursor-pointer"
+        >
+          <svg 
+            className={`text-white ${isSmall ? 'w-4 h-4' : 'w-5 h-5'}`} 
+            fill="currentColor" 
+            viewBox="0 0 24 24"
+            style={{ opacity: 0.6 }}
+          >
+            <path d="M4 12c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2zm6 0c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2zm6 0c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2z"/>
+          </svg>
+        </button>
+      )}
+    </div>
+  );
+} 

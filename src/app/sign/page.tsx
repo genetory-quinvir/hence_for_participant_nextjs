@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { loginUser, saveTokens } from "@/lib/api";
@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function SignPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -65,9 +66,14 @@ export default function SignPage() {
           );
         }
 
-        // 성공 메시지 표시 후 메인 페이지로 이동
+        // 성공 메시지 표시 후 redirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
         alert(`환영합니다, ${response.data?.nickname || '사용자'}님!`);
-        router.push("/");
+        const redirectUrl = searchParams.get('redirect');
+        if (redirectUrl) {
+          router.push(decodeURIComponent(redirectUrl));
+        } else {
+          router.push("/");
+        }
       } else {
         setError(response.error || "로그인에 실패했습니다.");
       }
