@@ -103,7 +103,7 @@ export default function HomePage() {
           {/* 히어로 섹션 */}
           <section className="flex-1 flex flex-col pt-10 px-6">
             <h1 className="text-6xl font-bold text-white mb-4 tracking-wider text-left">
-              HENCE
+              HENCE Beta
             </h1>
             <p className="text-lg text-white text-left" style={{ opacity: 0.6 }}>
               이벤트의 시작과 끝.
