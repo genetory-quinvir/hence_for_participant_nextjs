@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 
-export default function BoardWritePage() {
+function BoardWriteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [content, setContent] = useState("");
@@ -123,4 +123,25 @@ export default function BoardWritePage() {
       </div>
     </div>
   );
-} 
+}
+
+// 로딩 컴포넌트
+function BoardWriteLoading() {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <p className="text-sm" style={{ opacity: 0.7 }}>글쓰기 페이지를 불러오는 중...</p>
+      </div>
+    </div>
+  );
+}
+
+// 메인 컴포넌트 (Suspense로 감싸기)
+export default function BoardWritePage() {
+  return (
+    <Suspense fallback={<BoardWriteLoading />}>
+      <BoardWriteContent />
+    </Suspense>
+  );
+}
