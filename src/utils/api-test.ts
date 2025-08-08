@@ -135,7 +135,7 @@ export const testDataGenerator = {
 // API 테스트 헬퍼
 export const apiTestHelper = {
   // 로그인 테스트
-  testLogin: async (email: string, _password: string) => {
+  testLogin: async (email: string) => {
     logger.info('🧪 로그인 테스트 시작', { email });
     
     try {

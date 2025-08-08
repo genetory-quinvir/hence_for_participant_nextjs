@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { FaqItem } from "@/types/api";
 
 interface EventFaqProps {
@@ -12,7 +12,7 @@ export default function EventFaq({ faqs }: EventFaqProps) {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   // 스크롤 이벤트 핸들러
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     if (carouselRef.current) {
       const container = carouselRef.current;
       const scrollLeft = container.scrollLeft;
@@ -28,7 +28,7 @@ export default function EventFaq({ faqs }: EventFaqProps) {
 
       setCurrentSlide(slideIndex);
     }
-  };
+  }, [faqs.length]);
 
   // 도트 클릭 핸들러
   const goToSlide = (index: number) => {
@@ -59,7 +59,7 @@ export default function EventFaq({ faqs }: EventFaqProps) {
         carousel.removeEventListener('scroll', handleScroll);
       };
     }
-  }, [faqs.length, handleScroll]);
+  }, [handleScroll]);
 
   if (!faqs || faqs.length === 0) {
     return null;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { getAccessToken, getRefreshToken, removeTokens } from '@/lib/api';
 import { logger } from '@/utils/logger';
 
@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // 인증 상태 확인
-  const checkAuthStatus = async (): Promise<boolean> => {
+  const checkAuthStatus = useCallback(async (): Promise<boolean> => {
     try {
       logger.info('🔍 인증 상태 확인 시작');
       
@@ -150,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout();
       return false;
     }
-  };
+  }, [logout]);
 
   // 토큰 유효성 검증 (실제 구현에서는 서버 API 호출)
   const validateToken = async (token: string): Promise<boolean> => {
@@ -213,7 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initializeAuth();
-  }, [checkAuthStatus]);
+  }, []);
 
   const contextValue: AuthContextType = {
     ...authState,

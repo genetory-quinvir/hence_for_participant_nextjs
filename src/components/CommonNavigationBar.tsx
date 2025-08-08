@@ -25,15 +25,6 @@ export default function CommonNavigationBar({
   textColor = "text-white",
 }: CommonNavigationBarProps) {
   const router = useRouter();
-
-  // 기본 뒤로가기 핸들러
-  const handleBackClick = () => {
-    if (onLeftClick) {
-      onLeftClick();
-    } else {
-      router.back();
-    }
-  };
   return (
     <nav 
       className={`bg-${backgroundColor} bg-opacity-${backgroundOpacity} border-${backgroundColor} sticky top-0 z-50 h-[50px]`}
