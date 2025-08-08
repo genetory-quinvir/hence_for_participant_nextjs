@@ -5,7 +5,9 @@ import {
   LoginRequest,
   SocialLoginRequest,
   EventCodeResponse,
-  FeaturedResponse
+  FeaturedResponse,
+  PostDetailResponse,
+  CommentListResponse
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
@@ -271,6 +273,150 @@ export async function checkEventCode(eventCode: string): Promise<EventCodeRespon
     };
   }
 } 
+
+// 게시글 상세 정보 가져오기 API
+export async function getBoardDetail(eventId: string, boardType: string, postId: string): Promise<PostDetailResponse> {
+  const url = `${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`;
+  
+  try {
+    // 네트워크 상태 체크
+    if (!apiDebugger.checkNetworkStatus()) {
+      return {
+        success: false,
+        error: '네트워크 연결을 확인해주세요.',
+      };
+    }
+
+    const headers = { 'Content-Type': 'application/json' };
+    
+    // 요청 로깅
+    apiDebugger.logRequest('GET', url, headers, null);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    const responseText = await response.text();
+    const responseHeaders = Object.fromEntries(response.headers.entries());
+    
+    // 응답 로깅
+    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
+
+    if (response.status === 200) {
+      const responseData = JSON.parse(responseText);
+      logger.info('✅ 게시글 상세 정보 로드 성공', responseData);
+      return {
+        success: true,
+        data: responseData.data || responseData,
+      };
+    } else if (response.status === 404) {
+      logger.warn('⚠️ 게시글을 찾을 수 없음', { eventId, boardType, postId });
+      return {
+        success: false,
+        error: '게시글을 찾을 수 없습니다.',
+      };
+    } else {
+      // 에러 응답 처리
+      try {
+        const errorData = JSON.parse(responseText);
+        const errorMessage = errorData.message || '게시글 정보를 가져오는데 실패했습니다.';
+        logger.error('❌ 게시글 상세 정보 로드 실패', { status: response.status, error: errorMessage });
+        return {
+          success: false,
+          error: errorMessage,
+        };
+      } catch (e) {
+        logger.error('❌ 에러 응답 파싱 실패', e);
+        return {
+          success: false,
+          error: '게시글 정보를 가져오는데 실패했습니다. 다시 시도해주세요.',
+        };
+      }
+    }
+  } catch (error) {
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
+
+// 댓글 목록 가져오기 API
+export async function getComments(eventId: string, boardType: string, postId: string): Promise<CommentListResponse> {
+  const url = `${API_BASE_URL}/board/${eventId}/${boardType}/${postId}/comments`;
+  
+  try {
+    // 네트워크 상태 체크
+    if (!apiDebugger.checkNetworkStatus()) {
+      return {
+        success: false,
+        error: '네트워크 연결을 확인해주세요.',
+      };
+    }
+
+    const headers = { 'Content-Type': 'application/json' };
+    
+    // 요청 로깅
+    apiDebugger.logRequest('GET', url, headers, null);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    const responseText = await response.text();
+    const responseHeaders = Object.fromEntries(response.headers.entries());
+    
+    // 응답 로깅
+    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
+
+    if (response.status === 200) {
+      const responseData = JSON.parse(responseText);
+      logger.info('✅ 댓글 목록 로드 성공', responseData);
+      
+      const commentsData = responseData.data?.items || responseData.data || responseData;
+      
+      // 배열이 아닌 경우 빈 배열로 설정
+      const safeCommentsData = Array.isArray(commentsData) ? commentsData : [];
+      
+      return {
+        success: true,
+        data: safeCommentsData,
+      };
+    } else if (response.status === 404) {
+      logger.warn('⚠️ 댓글을 찾을 수 없음', { eventId, boardType, postId });
+      return {
+        success: false,
+        error: '댓글을 찾을 수 없습니다.',
+      };
+    } else {
+      // 에러 응답 처리
+      try {
+        const errorData = JSON.parse(responseText);
+        const errorMessage = errorData.message || '댓글을 가져오는데 실패했습니다.';
+        logger.error('❌ 댓글 목록 로드 실패', { status: response.status, error: errorMessage });
+        return {
+          success: false,
+          error: errorMessage,
+        };
+      } catch (e) {
+        logger.error('❌ 에러 응답 파싱 실패', e);
+        return {
+          success: false,
+          error: '댓글을 가져오는데 실패했습니다. 다시 시도해주세요.',
+        };
+      }
+    }
+  } catch (error) {
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
 
 // 이벤트 상세 정보 가져오기 API
 export async function getFeaturedEvent(eventId: string): Promise<FeaturedResponse> {

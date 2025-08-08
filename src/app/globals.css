@@ -29,6 +29,10 @@ body {
   font-family: var(--font-suit);
   margin: 0;
   padding: 0;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 /* Safe Area 지원 */

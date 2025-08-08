@@ -20,17 +20,18 @@ import EventHelp from "@/components/event/EventHelp";
 function EventPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [featuredData, setFeaturedData] = useState<FeaturedItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // 인증되지 않은 경우 메인 페이지로 리다이렉트
   useEffect(() => {
-    if (!isAuthenticated || !user) {
+    // 인증 상태 확인이 완료된 후에만 리다이렉트 처리
+    if (!authLoading && (!isAuthenticated || !user)) {
       router.push("/");
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, authLoading, router]);
 
   // 이벤트 데이터 가져오기
   useEffect(() => {
@@ -126,13 +127,15 @@ function EventPageContent() {
     }
   };
 
-  // 인증되지 않은 경우 로딩 표시
-  if (!isAuthenticated || !user) {
+  // 인증 상태 확인 중이거나 인증되지 않은 경우 로딩 표시
+  if (authLoading || !isAuthenticated || !user) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-sm" style={{ opacity: 0.7 }}>메인 페이지로 이동 중...</p>
+          <p className="text-sm" style={{ opacity: 0.7 }}>
+            {authLoading ? '인증 상태 확인 중...' : '메인 페이지로 이동 중...'}
+          </p>
         </div>
       </div>
     );

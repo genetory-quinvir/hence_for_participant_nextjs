@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { useRouter } from "next/navigation";
 import { NoticeItem } from "@/types/api";
 
 interface EventNoticeProps {
@@ -33,6 +34,7 @@ const getRelativeTime = (dateString: string): string => {
 
 export default function EventNotice({ notices }: EventNoticeProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // 최대 3개까지만 표시하고 id가 있는 것만 필터링
   const displayNotices = notices
@@ -64,11 +66,12 @@ export default function EventNotice({ notices }: EventNoticeProps) {
           {displayNotices.map((notice) => (
             <div
               key={notice.id}
-              className="flex-shrink-0 w-80 rounded-xl p-4 transition-all duration-300"
+              className="flex-shrink-0 w-80 rounded-xl p-4 transition-all duration-300 cursor-pointer hover:bg-white hover:bg-opacity-10"
               style={{ 
                 scrollSnapAlign: 'start',
                 backgroundColor: 'rgba(255, 255, 255, 0.05)'
               }}
+              onClick={() => router.push(`/board/${notice.id}?type=notice&eventId=${notice.eventId || 'default-event'}`)}
             >
               {/* 공지사항 정보 */}
               <div className="space-y-0">

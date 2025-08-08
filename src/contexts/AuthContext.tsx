@@ -50,6 +50,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = (user: User, accessToken: string, refreshToken?: string) => {
     logger.info('🔐 로그인 상태 업데이트', { userId: user.id, hasRefreshToken: !!refreshToken });
     
+    // 사용자 정보 저장
+    storeUser(user);
+    
     setAuthState({
       isAuthenticated: true,
       user,
@@ -65,6 +68,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // 토큰 제거
     removeTokens();
+    
+    // 저장된 사용자 정보 제거
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+    }
     
     // 상태 초기화
     setAuthState({
@@ -100,25 +108,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
 
-      // 토큰 유효성 검증 (실제로는 서버에 요청)
-      const isValid = await validateToken(accessToken);
-      
-      if (isValid) {
-        logger.info('✅ 토큰 유효 - 로그인 상태 유지');
-        // 사용자 정보는 로컬 스토리지에서 복원하거나 서버에서 다시 가져올 수 있음
-        const user = getStoredUser();
-        if (user) {
-          setAuthState({
-            isAuthenticated: true,
-            user,
-            accessToken,
-            refreshToken,
-            isLoading: false,
-          });
-        }
+      // 토큰이 있으면 일단 로그인 상태로 유지
+      // 실제 API 호출 시에 토큰 유효성을 검증하도록 함
+      const user = getStoredUser();
+      if (user) {
+        logger.info('✅ 저장된 사용자 정보로 로그인 상태 복원');
+        setAuthState({
+          isAuthenticated: true,
+          user,
+          accessToken,
+          refreshToken,
+          isLoading: false,
+        });
         return true;
       } else {
-        logger.warn('⚠️ 토큰 만료 - 로그아웃 처리');
+        // 사용자 정보가 없으면 토큰 검증 시도
+        try {
+          const isValid = await validateToken(accessToken);
+          if (isValid) {
+            const user = getStoredUser();
+            if (user) {
+              setAuthState({
+                isAuthenticated: true,
+                user,
+                accessToken,
+                refreshToken,
+                isLoading: false,
+              });
+              return true;
+            }
+          }
+        } catch (error) {
+          logger.warn('토큰 검증 실패, 로그아웃 처리', error);
+        }
+        
         logout();
         return false;
       }
@@ -134,7 +157,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // 실제로는 서버에 토큰 유효성 검증 요청
       // 예: GET /auth/me 또는 /auth/validate
-      const response = await fetch('http://127.0.0.1:8000/auth/me', {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-participant.hence.events';
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -313,6 +313,33 @@ export interface FreeBoardItem {
   updatedAt?: string;
 }
 
+// 댓글 타입
+export interface CommentItem {
+  id: string;
+  postId: string;
+  content: string;
+  user: {
+    id: string;
+    nickname: string;
+    profileImageUrl: string | null;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 커뮤니티/공지사항 상세 응답 타입
+export interface PostDetailResponse {
+  success: boolean;
+  data?: FreeBoardItem | NoticeItem;
+  error?: string;
+}
+
+export interface CommentListResponse {
+  success: boolean;
+  data?: CommentItem[];
+  error?: string;
+}
+
 // FeaturedItem 타입 (이벤트 종합 정보)
 export interface FeaturedItem {
   event: EventItem;

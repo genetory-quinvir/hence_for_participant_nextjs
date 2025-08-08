@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 
 interface CommonNavigationBarProps {
   title?: string;
@@ -19,15 +20,25 @@ export default function CommonNavigationBar({
   rightButton,
   onLeftClick,
   onRightClick,
-  backgroundColor = "white",
-  backgroundOpacity = 90,
-  textColor = "text-gray-800",
+  backgroundColor = "black",
+  backgroundOpacity = 100,
+  textColor = "text-white",
 }: CommonNavigationBarProps) {
+  const router = useRouter();
+
+  // 기본 뒤로가기 핸들러
+  const handleBackClick = () => {
+    if (onLeftClick) {
+      onLeftClick();
+    } else {
+      router.back();
+    }
+  };
   return (
     <nav 
       className={`bg-${backgroundColor} bg-opacity-${backgroundOpacity} border-${backgroundColor} sticky top-0 z-50 h-[50px]`}
     >
-      <div className="flex items-center justify-between h-full px-4">
+      <div className="flex items-center justify-between h-full px-1">
         {/* 왼쪽 버튼 */}
         <div className="flex items-center">
           {leftButton ? (
