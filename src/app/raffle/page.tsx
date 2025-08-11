@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { getRaffleInfo, participateRaffle } from "@/lib/api";
 
-export default function RafflePage() {
+function RaffleContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -436,5 +436,25 @@ export default function RafflePage() {
         />
       </div>
     </div>
+  );
+}
+
+// 로딩 컴포넌트
+function RaffleLoading() {
+  return (
+    <div className="min-h-screen bg-black text-white">
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">로딩 중...</div>
+      </div>
+    </div>
+  );
+}
+
+// Suspense로 감싸는 메인 컴포넌트
+export default function RafflePage() {
+  return (
+    <Suspense fallback={<RaffleLoading />}>
+      <RaffleContent />
+    </Suspense>
   );
 } 
