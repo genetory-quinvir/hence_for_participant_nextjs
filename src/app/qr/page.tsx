@@ -11,7 +11,7 @@ export default function QRPage() {
   const router = useRouter();
   const { isAuthenticated, user } = useAuth();
   const [isChecking, setIsChecking] = useState(false);
-  const [hasCamera, setHasCamera] = useState(false);
+  const [hasCamera, setHasCamera] = useState<boolean | null>(null); // null: 확인 중, true: 지원, false: 미지원
   const [isScanning, setIsScanning] = useState(false);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const qrContainerRef = useRef<HTMLDivElement>(null);
@@ -27,8 +27,16 @@ export default function QRPage() {
   useEffect(() => {
     const checkCameraSupport = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        console.log("카메라 권한 요청 중...");
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'environment', // 후면 카메라 우선
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        });
         stream.getTracks().forEach(track => track.stop()); // 스트림 정리
+        console.log("카메라 권한 획득 성공");
         setHasCamera(true);
       } catch (error) {
         console.log('카메라를 지원하지 않거나 권한이 없습니다:', error);
@@ -36,18 +44,49 @@ export default function QRPage() {
       }
     };
 
-    checkCameraSupport();
+    // 약간의 지연 후 카메라 확인 시작
+    const timer = setTimeout(() => {
+      checkCameraSupport();
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  // 카메라가 지원되면 QR 스캐너 시작
+  // 카메라가 지원되면 QR 스캐너 시작 (여러 번 시도)
   useEffect(() => {
-    if (hasCamera && !isScanning) {
-      // 약간의 지연 후 스캐너 시작 (컴포넌트 마운트 완료 후)
-      const timer = setTimeout(() => {
-        startScanner();
-      }, 500);
+    if (hasCamera === true && !isScanning) {
+      // 즉시 시도
+      startScanner();
+      
+      // 1초 후 재시도
+      const timer1 = setTimeout(() => {
+        if (!isScanning) {
+          console.log("1초 후 스캐너 재시도");
+          startScanner();
+        }
+      }, 1000);
 
-      return () => clearTimeout(timer);
+      // 2초 후 재시도
+      const timer2 = setTimeout(() => {
+        if (!isScanning) {
+          console.log("2초 후 스캐너 재시도");
+          startScanner();
+        }
+      }, 2000);
+
+      // 3초 후 재시도
+      const timer3 = setTimeout(() => {
+        if (!isScanning) {
+          console.log("3초 후 스캐너 재시도");
+          startScanner();
+        }
+      }, 3000);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+      };
     }
   }, [hasCamera, isScanning]);
 
@@ -84,9 +123,26 @@ export default function QRPage() {
 
   // QR 스캐너 시작
   const startScanner = () => {
-    if (!hasCamera || !qrContainerRef.current) return;
+    if (!hasCamera) {
+      console.log("카메라가 지원되지 않습니다.");
+      return;
+    }
+
+    // DOM 요소가 준비되었는지 확인
+    const qrReaderElement = document.getElementById("qr-reader");
+    if (!qrReaderElement) {
+      console.log("QR reader 요소가 아직 준비되지 않았습니다.");
+      return;
+    }
+
+    // 이미 스캐너가 실행 중이면 중단
+    if (scannerRef.current) {
+      console.log("이미 스캐너가 실행 중입니다.");
+      return;
+    }
 
     setIsScanning(true);
+    console.log("QR 스캐너 시작 중...");
     
     try {
       scannerRef.current = new Html5QrcodeScanner(
@@ -95,6 +151,8 @@ export default function QRPage() {
           fps: 10,
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
+          showTorchButtonIfSupported: true,
+          showZoomSliderIfSupported: true,
         },
         false
       );
@@ -110,6 +168,8 @@ export default function QRPage() {
           console.log("QR 스캔 오류:", error);
         }
       );
+
+      console.log("QR 스캐너 시작 완료");
     } catch (error) {
       console.error("QR 스캐너 시작 오류:", error);
       setIsScanning(false);
@@ -204,11 +264,23 @@ export default function QRPage() {
         {/* QR 카메라 영역 - 중앙 정렬 */}
         <section className="flex-1 flex flex-col items-center justify-center">
           <div className="w-full max-w-sm">
-            {hasCamera ? (
+            {hasCamera === null ? (
+              // 카메라 확인 중 - 로딩 표시
+              <div className="bg-white rounded-xl p-6 w-full">
+                <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
+                  <div className="text-gray-500 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400 mx-auto mb-4"></div>
+                    <p className="text-sm">카메라 확인 중...</p>
+                  </div>
+                </div>
+              </div>
+            ) : hasCamera === true ? (
+              // 카메라 지원 - QR 스캐너 표시
               <div ref={qrContainerRef} className="w-full">
                 <div id="qr-reader" className="w-full"></div>
               </div>
             ) : (
+              // 카메라 미지원 - 안내 메시지 표시
               <div className="bg-white rounded-xl p-6 w-full">
                 <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
                   <div className="text-gray-500 text-center">
