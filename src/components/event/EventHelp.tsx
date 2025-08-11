@@ -33,7 +33,7 @@ export default function EventHelp() {
         <div className="space-y-8 pt-2">
           <div>
             <p className="text-sm text-white mb-2">
-              <span className="text-purple-400 font-semibold">Q. </span>
+              <span className="text-purple-600 font-semibold">Q. </span>
               페스티벌 입장은 언제부터 가능한가요?
             </p>
             <p className="text-sm text-white" style={{ opacity: 0.8 }}>
@@ -44,7 +44,7 @@ export default function EventHelp() {
 
           <div>
             <p className="text-sm text-white mb-2">
-              <span className="text-purple-400 font-semibold">Q. </span>
+              <span className="text-purple-600 font-semibold">Q. </span>
               주차는 어떻게 하나요?
             </p>
             <p className="text-sm text-white" style={{ opacity: 0.8 }}>
@@ -55,7 +55,7 @@ export default function EventHelp() {
 
           <div>
             <p className="text-sm text-white mb-2">
-              <span className="text-purple-400 font-semibold">Q. </span>
+              <span className="text-purple-600 font-semibold">Q. </span>
               음식물 반입이 가능한가요?
             </p>
             <p className="text-sm text-white" style={{ opacity: 0.8 }}>
@@ -66,7 +66,7 @@ export default function EventHelp() {
 
           <div>
             <p className="text-sm text-white mb-2">
-              <span className="text-purple-400 font-semibold">Q. </span>
+              <span className="text-purple-600 font-semibold">Q. </span>
               우천 시 어떻게 되나요?
             </p>
             <p className="text-sm text-white" style={{ opacity: 0.8 }}>
@@ -77,7 +77,7 @@ export default function EventHelp() {
 
           <div>
             <p className="text-sm text-white mb-2">
-              <span className="text-purple-400 font-semibold">Q. </span>
+              <span className="text-purple-600 font-semibold">Q. </span>
               분실물은 어디서 찾을 수 있나요?
             </p>
             <p className="text-sm text-white" style={{ opacity: 0.8 }}>

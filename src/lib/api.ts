@@ -7,7 +7,8 @@ import {
   EventCodeResponse,
   FeaturedResponse,
   PostDetailResponse,
-  CommentListResponse
+  CommentListResponse,
+  BoardItem
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
@@ -554,6 +555,186 @@ export async function toggleLike(eventId: string, boardType: string, postId: str
 }
 
 // 댓글 작성 API
+export async function getBoardList(eventId: string, boardType: string, page: number = 1, limit: number = 10): Promise<{ success: boolean; error?: string; data?: { items: BoardItem[]; hasNext: boolean; total: number } }> {
+  const url = `${API_BASE_URL}/board/${eventId}/${boardType}?page=${page}&limit=${limit}`;
+  
+  try {
+    // 네트워크 상태 체크
+    if (!apiDebugger.checkNetworkStatus()) {
+      return {
+        success: false,
+        error: '네트워크 연결을 확인해주세요.',
+      };
+    }
+
+    // 액세스 토큰 가져오기
+    const accessToken = getAccessToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    // 요청 로깅
+    apiDebugger.logRequest('GET', url, headers);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    const responseText = await response.text();
+    const responseHeaders = Object.fromEntries(response.headers.entries());
+    
+    // 응답 로깅
+    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
+
+    if (response.status === 200) {
+      const responseData = JSON.parse(responseText);
+      logger.info('✅ 게시글 목록 조회 성공', responseData);
+      return {
+        success: true,
+        data: {
+          items: responseData.data?.items || responseData.items || [],
+          hasNext: responseData.data?.hasNext || responseData.hasNext || false,
+          total: responseData.data?.total || responseData.total || 0
+        }
+      };
+    } else if (response.status === 401) {
+      // 인증 오류
+      logger.error('❌ 인증 오류 (401)', { status: response.status });
+      return {
+        success: false,
+        error: '인증이 필요합니다. 다시 로그인해주세요.',
+      };
+    } else {
+      // 기타 에러 응답 처리
+      try {
+        const errorData = JSON.parse(responseText);
+        const errorMessage = errorData.message || '게시글 목록을 불러오는데 실패했습니다.';
+        logger.error('❌ 게시글 목록 조회 실패', { status: response.status, error: errorMessage });
+        return {
+          success: false,
+          error: errorMessage,
+        };
+      } catch (e) {
+        logger.error('❌ 에러 응답 파싱 실패', e);
+        return {
+          success: false,
+          error: '게시글 목록을 불러오는데 실패했습니다. 다시 시도해주세요.',
+        };
+      }
+    }
+  } catch (error) {
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
+
+export async function createPost(eventId: string, boardType: string, title: string | null, content: string, images: File[]): Promise<{ success: boolean; error?: string; data?: any }> {
+  const url = `${API_BASE_URL}/board/${eventId}/${boardType}`;
+  
+  try {
+    // 네트워크 상태 체크
+    if (!apiDebugger.checkNetworkStatus()) {
+      return {
+        success: false,
+        error: '네트워크 연결을 확인해주세요.',
+      };
+    }
+
+    // FormData 생성
+    const formData = new FormData();
+    
+    // 제목 추가 (null이 아닌 경우에만)
+    if (title) {
+      formData.append('title', title);
+    }
+    
+    // 내용 추가
+    formData.append('content', content);
+    
+    // 이미지 파일들 추가
+    images.forEach((image, index) => {
+      formData.append('images', image);
+    });
+
+    // 액세스 토큰 가져오기
+    const accessToken = getAccessToken();
+    const headers: Record<string, string> = {};
+    
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    // 요청 로깅
+    apiDebugger.logRequest('POST', url, headers, { title, content, imageCount: images.length });
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    const responseText = await response.text();
+    const responseHeaders = Object.fromEntries(response.headers.entries());
+    
+    // 응답 로깅
+    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
+
+    if (response.status === 201 || response.status === 200) {
+      const responseData = JSON.parse(responseText);
+      logger.info('✅ 게시글 작성 성공', responseData);
+      return {
+        success: true,
+        data: responseData.data || responseData,
+      };
+    } else if (response.status === 401) {
+      // 인증 오류
+      logger.error('❌ 인증 오류 (401)', { status: response.status });
+      return {
+        success: false,
+        error: '인증이 필요합니다. 다시 로그인해주세요.',
+      };
+    } else if (response.status === 403) {
+      // 권한 오류
+      logger.error('❌ 권한 오류 (403)', { status: response.status });
+      return {
+        success: false,
+        error: '권한이 없습니다. 다시 로그인해주세요.',
+      };
+    } else {
+      // 기타 에러 응답 처리
+      try {
+        const errorData = JSON.parse(responseText);
+        const errorMessage = errorData.message || '게시글 작성에 실패했습니다.';
+        logger.error('❌ 게시글 작성 실패', { status: response.status, error: errorMessage });
+        return {
+          success: false,
+          error: errorMessage,
+        };
+      } catch (e) {
+        logger.error('❌ 에러 응답 파싱 실패', e);
+        return {
+          success: false,
+          error: '게시글 작성에 실패했습니다. 다시 시도해주세요.',
+        };
+      }
+    }
+  } catch (error) {
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
+
 export async function createComment(eventId: string, boardType: string, postId: string, content: string): Promise<CommentListResponse> {
   const url = `${API_BASE_URL}/board/${eventId}/${boardType}/${postId}/comments`;
   

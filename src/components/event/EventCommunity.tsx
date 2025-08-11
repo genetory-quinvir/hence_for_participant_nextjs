@@ -21,7 +21,6 @@ export default function EventCommunity({
   onViewAllClick 
 }: EventCommunityProps) {
   const router = useRouter();
-  const [currentSlide, setCurrentSlide] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
   
   // id가 있는 것만 필터링하고 최대 5개까지만 표시
@@ -33,27 +32,7 @@ export default function EventCommunity({
     return null;
   }
 
-  // 캐러셀 스크롤 핸들러
-  const handleScroll = () => {
-    if (carouselRef.current) {
-      const container = carouselRef.current;
-      const scrollLeft = container.scrollLeft;
-      const cardWidth = 320; // 카드 너비 + 간격
-      const slideIndex = Math.round(scrollLeft / cardWidth);
-      setCurrentSlide(Math.max(0, Math.min(slideIndex, displayPosts.length - 1)));
-    }
-  };
 
-  // 특정 슬라이드로 이동
-  const goToSlide = (index: number) => {
-    if (carouselRef.current) {
-      const cardWidth = 320; // 카드 너비 + 간격
-      carouselRef.current.scrollTo({
-        left: index * cardWidth,
-        behavior: 'smooth'
-      });
-    }
-  };
 
   return (
     <EventSection
@@ -73,7 +52,6 @@ export default function EventCommunity({
         <div 
           ref={carouselRef}
           className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4"
-          onScroll={handleScroll}
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
@@ -112,9 +90,9 @@ export default function EventCommunity({
                 <div className="flex-1 flex space-x-3">
                   <div className="flex-1 min-w-0">
                     {post.content && (
-                      <p className="text-md text-white font-regular line-clamp-3">
+                      <div className="text-md text-white font-regular line-clamp-3 whitespace-pre-wrap">
                         {post.content}
-                      </p>
+                      </div>
                     )}
                   </div>
                   
@@ -159,22 +137,7 @@ export default function EventCommunity({
           ))}
         </div>
         
-        {/* 캐러셀 인디케이터 */}
-        {displayPosts.length > 1 && (
-          <div className="flex justify-center space-x-2 mt-4">
-            {displayPosts.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goToSlide(index)}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  index === currentSlide
-                    ? 'bg-purple-600'
-                    : 'bg-white bg-opacity-30'
-                }`}
-              />
-            ))}
-          </div>
-        )}
+
       </div>
 
       {/* 더 많은 게시글이 있는 경우 표시 */}
@@ -185,6 +148,23 @@ export default function EventCommunity({
           </p>
         </div>
       )}
+
+      {/* 소식 올리기 버튼 */}
+      <div className="mt-2">
+        <button
+          onClick={() => {
+            const url = `/board/write?eventId=${displayPosts[0]?.eventId || 'default-event'}`;
+            console.log('🔗 소식 올리기 클릭:', url);
+            router.push(url);
+          }}
+          className="w-full py-4 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+        >
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+          <span>소식 올리기</span>
+        </button>
+      </div>
     </EventSection>
   );
 } 

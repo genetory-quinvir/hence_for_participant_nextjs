@@ -70,9 +70,11 @@ function SignContent() {
         alert(`환영합니다, ${response.data?.nickname || '사용자'}님!`);
         const redirectUrl = searchParams.get('redirect');
         if (redirectUrl) {
-          router.push(decodeURIComponent(redirectUrl));
+          // router.replace를 사용하여 히스토리에서 로그인 페이지를 교체
+          router.replace(decodeURIComponent(redirectUrl));
         } else {
-          router.push("/");
+          // router.replace를 사용하여 히스토리에서 로그인 페이지를 교체
+          router.replace("/");
         }
       } else {
         setError(response.error || "로그인에 실패했습니다.");

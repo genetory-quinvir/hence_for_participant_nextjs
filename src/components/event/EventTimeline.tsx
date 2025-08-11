@@ -1,12 +1,19 @@
 "use client";
 
 import { TimelineItem } from "@/types/api";
+import EventSection from "./EventSection";
 
 interface EventTimelineProps {
   timelines: TimelineItem[];
+  showViewAllButton?: boolean;
+  onViewAllClick?: () => void;
 }
 
-export default function EventTimeline({ timelines }: EventTimelineProps) {
+export default function EventTimeline({ 
+  timelines, 
+  showViewAllButton = false,
+  onViewAllClick 
+}: EventTimelineProps) {
   // id가 있는 것만 필터링
   const displayTimelines = timelines.filter(timeline => timeline.id);
 
@@ -15,15 +22,16 @@ export default function EventTimeline({ timelines }: EventTimelineProps) {
   }
 
   return (
-    <section className="py-8 px-4">
-      {/* 섹션 헤더 */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-white mb-1">타임라인</h2>
-        <p className="text-sm text-white" style={{ opacity: 0.7 }}>
-          이벤트 일정을 확인해보세요
-        </p>
-      </div>
-
+    <EventSection
+      title="타임라인"
+      subtitle="이벤트 일정을 확인해보세요"
+      rightButton={showViewAllButton ? {
+        text: "전체보기",
+        onClick: onViewAllClick || (() => {
+          console.log('타임라인 전체보기 클릭');
+        })
+      } : undefined}
+    >
       {/* 타임라인 리스트 */}
       <div className="space-y-4">
         {displayTimelines.map((timeline, index) => (
@@ -168,6 +176,6 @@ export default function EventTimeline({ timelines }: EventTimelineProps) {
           </div>
         ))}
       </div>
-    </section>
+    </EventSection>
   );
 } 

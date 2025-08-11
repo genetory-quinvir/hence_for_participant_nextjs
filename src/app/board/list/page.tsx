@@ -1,34 +1,44 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef, Suspense } from "react";
+import { useEffect, useState, useMemo, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { BoardItem } from "@/types/api";
-import { getFeaturedEvent } from "@/lib/api";
+import { getBoardList, getAccessToken } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import PostHeader from "@/components/common/PostHeader";
 
 function BoardListContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [freeBoard, setFreeBoard] = useState<BoardItem[]>([]);
+  const [boardItems, setBoardItems] = useState<BoardItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortType, setSortType] = useState<'latest' | 'popular' | 'comments'>('latest');
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(true);
+  const [total, setTotal] = useState(0);
 
-  // 이벤트 ID 가져오기
+  // 이벤트 ID와 타입 가져오기
   const eventId = searchParams.get('eventId') || 'default-event';
+  const type = searchParams.get('type') || 'free'; // 'free' 또는 'notice'
 
+  // 초기 데이터 로딩
   useEffect(() => {
-    const fetchBoardList = async () => {
+    const fetchInitialData = async () => {
       try {
         setLoading(true);
         setError(null);
+        setPage(1);
+        setHasNext(true);
         
-        const result = await getFeaturedEvent(eventId);
+        const result = await getBoardList(eventId, type, 1, 10);
         
-        if (result.success && result.featured?.freeBoard) {
-          setFreeBoard(result.featured.freeBoard);
+        if (result.success && result.data) {
+          setBoardItems(result.data.items);
+          setHasNext(result.data.hasNext);
+          setTotal(result.data.total);
         } else {
           setError(result.error || '게시글을 불러오는데 실패했습니다.');
         }
@@ -40,27 +50,78 @@ function BoardListContent() {
       }
     };
 
-    fetchBoardList();
-  }, [eventId]);
+    fetchInitialData();
+  }, [eventId, type]);
+
+  // 추가 데이터 로딩
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasNext) return;
+
+    try {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+      
+      const result = await getBoardList(eventId, type, nextPage, 10);
+      
+      if (result.success && result.data) {
+        setBoardItems(prev => [...prev, ...result.data!.items]);
+        setHasNext(result.data.hasNext);
+        setPage(nextPage);
+      } else {
+        console.error("추가 데이터 로드 실패:", result.error);
+      }
+    } catch (err) {
+      console.error("추가 데이터 로드 오류:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [eventId, type, page, hasNext, loadingMore]);
+
+  // 스크롤 감지
+  const handleScroll = useCallback(() => {
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 100) {
+      loadMore();
+    }
+  }, [loadMore]);
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   const handleBackClick = () => {
     router.back();
   };
 
   const handlePostClick = (post: BoardItem) => {
-    const url = `/board/${post.id}?type=free&eventId=${post.eventId || eventId}`;
+    const url = `/board/${post.id}?type=${type}&eventId=${post.eventId || eventId}`;
     router.push(url);
   };
 
   const handleWriteClick = () => {
+    // 공지사항은 글쓰기 불가
+    if (type === 'notice') {
+      alert('공지사항은 관리자만 작성할 수 있습니다.');
+      return;
+    }
+    
+    // 로그인 상태 확인
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+      const currentUrl = window.location.pathname + window.location.search;
+      router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+      return;
+    }
+    
     router.push(`/board/write?eventId=${eventId}`);
   };
 
   // 정렬된 게시글 목록
   const sortedPosts = useMemo(() => {
-    if (!Array.isArray(freeBoard)) return [];
+    if (!Array.isArray(boardItems)) return [];
     
-    const sorted = [...freeBoard];
+    const sorted = [...boardItems];
     
     switch (sortType) {
       case 'latest':
@@ -74,17 +135,23 @@ function BoardListContent() {
       default:
         return sorted;
     }
-  }, [freeBoard, sortType]);
+  }, [boardItems, sortType]);
 
 
 
 
+
+  // 페이지 제목과 빈 상태 메시지
+  const pageTitle = type === 'notice' ? '공지사항' : '커뮤니티';
+  const emptyMessage = type === 'notice' 
+    ? { title: '아직 공지사항이 없습니다', subtitle: '새로운 공지사항을 기다려주세요!' }
+    : { title: '아직 게시글이 없습니다', subtitle: '첫 번째 게시글을 작성해보세요!' };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white">
         <CommonNavigationBar 
-          title="커뮤니티"
+          title={pageTitle}
           leftButton={
             <svg
               className="w-6 h-6 text-white"
@@ -108,7 +175,7 @@ function BoardListContent() {
     return (
       <div className="min-h-screen bg-black text-white">
         <CommonNavigationBar 
-          title="커뮤니티"
+          title={pageTitle}
           leftButton={
             <svg
               className="w-6 h-6 text-white"
@@ -131,7 +198,7 @@ function BoardListContent() {
   return (
     <div className="min-h-screen bg-black text-white">
       <CommonNavigationBar 
-        title="커뮤니티"
+        title={pageTitle}
         leftButton={
           <svg
             className="w-6 h-6 text-white"
@@ -183,35 +250,48 @@ function BoardListContent() {
                   createdAt={post.createdAt}
                   className="p-4 pb-3"
                   showMoreButton={true}
+                  isNotice={type === 'notice'}
                   onMoreClick={() => {
                     // TODO: 더보기 메뉴 표시
                     console.log('더보기 클릭');
                   }}
                 />
                 
-                {/* 게시글 내용과 이미지 */}
-                <div className="flex-1 flex space-x-3 px-4 pb-6 pt-3">
-                  <div className="flex-1 min-w-0">
-                    {post.content && (
-                      <p className="text-md text-white font-regular line-clamp-3">
-                        {post.content}
-                      </p>
+                {/* 공지사항인 경우 제목과 내용 표시 */}
+                {type === 'notice' ? (
+                  <div className="px-4 pb-6 pt-3">
+                    <h3 className="text-white font-bold text-lg mb-2 line-clamp-2">
+                      {post.title || '제목 없음'}
+                    </h3>
+                    <p className="text-sm text-white whitespace-pre-wrap" style={{ opacity: 0.8 }}>
+                      {post.content || '내용 없음'}
+                    </p>
+                  </div>
+                ) : (
+                  /* 커뮤니티인 경우 내용과 이미지 표시 */
+                  <div className="flex-1 flex space-x-3 px-4 pb-6 pt-3">
+                    <div className="flex-1 min-w-0">
+                      {post.content && (
+                        <div className="text-md text-white font-regular line-clamp-3 whitespace-pre-wrap">
+                          {post.content}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* 이미지가 있는 경우 */}
+                    {post.images && post.images.length > 0 && (
+                      <div className="flex-shrink-0">
+                        <Image 
+                          src={post.images[0]} 
+                          alt="게시글 이미지"
+                          width={80}
+                          height={80}
+                          className="w-20 h-20 object-cover rounded-lg"
+                        />
+                      </div>
                     )}
                   </div>
-                  
-                  {/* 이미지가 있는 경우 */}
-                  {post.images && post.images.length > 0 && (
-                    <div className="flex-shrink-0">
-                      <Image 
-                        src={post.images[0]} 
-                        alt="게시글 이미지"
-                        width={80}
-                        height={80}
-                        className="w-20 h-20 object-cover rounded-lg"
-                      />
-                    </div>
-                  )}
-                </div>
+                )}
                 
                 {/* 액션 버튼 */}
                 <div className="px-4 pb-5 mt-4">
@@ -239,28 +319,49 @@ function BoardListContent() {
             ))
           ) : (
             <div className="text-center py-12">
-              <p className="text-white text-lg mb-2">아직 게시글이 없습니다</p>
+              <p className="text-white text-lg mb-2">{emptyMessage.title}</p>
               <p className="text-white text-sm" style={{ opacity: 0.6 }}>
-                첫 번째 게시글을 작성해보세요!
+                {emptyMessage.subtitle}
+              </p>
+            </div>
+          )}
+          
+          {/* 추가 로딩 인디케이터 */}
+          {loadingMore && (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
+              <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+                더 많은 게시글을 불러오는 중...
+              </p>
+            </div>
+          )}
+          
+          {/* 더 이상 데이터가 없을 때 */}
+          {!hasNext && boardItems.length > 0 && (
+            <div className="text-center py-8">
+              <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+                모든 게시글을 불러왔습니다
               </p>
             </div>
           )}
         </div>
       </div>
       
-      {/* 플로팅 글쓰기 버튼 */}
-      <button
-        onClick={handleWriteClick}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 z-50"
-      >
-        <svg
-          className="w-6 h-6"
-          fill="currentColor"
-          viewBox="0 0 24 24"
+      {/* 플로팅 글쓰기 버튼 (커뮤니티에서만 표시) */}
+      {type === 'free' && (
+        <button
+          onClick={handleWriteClick}
+          className="fixed bottom-6 right-6 w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 z-50"
         >
-          <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-        </svg>
-      </button>
+          <svg
+            className="w-6 h-6"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

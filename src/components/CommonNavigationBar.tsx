@@ -29,7 +29,7 @@ export default function CommonNavigationBar({
     <nav 
       className={`bg-${backgroundColor} bg-opacity-${backgroundOpacity} border-${backgroundColor} sticky top-0 z-50 h-[50px]`}
     >
-      <div className="flex items-center justify-between h-full px-1">
+      <div className="flex items-center justify-between h-full px-2">
         {/* 왼쪽 버튼 */}
         <div className="flex items-center">
           {leftButton ? (

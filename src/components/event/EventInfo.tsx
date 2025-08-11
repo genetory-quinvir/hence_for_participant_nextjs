@@ -34,7 +34,7 @@ export default function EventInfo({ event }: EventInfoProps) {
             {!isDescriptionExpanded && (
               <button 
                 onClick={toggleDescription}
-                className="text-purple-700 hover:text-purple-600 text-sm mt-1"
+                className="text-purple-600 hover:text-purple-700 text-sm mt-1"
               >
                 더보기
               </button>
@@ -42,7 +42,7 @@ export default function EventInfo({ event }: EventInfoProps) {
             {isDescriptionExpanded && (
               <button 
                 onClick={toggleDescription}
-                className="text-purple-700 hover:text-purple-600 text-sm mt-1"
+                className="text-purple-600 hover:text-purple-700 text-sm mt-1"
               >
                 접기
               </button>

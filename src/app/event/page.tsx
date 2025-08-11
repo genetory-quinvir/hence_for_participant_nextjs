@@ -211,7 +211,15 @@ function EventPageContent() {
         <EventInfo event={featuredData.event} />
 
         {/* 공지사항 섹션 */}
-        {featuredData.notices && <EventNotice notices={featuredData.notices} />}
+        {featuredData.notices && (
+          <EventNotice 
+            notices={featuredData.notices} 
+            showViewAllButton={true}
+            onViewAllClick={() => {
+              router.push(`/board/list?eventId=${featuredData.event.id || 'default-event'}&type=notice`);
+            }}
+          />
+        )}
 
 
         {/* FAQ 섹션 */}
@@ -227,10 +235,27 @@ function EventPageContent() {
         {featuredData.participants && <EventParticipants participants={featuredData.participants} />}
 
         {/* 타임라인 섹션 */}
-        {featuredData.timelines && <EventTimeline timelines={featuredData.timelines} />}
+        {featuredData.timelines && (
+          <EventTimeline 
+            timelines={featuredData.timelines} 
+            showViewAllButton={true}
+            onViewAllClick={() => {
+              router.push(`/timeline/list?eventId=${featuredData.event.id || 'default-event'}`);
+            }}
+          />
+        )}
 
         {/* 푸드트럭 섹션 */}
-        {featuredData.vendors && <EventFoodTrucks vendors={featuredData.vendors} />}
+        {featuredData.vendors && (
+          <EventFoodTrucks 
+            vendors={featuredData.vendors} 
+            showViewAllButton={true}
+            eventId={featuredData.event.id || 'default-event'}
+            onViewAllClick={() => {
+              router.push(`/foodtrucks/list?eventId=${featuredData.event.id || 'default-event'}`);
+            }}
+          />
+        )}
 
         {/* 커뮤니티 섹션 */}
         {featuredData.freeBoard && (

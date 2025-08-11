@@ -7,6 +7,7 @@ interface PostHeaderProps {
   className?: string;
   showMoreButton?: boolean;
   onMoreClick?: () => void;
+  isNotice?: boolean;
 }
 
 // 상대적 시간 표시 함수
@@ -38,7 +39,8 @@ export default function PostHeader({
   size = 'md',
   className = '',
   showMoreButton = false,
-  onMoreClick
+  onMoreClick,
+  isNotice = false
 }: PostHeaderProps) {
   const displayName = nickname || '익명';
   const initial = displayName.charAt(0).toUpperCase();
@@ -47,30 +49,51 @@ export default function PostHeader({
   
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
-      <div className={`flex-shrink-0 bg-purple-600 rounded-full flex items-center justify-center ${
-        isSmall ? 'w-6 h-6' : 'w-8 h-8'
-      }`}>
-        <span className={`text-white font-bold ${
-          isSmall ? 'text-xs' : 'text-sm'
-        }`}>
-          {initial}
-        </span>
-      </div>
-      
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-col">
-          <span className={`text-white font-semibold ${
-            isSmall ? 'text-xs' : 'text-sm'
-          }`}>
-            {displayName}
-          </span>
-          <span className={`text-white ${
-            isSmall ? 'text-xs' : 'text-xs'
-          }`} style={{ opacity: 0.6 }}>
-            {createdAt ? getRelativeTime(createdAt) : ''}
-          </span>
+      {isNotice ? (
+        // 공지사항 모드: 프로필 대신 공지사항 라벨과 날짜
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-col">
+            <span className={`text-purple-600 font-semibold ${
+              isSmall ? 'text-xs' : 'text-sm'
+            }`}>
+              공지사항
+            </span>
+            <span className={`text-white ${
+              isSmall ? 'text-xs' : 'text-xs'
+            }`} style={{ opacity: 0.6 }}>
+              {createdAt ? getRelativeTime(createdAt) : ''}
+            </span>
+          </div>
         </div>
-      </div>
+      ) : (
+        // 일반 모드: 프로필과 닉네임
+        <>
+          <div className={`flex-shrink-0 bg-purple-600 rounded-full flex items-center justify-center ${
+            isSmall ? 'w-6 h-6' : 'w-8 h-8'
+          }`}>
+            <span className={`text-white font-bold ${
+              isSmall ? 'text-xs' : 'text-sm'
+            }`}>
+              {initial}
+            </span>
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col">
+              <span className={`text-white font-semibold ${
+                isSmall ? 'text-xs' : 'text-sm'
+              }`}>
+                {displayName}
+              </span>
+              <span className={`text-white ${
+                isSmall ? 'text-xs' : 'text-xs'
+              }`} style={{ opacity: 0.6 }}>
+                {createdAt ? getRelativeTime(createdAt) : ''}
+              </span>
+            </div>
+          </div>
+        </>
+      )}
       
       {/* 더보기 버튼 */}
       {showMoreButton && (

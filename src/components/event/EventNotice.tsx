@@ -3,9 +3,12 @@
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { NoticeItem } from "@/types/api";
+import EventSection from "./EventSection";
 
 interface EventNoticeProps {
   notices: NoticeItem[];
+  showViewAllButton?: boolean;
+  onViewAllClick?: () => void;
 }
 
 // 상대적 시간 표시 함수
@@ -32,7 +35,11 @@ const getRelativeTime = (dateString: string): string => {
   return date.toLocaleDateString('ko-KR');
 };
 
-export default function EventNotice({ notices }: EventNoticeProps) {
+export default function EventNotice({ 
+  notices, 
+  showViewAllButton = false,
+  onViewAllClick 
+}: EventNoticeProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -46,15 +53,16 @@ export default function EventNotice({ notices }: EventNoticeProps) {
   }
 
   return (
-    <section className="py-4 px-4">
-      {/* 섹션 헤더 */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-white mb-1">공지사항</h2>
-        <p className="text-sm text-white" style={{ opacity: 0.7 }}>
-          이벤트 관련 중요한 공지사항을 확인해보세요
-        </p>
-      </div>
-
+    <EventSection
+      title="공지사항"
+      subtitle="이벤트 관련 중요한 공지사항을 확인해보세요"
+      rightButton={showViewAllButton ? {
+        text: "전체보기",
+        onClick: onViewAllClick || (() => {
+          console.log('공지사항 전체보기 클릭');
+        })
+      } : undefined}
+    >
       {/* 공지사항 캐로셀 */}
       <div className="relative">
         {/* 스크롤 컨테이너 */}
@@ -76,7 +84,7 @@ export default function EventNotice({ notices }: EventNoticeProps) {
               {/* 공지사항 정보 */}
               <div className="space-y-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-purple-500 font-medium">공지사항</span>
+                  <span className="text-sm text-purple-600 font-medium">공지사항</span>
                   <span className="text-sm text-white" style={{ opacity: 0.6 }}>
                     {notice.createdAt ? getRelativeTime(notice.createdAt) : ''}
                   </span>
@@ -95,6 +103,6 @@ export default function EventNotice({ notices }: EventNoticeProps) {
           ))}
         </div>
       </div>
-    </section>
+    </EventSection>
   );
 } 

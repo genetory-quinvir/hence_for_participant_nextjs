@@ -74,3 +74,8 @@ html, body {
 .comment-textarea::placeholder {
   color: rgba(255, 255, 255, 0.6) !important;
 }
+
+/* 글쓰기 페이지 플레이스홀더 스타일 */
+.board-write-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}

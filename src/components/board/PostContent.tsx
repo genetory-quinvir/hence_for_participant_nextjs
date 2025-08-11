@@ -8,6 +8,12 @@ interface PostContentProps {
 export default function PostContent({ post, isFreeBoardPost }: PostContentProps) {
   return (
     <div className="mb-8 mt-4">
+      {/* 공지사항 제목 */}
+      {!isFreeBoardPost && post.title && (
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-white">{post.title}</h1>
+        </div>
+      )}
       {isFreeBoardPost && 'images' in post && post.images && post.images.length > 0 && (
         <div className="mb-6">
           <div className="flex flex-col space-y-3">

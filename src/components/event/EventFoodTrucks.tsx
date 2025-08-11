@@ -1,13 +1,24 @@
 "use client";
 
 import { useRef } from "react";
+import { useRouter } from "next/navigation";
 import { VendorItem } from "@/types/api";
+import EventSection from "./EventSection";
 
 interface EventFoodTrucksProps {
   vendors: VendorItem[];
+  showViewAllButton?: boolean;
+  onViewAllClick?: () => void;
+  eventId?: string;
 }
 
-export default function EventFoodTrucks({ vendors }: EventFoodTrucksProps) {
+export default function EventFoodTrucks({ 
+  vendors, 
+  showViewAllButton = false,
+  onViewAllClick,
+  eventId = 'default-event'
+}: EventFoodTrucksProps) {
+  const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // id가 있는 것만 필터링
@@ -18,15 +29,16 @@ export default function EventFoodTrucks({ vendors }: EventFoodTrucksProps) {
   }
 
   return (
-    <section className="py-8 px-5">
-      {/* 섹션 헤더 */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-white mb-1">푸드트럭</h2>
-        <p className="text-sm text-white" style={{ opacity: 0.7 }}>
-          이벤트에서 즐길 수 있는 다양한 푸드트럭을 확인해보세요
-        </p>
-      </div>
-
+    <EventSection
+      title="푸드트럭"
+      subtitle="이벤트에서 즐길 수 있는 다양한 푸드트럭을 확인해보세요"
+      rightButton={showViewAllButton ? {
+        text: "전체보기",
+        onClick: onViewAllClick || (() => {
+          console.log('푸드트럭 전체보기 클릭');
+        })
+      } : undefined}
+    >
       {/* 푸드트럭 캐로셀 */}
       <div className="relative">
         {/* 스크롤 컨테이너 */}
@@ -38,10 +50,15 @@ export default function EventFoodTrucks({ vendors }: EventFoodTrucksProps) {
           {displayVendors.map((vendor) => (
             <div
               key={vendor.id}
-              className="flex-shrink-0 w-72 rounded-xl overflow-hidden transition-all duration-300"
+              className="flex-shrink-0 w-72 rounded-xl overflow-hidden transition-all duration-300 cursor-pointer hover:bg-white hover:bg-opacity-10"
               style={{ 
                 scrollSnapAlign: 'start',
                 backgroundColor: 'rgba(255, 255, 255, 0.05)'
+              }}
+              onClick={() => {
+                const url = `/foodtrucks/${vendor.id}?eventId=${eventId}`;
+                console.log('🔗 푸드트럭 클릭:', url);
+                router.push(url);
               }}
             >
               {/* 썸네일 이미지 */}
@@ -130,6 +147,6 @@ export default function EventFoodTrucks({ vendors }: EventFoodTrucksProps) {
           ))}
         </div>
       </div>
-    </section>
+    </EventSection>
   );
 } 
