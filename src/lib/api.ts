@@ -1,16 +1,17 @@
-import { 
-  LoginResponse, 
-  SocialLoginResponse, 
-  SocialProvider,
+import {
   LoginRequest,
+  LoginResponse,
   SocialLoginRequest,
+  SocialLoginResponse,
+  SocialProvider,
   EventCodeResponse,
   FeaturedResponse,
   PostDetailResponse,
   CommentListResponse,
   BoardItem,
   TimelineItem,
-  VendorItem
+  VendorItem,
+  CouponItem
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
@@ -1040,11 +1041,25 @@ export async function getRaffleInfo(eventId: string): Promise<{ success: boolean
   }
 }
 
-// 쿠폰 사용 가능한 벤더 목록 조회
-export async function getCouponVendors(eventId: string, couponId: string): Promise<{ success: boolean; error?: string; data?: VendorItem[] }> {
-  const url = `${API_BASE_URL}/events/${eventId}/coupons/${couponId}/vendors`;
+
+// 쿠폰 가능한 벤더 목록 조회 (간단한 정보)
+export async function getVendorsSimple(eventId: string, vendorType?: string): Promise<{ success: boolean; error?: string; data?: VendorItem[] }> {
+  let url = `${API_BASE_URL}/vendors/${eventId}/simple`;
+  
+  // vendor_type이 제공된 경우에만 쿼리 파라미터 추가
+  if (vendorType) {
+    url += `?vendor_type=${vendorType}`;
+  }
   
   try {
+    // 네트워크 상태 체크
+    if (!apiDebugger.checkNetworkStatus()) {
+      return {
+        success: false,
+        error: '네트워크 연결을 확인해주세요.',
+      };
+    }
+
     const accessToken = getAccessToken();
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     
@@ -1052,34 +1067,74 @@ export async function getCouponVendors(eventId: string, couponId: string): Promi
       headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
+    // 요청 로깅
+    apiDebugger.logRequest('GET', url, headers);
+
     const response = await fetch(url, {
       method: 'GET',
       headers,
     });
 
+    const responseText = await response.text();
+    const responseHeaders = Object.fromEntries(response.headers.entries());
+    
+    // 응답 로깅
+    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
+
     if (response.status === 200) {
-      const data = await response.json();
+      const responseData = JSON.parse(responseText);
+      logger.info('✅ 벤더 목록 조회 성공', responseData);
+      
+      // 응답 데이터 구조 확인 및 안전한 배열 반환
+      let vendorArray: VendorItem[] = [];
+      
+      if (responseData.data && responseData.data.vendors) {
+        // {"data": {"vendors": [...]}} 구조
+        vendorArray = Array.isArray(responseData.data.vendors) ? responseData.data.vendors : [];
+      } else if (responseData.data) {
+        // {"data": [...]} 구조
+        vendorArray = Array.isArray(responseData.data) ? responseData.data : [];
+      } else if (Array.isArray(responseData)) {
+        // [...] 구조
+        vendorArray = responseData;
+      } else if (responseData.items && Array.isArray(responseData.items)) {
+        // {"items": [...]} 구조
+        vendorArray = responseData.items;
+      }
+      
       return {
         success: true,
-        data: data.data || data.vendors || [],
+        data: vendorArray,
       };
     } else if (response.status === 401 || response.status === 403) {
+      logger.error('❌ 인증 오류', { status: response.status });
       return {
         success: false,
-        error: 'AUTH_REQUIRED',
+        error: '인증이 필요합니다. 다시 로그인해주세요.',
       };
     } else {
-      const errorData = await response.json();
-      return {
-        success: false,
-        error: errorData.message || '벤더 목록을 불러오는데 실패했습니다.',
-      };
+      // 에러 응답 처리
+      try {
+        const errorData = JSON.parse(responseText);
+        const errorMessage = errorData.message || '벤더 목록을 불러오는데 실패했습니다.';
+        logger.error('❌ 벤더 목록 조회 실패', { status: response.status, error: errorMessage });
+        return {
+          success: false,
+          error: errorMessage,
+        };
+      } catch (e) {
+        logger.error('❌ 에러 응답 파싱 실패', e);
+        return {
+          success: false,
+          error: '벤더 목록을 불러오는데 실패했습니다. 다시 시도해주세요.',
+        };
+      }
     }
   } catch (error) {
-    console.error('벤더 목록 조회 오류:', error);
+    apiDebugger.logError(url, error);
     return {
       success: false,
-      error: '벤더 목록을 불러오는데 실패했습니다.',
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
     };
   }
 }

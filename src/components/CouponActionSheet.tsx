@@ -9,19 +9,23 @@ interface ActionSheetItem {
   variant?: 'default' | 'destructive';
 }
 
-interface CommonActionSheetProps {
+interface CouponActionSheetProps {
   isOpen: boolean;
   onClose: () => void;
   items: ActionSheetItem[];
   title?: string;
+  selectedItem?: ActionSheetItem | null;
+  onUseSelected?: () => void;
 }
 
-export default function CommonActionSheet({ 
+export default function CouponActionSheet({ 
   isOpen, 
   onClose, 
   items, 
-  title 
-}: CommonActionSheetProps) {
+  title,
+  selectedItem,
+  onUseSelected
+}: CouponActionSheetProps) {
   // 액션시트가 열렸을 때 body에 스타일 적용
   useEffect(() => {
     if (isOpen) {
@@ -167,15 +171,34 @@ export default function CommonActionSheet({
           
           {/* 취소 버튼 */}
           <div className="mt-4 pt-4 border-t border-gray-800">
-            <button
-              onClick={onClose}
-              className="w-full p-3 text-gray-400 hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              취소
-            </button>
+            {selectedItem ? (
+              // 선택된 아이템이 있을 때: 취소 + 사용하기 버튼
+              <div className="flex space-x-3">
+                <button
+                  onClick={onClose}
+                  className="flex-[2] p-3 text-gray-400 hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={onUseSelected}
+                  className="flex-[5] p-3 bg-purple-600 text-white hover:bg-purple-700 rounded-lg transition-colors font-medium"
+                >
+                  사용하기
+                </button>
+              </div>
+            ) : (
+              // 선택된 아이템이 없을 때: 취소 버튼만
+              <button
+                onClick={onClose}
+                className="w-full p-3 text-gray-400 hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                취소
+              </button>
+            )}
           </div>
         </div>
       </div>
     </>
   );
-} 
+}

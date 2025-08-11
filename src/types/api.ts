@@ -272,16 +272,26 @@ export interface TimelineItem {
   updatedAt?: string;
 }
 
-// 벤더 아이템 타입
+// VendorItem type
 export interface VendorItem {
   id?: string;
   eventId?: string;
   name?: string;
   description?: string;
   logoUrl?: string;
-  imageUrl?: string;
+  imageUrl?: string; // Added
   website?: string;
   location?: string;
+  type?: string; // Added for vendor type (e.g., 'FOOD_TRUCK')
+  category?: string; // Added for vendor category
+  contact_info?: string | null;
+  operation_time?: string;
+  thumb_image_url?: string;
+  price_average?: string;
+  rating?: number;
+  review_count?: number;
+  status?: string;
+  is_active?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

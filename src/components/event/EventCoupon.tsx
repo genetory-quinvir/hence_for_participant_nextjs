@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CouponItem, VendorItem } from "@/types/api";
-import { getCouponVendors, useCoupon, getAccessToken } from "@/lib/api";
-import CommonActionSheet from "@/components/CommonActionSheet";
+import { getVendorsSimple, useCoupon, getAccessToken } from "@/lib/api";
+import CouponActionSheet from "@/components/CouponActionSheet";
 
 interface EventCouponProps {
   coupons: CouponItem[];
@@ -17,7 +17,28 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
   const [showVendorSheet, setShowVendorSheet] = useState(false);
   const [vendors, setVendors] = useState<VendorItem[]>([]);
   const [selectedCoupon, setSelectedCoupon] = useState<CouponItem | null>(null);
+  const [selectedVendor, setSelectedVendor] = useState<VendorItem | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // 액션시트 디버깅
+  useEffect(() => {
+    if (showVendorSheet) {
+      const vendorItems = (Array.isArray(vendors) ? vendors : []).map((vendor) => ({
+        label: vendor.name || '알 수 없는 벤더',
+        onClick: () => handleVendorSelect(vendor),
+      }));
+    }
+  }, [showVendorSheet, vendors]);
+
+  // vendors 상태 변화 추적
+  useEffect(() => {
+    // vendors 상태 변화 추적
+  }, [vendors]);
+
+  // showVendorSheet 상태 변화 추적
+  useEffect(() => {
+    // showVendorSheet 상태 변화 추적
+  }, [showVendorSheet]);
 
   // 쿠폰 사용 처리
   const handleCouponUse = async (coupon: CouponItem) => {
@@ -56,17 +77,27 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
       setLoading(true);
       
       try {
-        const result = await getCouponVendors(eventId, coupon.id!);
+        // 벤더 심플 리스트 가져오기 (푸드트럭 타입)
+        const result = await getVendorsSimple(eventId, "FOOD_TRUCK");
+        
         if (result.success && result.data) {
-          setVendors(result.data);
+          // 데이터가 배열인지 확인하고 안전하게 설정
+          const vendorArray = Array.isArray(result.data) ? result.data : [];
+          
+          setVendors(vendorArray);
+          
           setShowVendorSheet(true);
+          
         } else if (result.error === 'AUTH_REQUIRED') {
+          console.error('❌ 인증 오류');
           alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
           router.push('/sign');
         } else {
+          console.error('❌ 벤더 목록 로드 실패:', result.error);
           alert(result.error || '사용 가능한 벤더를 불러오는데 실패했습니다.');
         }
       } catch (error) {
+        console.error('❌ 벤더 목록 요청 중 예외 발생:', error);
         alert('사용 가능한 벤더를 불러오는데 실패했습니다.');
       } finally {
         setLoading(false);
@@ -76,13 +107,18 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
 
   // 벤더 선택 처리
   const handleVendorSelect = async (vendor: VendorItem) => {
-    if (!selectedCoupon) return;
+    setSelectedVendor(vendor);
+  };
+
+  // 선택된 벤더로 쿠폰 사용
+  const handleUseSelectedVendor = async () => {
+    if (!selectedCoupon || !selectedVendor) return;
     
     setShowVendorSheet(false);
     setLoading(true);
     
     try {
-      const result = await useCoupon(eventId, selectedCoupon.id!, vendor.id);
+      const result = await useCoupon(eventId, selectedCoupon.id!, selectedVendor.id);
       if (result.success) {
         alert('쿠폰이 사용되었습니다!');
       } else if (result.error === 'AUTH_REQUIRED') {
@@ -96,20 +132,9 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
     } finally {
       setLoading(false);
       setSelectedCoupon(null);
+      setSelectedVendor(null);
     }
   };
-
-  // 쿠폰 데이터 디버깅
-  console.log('EventCoupon 렌더링:', {
-    couponsCount: coupons?.length,
-    loading,
-    coupons: coupons?.map(c => ({
-      id: c.id,
-      title: c.title,
-      status: c.status,
-      isUsed: c.isUsed
-    }))
-  });
 
   if (!coupons || coupons.length === 0) {
     return null;
@@ -164,17 +189,6 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
                    const isNotLoading = !loading;
                    const canUse = isActive && isNotUsed && isNotLoading;
                    
-                   console.log(`쿠폰 ${coupon.id} 버튼 조건:`, {
-                     status: coupon.status,
-                     statusLower: coupon.status?.toLowerCase(),
-                     isActive,
-                     isUsed: coupon.isUsed,
-                     isNotUsed,
-                     loading,
-                     isNotLoading,
-                     canUse
-                   });
-                   
                    return (
                      <button
                        className={`w-full py-3 mt-4 px-4 rounded-lg text-sm font-bold transition-colors ${
@@ -184,14 +198,6 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
                        }`}
                        disabled={!canUse}
                        onClick={() => {
-                         console.log('쿠폰 클릭:', {
-                           id: coupon.id,
-                           status: coupon.status,
-                           statusLower: coupon.status?.toLowerCase(),
-                           isUsed: coupon.isUsed,
-                           isActive: coupon.status?.toLowerCase() === 'active',
-                           canUse: coupon.status?.toLowerCase() === 'active' && !coupon.isUsed
-                         });
                          handleCouponUse(coupon);
                        }}
                      >
@@ -208,17 +214,26 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
       </div>
 
       {/* 벤더 선택 액션시트 */}
-      <CommonActionSheet
+      <CouponActionSheet
         isOpen={showVendorSheet}
         onClose={() => {
           setShowVendorSheet(false);
           setSelectedCoupon(null);
+          setSelectedVendor(null);
         }}
-        title="사용할 벤더를 선택하세요"
-        items={vendors.map((vendor) => ({
-          label: vendor.name || '알 수 없는 벤더',
-          onClick: () => handleVendorSelect(vendor),
-        }))}
+        title="사용할 쿠폰을 선택하세요"
+        selectedItem={selectedVendor ? {
+          label: selectedVendor.name || '알 수 없는 벤더',
+          onClick: () => {},
+        } : null}
+        onUseSelected={handleUseSelectedVendor}
+        items={(Array.isArray(vendors) ? vendors : []).map((vendor) => {
+          const item = {
+            label: vendor.name || '알 수 없는 벤더',
+            onClick: () => handleVendorSelect(vendor),
+          };
+          return item;
+        })}
       />
     </section>
   );
