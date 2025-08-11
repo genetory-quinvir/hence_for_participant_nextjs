@@ -70,7 +70,10 @@ export default function PostHeader({
         <>
           <div className={`flex-shrink-0 bg-purple-600 rounded-full flex items-center justify-center ${
             isSmall ? 'w-6 h-6' : 'w-8 h-8'
-          }`}>
+          }`} style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.4)',
+            border: '3px solid rgba(255, 255, 255, 0.1)'
+          }}>
             <span className={`text-white font-bold ${
               isSmall ? 'text-xs' : 'text-sm'
             }`}>

@@ -60,12 +60,15 @@ function BoardWriteContent() {
 
       if (result.success) {
         alert('글이 작성되었습니다.');
-        router.back();
+        // 글 리스트 페이지로 이동 (히스토리에서 글쓰기 페이지 제거)
+        router.replace(`/board/list?type=free&eventId=${eventId}`);
       } else {
         // 인증 오류인 경우 로그인 페이지로 리다이렉트
         if (result.error?.includes('인증') || result.error?.includes('토큰') || result.error?.includes('로그인')) {
           alert('로그인이 필요합니다.');
-          router.push(`/sign?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+          // 로그인 후 글 리스트 페이지로 돌아가도록 redirect 설정
+          const redirectUrl = `/board/list?type=free&eventId=${eventId}`;
+          router.push(`/sign?redirect=${encodeURIComponent(redirectUrl)}`);
         } else {
           alert(result.error || '글쓰기에 실패했습니다. 다시 시도해주세요.');
         }
@@ -133,10 +136,12 @@ function BoardWriteContent() {
       if (confirm('작성 중인 내용이 있습니다. 정말 나가시겠습니까?')) {
         // 이미지 URL 정리
         imageUrls.forEach(url => URL.revokeObjectURL(url));
-        router.back();
+        // 글 리스트 페이지로 이동
+        router.push(`/board/list?type=free&eventId=${eventId}`);
       }
     } else {
-      router.back();
+      // 글 리스트 페이지로 이동
+      router.push(`/board/list?type=free&eventId=${eventId}`);
     }
   };
 

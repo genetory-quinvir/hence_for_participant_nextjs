@@ -64,7 +64,12 @@ function BoardListContent() {
       const result = await getBoardList(eventId, type, nextPage, 10);
       
       if (result.success && result.data) {
-        setBoardItems(prev => [...prev, ...result.data!.items]);
+        setBoardItems(prev => {
+          // 중복 제거를 위해 기존 ID들과 비교
+          const existingIds = new Set(prev.map(item => item.id));
+          const newItems = result.data!.items.filter(item => !existingIds.has(item.id));
+          return [...prev, ...newItems];
+        });
         setHasNext(result.data.hasNext);
         setPage(nextPage);
       } else {
@@ -75,7 +80,7 @@ function BoardListContent() {
     } finally {
       setLoadingMore(false);
     }
-  }, [eventId, type, page, hasNext, loadingMore]);
+  }, [eventId, type, hasNext, loadingMore]);
 
   // 스크롤 감지
   const handleScroll = useCallback(() => {
@@ -90,7 +95,8 @@ function BoardListContent() {
   }, [handleScroll]);
 
   const handleBackClick = () => {
-    router.back();
+    // 메인 페이지로 이동
+    router.push('/');
   };
 
   const handlePostClick = (post: BoardItem) => {

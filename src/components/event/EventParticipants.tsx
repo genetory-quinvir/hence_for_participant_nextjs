@@ -78,7 +78,10 @@ export default function EventParticipants({ participants }: EventParticipantsPro
               onMouseLeave={() => setHoveredIndex(null)}
             >
               {/* 프로필 사진 */}
-              <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-purple-600 flex items-center justify-center">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-purple-600 flex items-center justify-center" style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.4)',
+                border: '3px solid rgba(255, 255, 255, 0.1)'
+              }}>
                 {participant.user?.profileImageUrl ? (
                   <img 
                     src={participant.user.profileImageUrl} 

@@ -36,45 +36,67 @@ function EventPageContent() {
   // 이벤트 데이터 가져오기
   useEffect(() => {
     const eventCode = searchParams.get('code');
+    const eventId = searchParams.get('eventId');
     
-    if (eventCode) {
+    if (eventCode || eventId) {
       setIsLoading(true);
       setError(null);
       
-      // 1단계: 이벤트 코드로 이벤트 확인
-      checkEventCode(eventCode)
-        .then((result) => {
-          if (result.success && result.event) {
-            console.log('이벤트 코드 확인 성공:', result.event);
-            
-            // 2단계: 이벤트 ID로 상세 정보 가져오기
-            if (result.event.id) {
-              return getFeaturedEvent(result.event.id);
-            } else {
-              throw new Error('이벤트 ID가 없습니다.');
+      if (eventId) {
+        // eventId가 있으면 직접 이벤트 정보 가져오기
+        getFeaturedEvent(eventId)
+          .then((featuredResult) => {
+            if (featuredResult && featuredResult.success && featuredResult.featured) {
+              setFeaturedData(featuredResult.featured);
+              console.log('이벤트 종합 정보 로드 성공:', featuredResult.featured);
+            } else if (featuredResult) {
+              setError(featuredResult.error || '이벤트 종합 정보를 가져올 수 없습니다.');
+              console.error('이벤트 종합 정보 로드 실패:', featuredResult.error);
             }
-          } else {
-            setError(result.error || '이벤트를 찾을 수 없습니다.');
-            console.error('이벤트 코드 확인 실패:', result.error);
-            return null;
-          }
-        })
-        .then((featuredResult) => {
-          if (featuredResult && featuredResult.success && featuredResult.featured) {
-            setFeaturedData(featuredResult.featured);
-            console.log('이벤트 종합 정보 로드 성공:', featuredResult.featured);
-          } else if (featuredResult) {
-            setError(featuredResult.error || '이벤트 종합 정보를 가져올 수 없습니다.');
-            console.error('이벤트 종합 정보 로드 실패:', featuredResult.error);
-          }
-        })
-        .catch((error) => {
-          setError('이벤트 로드 중 오류가 발생했습니다.');
-          console.error('이벤트 로드 오류:', error);
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
+          })
+          .catch((error) => {
+            setError('이벤트 로드 중 오류가 발생했습니다.');
+            console.error('이벤트 로드 오류:', error);
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
+      } else if (eventCode) {
+        // 1단계: 이벤트 코드로 이벤트 확인
+        checkEventCode(eventCode)
+          .then((result) => {
+            if (result.success && result.event) {
+              console.log('이벤트 코드 확인 성공:', result.event);
+              
+              // 2단계: 이벤트 ID로 상세 정보 가져오기
+              if (result.event.id) {
+                return getFeaturedEvent(result.event.id);
+              } else {
+                throw new Error('이벤트 ID가 없습니다.');
+              }
+            } else {
+              setError(result.error || '이벤트를 찾을 수 없습니다.');
+              console.error('이벤트 코드 확인 실패:', result.error);
+              return null;
+            }
+          })
+          .then((featuredResult) => {
+            if (featuredResult && featuredResult.success && featuredResult.featured) {
+              setFeaturedData(featuredResult.featured);
+              console.log('이벤트 종합 정보 로드 성공:', featuredResult.featured);
+            } else if (featuredResult) {
+              setError(featuredResult.error || '이벤트 종합 정보를 가져올 수 없습니다.');
+              console.error('이벤트 종합 정보 로드 실패:', featuredResult.error);
+            }
+          })
+          .catch((error) => {
+            setError('이벤트 로드 중 오류가 발생했습니다.');
+            console.error('이벤트 로드 오류:', error);
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
+      }
     }
   }, [searchParams]);
 
@@ -100,7 +122,10 @@ function EventPageContent() {
       
       return (
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center" style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.4)',
+            border: '3px solid rgba(255, 255, 255, 0.1)'
+          }}>
             <span className="text-white text-sm font-semibold">
               {userInitial}
             </span>

@@ -8,7 +8,8 @@ import {
   FeaturedResponse,
   PostDetailResponse,
   CommentListResponse,
-  BoardItem
+  BoardItem,
+  TimelineItem
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
@@ -555,6 +556,87 @@ export async function toggleLike(eventId: string, boardType: string, postId: str
 }
 
 // 댓글 작성 API
+export async function getTimelineList(eventId: string, page: number = 1, limit: number = 10): Promise<{ success: boolean; error?: string; data?: { items: TimelineItem[]; hasNext: boolean; total: number } }> {
+  const url = `${API_BASE_URL}/timelines/${eventId}?page=${page}&limit=${limit}`;
+  
+  try {
+    // 네트워크 상태 체크
+    if (!apiDebugger.checkNetworkStatus()) {
+      return {
+        success: false,
+        error: '네트워크 연결을 확인해주세요.',
+      };
+    }
+
+    // 액세스 토큰 가져오기
+    const accessToken = getAccessToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    // 요청 로깅
+    apiDebugger.logRequest('GET', url, headers);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    const responseText = await response.text();
+    const responseHeaders = Object.fromEntries(response.headers.entries());
+    
+    // 응답 로깅
+    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
+
+    if (response.status === 200) {
+      const responseData = JSON.parse(responseText);
+      logger.info('✅ 타임라인 목록 조회 성공', responseData);
+      return {
+        success: true,
+        data: {
+          items: responseData.data?.items || responseData.items || [],
+          hasNext: responseData.data?.hasNext || responseData.hasNext || false,
+          total: responseData.data?.total || responseData.total || 0
+        }
+      };
+    } else if (response.status === 401) {
+      // 인증 오류
+      logger.error('❌ 인증 오류 (401)', { status: response.status });
+      return {
+        success: false,
+        error: '인증이 필요합니다. 다시 로그인해주세요.',
+      };
+    } else {
+      // 기타 에러 응답 처리
+      try {
+        const errorData = JSON.parse(responseText);
+        const errorMessage = errorData.message || '타임라인 목록을 불러오는데 실패했습니다.';
+        logger.error('❌ 타임라인 목록 조회 실패', { status: response.status, error: errorMessage });
+        return {
+          success: false,
+          error: errorMessage,
+        };
+      } catch (e) {
+        logger.error('❌ 에러 응답 파싱 실패', e);
+        return {
+          success: false,
+          error: '타임라인 목록을 불러오는데 실패했습니다. 다시 시도해주세요.',
+        };
+      }
+    }
+  } catch (error) {
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
+
 export async function getBoardList(eventId: string, boardType: string, page: number = 1, limit: number = 10): Promise<{ success: boolean; error?: string; data?: { items: BoardItem[]; hasNext: boolean; total: number } }> {
   const url = `${API_BASE_URL}/board/${eventId}/${boardType}?page=${page}&limit=${limit}`;
   

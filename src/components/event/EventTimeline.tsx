@@ -40,7 +40,7 @@ export default function EventTimeline({
             <div className="flex flex-col items-center mr-4">
               {/* 시간 */}
               <div 
-                className="text-sm font-medium mb-2 mt-1"
+                className="text-sm font-medium mb-2 mt-1 flex-shrink-0"
                 style={{ 
                   color: timeline.status === 'COMPLETED' 
                     ? 'rgba(255, 255, 255, 0.4)' 
@@ -54,14 +54,17 @@ export default function EventTimeline({
               
               {/* 닷 */}
               <div 
-                className="w-4 h-4 rounded-full z-10 relative flex items-center justify-center"
+                className={`w-4 h-4 rounded-full z-10 relative flex items-center justify-center flex-shrink-0 ${
+                  timeline.status === 'ACTIVE' ? 'animate-pulse' : ''
+                }`}
                 style={{ 
                   backgroundColor: timeline.status === 'COMPLETED' 
                     ? 'rgba(255, 255, 255, 0.3)' 
                     : timeline.status === 'ACTIVE'
                     ? '#7c3aed'
                     : 'rgba(255, 255, 255, 0.3)',
-                  border: timeline.status === 'PENDING' ? '2px solid rgba(255, 255, 255, 0.3)' : 'none'
+                  border: timeline.status === 'PENDING' ? '2px solid rgba(255, 255, 255, 0.3)' : 'none',
+                  animation: timeline.status === 'ACTIVE' ? 'timelineDotPulse 1s ease-in-out infinite' : 'none'
                 }}
               >
                 {timeline.status === 'COMPLETED' && (
@@ -74,9 +77,8 @@ export default function EventTimeline({
               {/* 연결선 (마지막 항목이 아닌 경우에만) */}
               {index < displayTimelines.length - 1 && (
                 <div 
-                  className="w-0.5"
+                  className="w-0.5 flex-1"
                   style={{ 
-                    height: '80px',
                     backgroundColor: timeline.status === 'COMPLETED' 
                       ? 'rgba(255, 255, 255, 0.3)' 
                       : timeline.status === 'ACTIVE'

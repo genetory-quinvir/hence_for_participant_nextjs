@@ -42,7 +42,10 @@ export default function HomePage() {
       
       return (
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center" style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.4)',
+            border: '3px solid rgba(255, 255, 255, 0.1)'
+          }}>
             <span className="text-white text-sm font-semibold">
               {userInitial}
             </span>
