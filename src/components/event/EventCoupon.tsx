@@ -99,6 +99,18 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
     }
   };
 
+  // 쿠폰 데이터 디버깅
+  console.log('EventCoupon 렌더링:', {
+    couponsCount: coupons?.length,
+    loading,
+    coupons: coupons?.map(c => ({
+      id: c.id,
+      title: c.title,
+      status: c.status,
+      isUsed: c.isUsed
+    }))
+  });
+
   if (!coupons || coupons.length === 0) {
     return null;
   }
@@ -146,17 +158,49 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
                  )}
 
                  {/* 쿠폰 사용 버튼 */}
-                 <button
-                  className={`w-full py-3 mt-4 px-4 rounded-lg text-sm font-bold transition-colors ${
-                     coupon.status === 'active' && !loading
-                       ? 'bg-purple-600 text-white hover:bg-purple-700'
-                       : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                   }`}
-                   disabled={coupon.status !== 'active' || loading}
-                   onClick={() => handleCouponUse(coupon)}
-                 >
-                   {loading ? '처리 중...' : coupon.status === 'active' ? '쿠폰 사용하기' : '사용 불가'}
-                 </button>
+                 {(() => {
+                   const isActive = coupon.status?.toLowerCase() === 'active';
+                   const isNotUsed = !coupon.isUsed;
+                   const isNotLoading = !loading;
+                   const canUse = isActive && isNotUsed && isNotLoading;
+                   
+                   console.log(`쿠폰 ${coupon.id} 버튼 조건:`, {
+                     status: coupon.status,
+                     statusLower: coupon.status?.toLowerCase(),
+                     isActive,
+                     isUsed: coupon.isUsed,
+                     isNotUsed,
+                     loading,
+                     isNotLoading,
+                     canUse
+                   });
+                   
+                   return (
+                     <button
+                       className={`w-full py-3 mt-4 px-4 rounded-lg text-sm font-bold transition-colors ${
+                         canUse
+                           ? 'bg-purple-600 text-white hover:bg-purple-700'
+                           : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                       }`}
+                       disabled={!canUse}
+                       onClick={() => {
+                         console.log('쿠폰 클릭:', {
+                           id: coupon.id,
+                           status: coupon.status,
+                           statusLower: coupon.status?.toLowerCase(),
+                           isUsed: coupon.isUsed,
+                           isActive: coupon.status?.toLowerCase() === 'active',
+                           canUse: coupon.status?.toLowerCase() === 'active' && !coupon.isUsed
+                         });
+                         handleCouponUse(coupon);
+                       }}
+                     >
+                       {loading ? '처리 중...' : 
+                        coupon.isUsed ? '이미 사용됨' :
+                        coupon.status?.toLowerCase() === 'active' ? '쿠폰 사용하기' : '사용 불가'}
+                     </button>
+                   );
+                 })()}
                </div>
             </div>
           ))}

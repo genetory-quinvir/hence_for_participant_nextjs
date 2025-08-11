@@ -235,13 +235,16 @@ export interface CouponItem {
   eventId?: string;
   title?: string;
   description?: string;
+  category?: string;
   discountType?: string;
-  discountValue?: number;
-  startDate?: string;
-  endDate?: string;
+  discountValue?: string;
   status?: string;
+  validFrom?: string;
+  validUntil?: string;
+  usedCount?: number;
+  totalCount?: number;
   createdAt?: string;
-  updatedAt?: string;
+  isUsed?: boolean;
 }
 
 // 참가자 아이템 타입
