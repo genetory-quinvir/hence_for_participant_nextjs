@@ -31,7 +31,7 @@ export default function EventFoodTrucks({
   return (
     <EventSection
       title="푸드트럭"
-      subtitle="이벤트에서 즐길 수 있는 다양한 푸드트럭을 확인해보세요"
+      subtitle="다양한 푸드트럭을 확인해보세요"
       rightButton={showViewAllButton ? {
         text: "전체보기",
         onClick: onViewAllClick || (() => {

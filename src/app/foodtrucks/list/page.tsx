@@ -37,7 +37,7 @@ function FoodTrucksContent() {
   }, [eventId]);
 
   const handleBackClick = () => {
-    router.back();
+    router.push(`/event/${eventId}`);
   };
 
   if (loading) {
@@ -105,7 +105,7 @@ function FoodTrucksContent() {
         onLeftClick={handleBackClick}
       />
       
-      <div className="px-4 py-6">
+      <div className="px-4 py-2">
         {/* 그리드 레이아웃 */}
         <div className="grid grid-cols-2 gap-4">
           {vendors.length > 0 ? (

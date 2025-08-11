@@ -124,17 +124,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         // 사용자 정보가 없으면 토큰 검증 시도
         try {
-          const isValid = await validateToken(accessToken);
-          if (isValid) {
-            const user = getStoredUser();
-            if (user) {
-              setAuthState({
-                isAuthenticated: true,
-                user,
-                accessToken,
-                refreshToken,
-                isLoading: false,
-              });
+      const isValid = await validateToken(accessToken);
+      if (isValid) {
+        const user = getStoredUser();
+        if (user) {
+          setAuthState({
+            isAuthenticated: true,
+            user,
+            accessToken,
+            refreshToken,
+            isLoading: false,
+          });
               return true;
             }
           }

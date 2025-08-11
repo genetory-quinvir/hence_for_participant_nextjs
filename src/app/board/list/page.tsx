@@ -95,8 +95,8 @@ function BoardListContent() {
   }, [handleScroll]);
 
   const handleBackClick = () => {
-    // 메인 페이지로 이동
-    router.push('/');
+    // 기본적으로 이벤트 페이지로 이동
+    router.push(`/event/${eventId}`);
   };
 
   const handlePostClick = (post: BoardItem) => {
@@ -120,7 +120,7 @@ function BoardListContent() {
       return;
     }
     
-    router.push(`/board/write?eventId=${eventId}`);
+    router.push(`/board/write?eventId=${eventId}&from=boardList`);
   };
 
   // 정렬된 게시글 목록
@@ -219,8 +219,8 @@ function BoardListContent() {
       />
       
       {/* 정렬 드롭다운 */}
-      <div className="px-4 py-6">
-        <div className="flex justify-end mb-4">
+      <div className="px-4">
+        <div className="flex justify-end mb-2">
           <div className="relative">
             <select
               value={sortType}
@@ -254,7 +254,7 @@ function BoardListContent() {
                 <PostHeader 
                   nickname={post.user?.nickname}
                   createdAt={post.createdAt}
-                  className="p-4 pb-3"
+                  className="p-4"
                   showMoreButton={true}
                   isNotice={type === 'notice'}
                   onMoreClick={() => {
@@ -265,8 +265,8 @@ function BoardListContent() {
                 
                 {/* 공지사항인 경우 제목과 내용 표시 */}
                 {type === 'notice' ? (
-                  <div className="px-4 pb-6 pt-3">
-                    <h3 className="text-white font-bold text-lg mb-2 line-clamp-2">
+                  <div className="px-4 pb-2">
+                    <h3 className="text-white font-bold text-lg mb-1 line-clamp-2">
                       {post.title || '제목 없음'}
                     </h3>
                     <p className="text-sm text-white whitespace-pre-wrap" style={{ opacity: 0.8 }}>

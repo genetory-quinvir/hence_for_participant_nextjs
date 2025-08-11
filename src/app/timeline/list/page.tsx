@@ -91,7 +91,7 @@ function TimelineListContent() {
   }, [handleScroll]);
 
   const handleBackClick = () => {
-    router.back();
+    router.push(`/event/${eventId}`);
   };
 
   const handleTimelineClick = (timeline: TimelineItem) => {
@@ -164,7 +164,7 @@ function TimelineListContent() {
         onLeftClick={handleBackClick}
       />
       
-      <div className="px-4 py-6">
+      <div className="px-4 py-2">
         {/* 타임라인 리스트 */}
         <div className="space-y-4">
           {timelines.length > 0 ? (

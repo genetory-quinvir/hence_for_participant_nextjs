@@ -80,6 +80,11 @@ html, body {
   color: rgba(255, 255, 255, 0.6) !important;
 }
 
+/* 코드 입력 필드 플레이스홀더 스타일 */
+.code-input-field::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
 /* 타임라인 닷 펄스 애니메이션 */
 @keyframes timelineDotPulse {
   0% {

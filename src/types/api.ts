@@ -201,16 +201,32 @@ export interface EventCodeResponse {
 }
 
 // 래플 아이템 타입
+export interface RafflePrize {
+  id: string;
+  raffleId: string;
+  prizeRank: string;
+  winnerCount: number;
+  prizeName: string;
+  prizeDescription: string;
+  prizeImageUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface RaffleItem {
-  id?: string;
-  eventId?: string;
-  title?: string;
-  description?: string;
-  startDate?: string;
-  endDate?: string;
-  status?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  id: string;
+  eventId: string;
+  title: string;
+  imageUrl?: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  maxWinners: number;
+  participantCount: number;
+  status: string;
+  prizes: RafflePrize[];
+  createdAt: string;
+  isParticipated: boolean;
 }
 
 // 쿠폰 아이템 타입

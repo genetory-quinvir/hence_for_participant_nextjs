@@ -69,7 +69,7 @@ export default function EventCommunity({
               className="flex-shrink-0 w-80 h-48 rounded-xl overflow-hidden transition-all duration-300 hover:bg-white hover:bg-opacity-5 cursor-pointer"
               style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
               onClick={() => {
-                const url = `/board/${post.id}?type=free&eventId=${post.eventId || 'default-event'}`;
+                const url = `/board/${post.id}?type=free&eventId=${post.eventId || 'default-event'}&fromEvent=true`;
                 console.log('🔗 자유게시판 클릭:', url);
                 router.push(url);
               }}
@@ -159,9 +159,6 @@ export default function EventCommunity({
           }}
           className="w-full py-4 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
         >
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-          </svg>
           <span>소식 올리기</span>
         </button>
       </div>

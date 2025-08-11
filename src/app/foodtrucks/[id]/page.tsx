@@ -47,7 +47,18 @@ function FoodTruckDetailContent() {
   }, [params.id, eventId]);
 
   const handleBackClick = () => {
-    router.back();
+    // 이전 페이지가 이벤트 페이지인지 확인
+    const referrer = document.referrer;
+    const currentOrigin = window.location.origin;
+    const eventPageUrl = `${currentOrigin}/event/${eventId}`;
+    
+    if (referrer.startsWith(eventPageUrl)) {
+      // 이벤트 페이지에서 온 경우 이벤트 페이지로 돌아가기
+      router.push(`/event/${eventId}`);
+    } else {
+      // 다른 페이지에서 온 경우 뒤로가기
+      router.back();
+    }
   };
 
   if (loading) {

@@ -30,9 +30,9 @@ export default function RootLayout({
       </head>
       <body className="font-suit antialiased bg-black text-white">
         <ErrorBoundary>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         </ErrorBoundary>
       </body>
     </html>

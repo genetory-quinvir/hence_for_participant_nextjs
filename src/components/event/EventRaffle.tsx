@@ -1,12 +1,16 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { RaffleItem } from "@/types/api";
 
 interface EventRaffleProps {
   raffle: RaffleItem;
+  eventId: string;
 }
 
-export default function EventRaffle({ raffle }: EventRaffleProps) {
+export default function EventRaffle({ raffle, eventId }: EventRaffleProps) {
+  const router = useRouter();
+  
   return (
     <section className="px-4 py-8">
       {/* 섹션 헤더 */}
@@ -63,17 +67,33 @@ export default function EventRaffle({ raffle }: EventRaffleProps) {
           )}
         </div>
         
-        {/* 응모하러가기 버튼 */}
+        {/* 응모 상태에 따른 버튼 */}
         <div className="mt-6">
-          <button
-            className="w-full px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-lg"
-            onClick={() => {
-              console.log('경품 이벤트 응모하러가기 버튼 클릭');
-              alert('경품 이벤트 응모 페이지로 이동합니다.');
-            }}
-          >
-            응모 하러 가기
-          </button>
+          {raffle.isParticipated ? (
+            // 이미 응모한 경우 - 클릭 가능한 버튼
+            <button
+              className="w-full px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium text-lg"
+              onClick={() => {
+                console.log('이미 응모된 래플 페이지로 이동');
+                const raffleId = raffle.id || 'default-raffle';
+                router.push(`/raffle?eventId=${eventId}&raffleId=${raffleId}`);
+              }}
+            >
+              응모 현황 보기
+            </button>
+          ) : (
+            // 응모하지 않은 경우
+            <button
+              className="w-full px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-lg"
+              onClick={() => {
+                console.log('경품 이벤트 응모하러가기 버튼 클릭');
+                const raffleId = raffle.id || 'default-raffle';
+                router.push(`/raffle?eventId=${eventId}&raffleId=${raffleId}`);
+              }}
+            >
+              응모 하러 가기
+            </button>
+          )}
         </div>
       </div>
     </section>

@@ -9,7 +9,8 @@ import {
   PostDetailResponse,
   CommentListResponse,
   BoardItem,
-  TimelineItem
+  TimelineItem,
+  VendorItem
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
@@ -901,8 +902,243 @@ export async function createComment(eventId: string, boardType: string, postId: 
 }
 
 // 이벤트 상세 정보 가져오기 API
+// 래플 참여 API
+export async function participateRaffle(eventId: string, raffleId: string, data: {
+  userId: string;
+  realName: string;
+  phoneNumber: string;
+  privacyAgreement: boolean;
+}): Promise<{ success: boolean; error?: string }> {
+  const accessToken = getAccessToken();
+  
+  if (!accessToken) {
+    return {
+      success: false,
+      error: '인증 토큰이 없습니다.',
+    };
+  }
+
+  const url = `${API_BASE_URL}/raffles/${eventId}/${raffleId}/participate`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const responseText = await response.text();
+    
+    if (response.status === 200 || response.status === 201) {
+      return {
+        success: true,
+      };
+    } else if (response.status === 401 || response.status === 403) {
+      return {
+        success: false,
+        error: '인증이 만료되었습니다. 다시 로그인해주세요.',
+      };
+    } else {
+      try {
+        const errorData = JSON.parse(responseText);
+        return {
+          success: false,
+          error: errorData.message || '래플 응모에 실패했습니다.',
+        };
+      } catch (e) {
+        return {
+          success: false,
+          error: '래플 응모에 실패했습니다.',
+        };
+      }
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다.',
+    };
+  }
+}
+
+// 래플 정보 및 참여 상태 확인
+export async function getRaffleInfo(eventId: string): Promise<{ success: boolean; error?: string; isParticipated?: boolean; raffle?: any }> {
+  const accessToken = getAccessToken();
+  
+  if (!accessToken) {
+    return {
+      success: false,
+      error: '인증 토큰이 없습니다.',
+    };
+  }
+
+  const url = `${API_BASE_URL}/raffles/${eventId}`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const responseText = await response.text();
+    
+    if (response.status === 200) {
+      const responseData = JSON.parse(responseText);
+      console.log('서버 응답 데이터:', responseData);
+      
+      // 응답 구조에 따라 isParticipated 추출
+      let isParticipated = false;
+      let raffleData = null;
+      
+      if (responseData.data && responseData.data.items && responseData.data.items.length > 0) {
+        // 배열 형태로 오는 경우 (첫 번째 아이템 사용)
+        raffleData = responseData.data.items[0];
+        isParticipated = raffleData.isParticipated || false;
+      } else if (responseData.isParticipated !== undefined) {
+        // 단일 객체로 오는 경우
+        raffleData = responseData;
+        isParticipated = responseData.isParticipated;
+      }
+      
+      console.log('추출된 isParticipated 값:', isParticipated);
+      console.log('추출된 래플 데이터:', raffleData);
+      
+      return {
+        success: true,
+        isParticipated: isParticipated,
+        raffle: raffleData,
+      };
+    } else if (response.status === 401 || response.status === 403) {
+      return {
+        success: false,
+        error: '인증이 만료되었습니다. 다시 로그인해주세요.',
+      };
+    } else {
+      try {
+        const errorData = JSON.parse(responseText);
+        return {
+          success: false,
+          error: errorData.message || '래플 정보를 가져오는데 실패했습니다.',
+        };
+      } catch (e) {
+        return {
+          success: false,
+          error: '래플 정보를 가져오는데 실패했습니다.',
+        };
+      }
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다.',
+    };
+  }
+}
+
+// 쿠폰 사용 가능한 벤더 목록 조회
+export async function getCouponVendors(eventId: string, couponId: string): Promise<{ success: boolean; error?: string; data?: VendorItem[] }> {
+  const url = `${API_BASE_URL}/events/${eventId}/coupons/${couponId}/vendors`;
+  
+  try {
+    const accessToken = getAccessToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (response.status === 200) {
+      const data = await response.json();
+      return {
+        success: true,
+        data: data.data || data.vendors || [],
+      };
+    } else if (response.status === 401 || response.status === 403) {
+      return {
+        success: false,
+        error: 'AUTH_REQUIRED',
+      };
+    } else {
+      const errorData = await response.json();
+      return {
+        success: false,
+        error: errorData.message || '벤더 목록을 불러오는데 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('벤더 목록 조회 오류:', error);
+    return {
+      success: false,
+      error: '벤더 목록을 불러오는데 실패했습니다.',
+    };
+  }
+}
+
+// 쿠폰 사용
+export async function useCoupon(eventId: string, couponId: string, vendorId?: string): Promise<{ success: boolean; error?: string }> {
+  const url = `${API_BASE_URL}/events/${eventId}/coupons/${couponId}/use`;
+  
+  try {
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      return {
+        success: false,
+        error: 'AUTH_REQUIRED',
+      };
+    }
+
+    const headers = { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`
+    };
+
+    const body: any = {};
+    if (vendorId) {
+      body.vendorId = vendorId;
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    if (response.status === 200) {
+      return { success: true };
+    } else if (response.status === 401 || response.status === 403) {
+      return {
+        success: false,
+        error: 'AUTH_REQUIRED',
+      };
+    } else {
+      const errorData = await response.json();
+      return {
+        success: false,
+        error: errorData.message || '쿠폰 사용에 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('쿠폰 사용 오류:', error);
+    return {
+      success: false,
+      error: '쿠폰 사용에 실패했습니다.',
+    };
+  }
+}
+
 export async function getFeaturedEvent(eventId: string): Promise<FeaturedResponse> {
   const url = `${API_BASE_URL}/featured/${eventId}`;
+  const accessToken = getAccessToken();
   
   try {
     // 네트워크 상태 체크
@@ -913,7 +1149,12 @@ export async function getFeaturedEvent(eventId: string): Promise<FeaturedRespons
       };
     }
 
-    const headers = { 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    
+    // Access token이 있으면 헤더에 추가
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
     
     // 요청 로깅
     apiDebugger.logRequest('GET', url, headers, null);
@@ -935,6 +1176,11 @@ export async function getFeaturedEvent(eventId: string): Promise<FeaturedRespons
       return {
         success: true,
         featured: responseData.data || responseData,
+      };
+    } else if (response.status === 401 || response.status === 403) {
+      return {
+        success: false,
+        error: '인증이 만료되었습니다. 다시 로그인해주세요.',
       };
     } else if (response.status === 404) {
       logger.warn('⚠️ 이벤트를 찾을 수 없음', { eventId });

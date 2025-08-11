@@ -113,7 +113,17 @@ function BoardDetailContent() {
 
 
   const handleBackClick = () => {
-    router.back();
+    // URL 파라미터에서 이전 페이지 정보 확인
+    const fromEvent = searchParams.get('fromEvent');
+    const eventId = searchParams.get('eventId') || 'default-event';
+    
+    if (fromEvent === 'true') {
+      // 이벤트 페이지에서 온 경우 이벤트 페이지로 돌아가기
+      router.push(`/event/${eventId}`);
+    } else {
+      // board list에서 온 경우 board list로 돌아가기
+      router.push(`/board/list?type=${postType}&eventId=${eventId}`);
+    }
   };
 
   const getPageTitle = () => {
@@ -235,7 +245,7 @@ function BoardDetailContent() {
         onLeftClick={handleBackClick}
       />
       
-            <div className={`pl-4 pr-6 ${isFreeBoardPost ? 'py-4' : 'py-6'}`}>
+            <div className={`pl-4 pr-6 ${isFreeBoardPost ? 'py-2' : 'py-2'}`}>
         {/* 게시글 디테일 */}
         <PostDetail 
           post={post} 

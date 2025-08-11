@@ -14,30 +14,31 @@ function BoardWriteContent() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showActionSheet, setShowActionSheet] = useState(false);
-  const [hasCamera, setHasCamera] = useState(false);
+  const [hasCamera, setHasCamera] = useState<boolean | null>(null);
 
-  // 이벤트 ID 가져오기
+  // 이벤트 ID와 출처 가져오기
   const eventId = searchParams.get('eventId') || 'default-event';
-
-  // 카메라 지원 여부 확인
-  useEffect(() => {
-    const checkCameraSupport = async () => {
-      try {
-        // 카메라 접근 권한 확인
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        stream.getTracks().forEach(track => track.stop()); // 스트림 정리
-        setHasCamera(true);
-      } catch (error) {
-        console.log('카메라를 지원하지 않거나 권한이 없습니다:', error);
-        setHasCamera(false);
-      }
-    };
-
-    checkCameraSupport();
-  }, []);
+  const from = searchParams.get('from');
 
   const handleBackClick = () => {
-    router.back();
+    // from 파라미터를 우선적으로 확인
+    if (from === 'boardList') {
+      // board list에서 온 경우 board list로 돌아가기
+      router.push(`/board/list?type=free&eventId=${eventId}`);
+    } else {
+      // 이전 페이지가 이벤트 페이지인지 확인
+      const referrer = document.referrer;
+      const currentOrigin = window.location.origin;
+      const eventPageUrl = `${currentOrigin}/event/${eventId}`;
+      
+      if (referrer.startsWith(eventPageUrl)) {
+        // 이벤트 페이지에서 온 경우 이벤트 페이지로 돌아가기
+        router.push(`/event/${eventId}`);
+      } else {
+        // 다른 페이지에서 온 경우 뒤로가기
+        router.back();
+      }
+    }
   };
 
   const handleSubmit = async () => {
@@ -59,7 +60,6 @@ function BoardWriteContent() {
       );
 
       if (result.success) {
-        alert('글이 작성되었습니다.');
         // 글 리스트 페이지로 이동 (히스토리에서 글쓰기 페이지 제거)
         router.replace(`/board/list?type=free&eventId=${eventId}`);
       } else {
@@ -131,17 +131,36 @@ function BoardWriteContent() {
     setImageUrls(newUrls);
   };
 
+  // 카메라 지원 여부 확인
+  const checkCameraSupport = async () => {
+    if (hasCamera !== null) {
+      return hasCamera; // 이미 확인된 경우 캐시된 값 반환
+    }
+
+    try {
+      // 카메라 접근 권한 확인
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop()); // 스트림 정리
+      setHasCamera(true);
+      return true;
+    } catch (error) {
+      console.log('카메라를 지원하지 않거나 권한이 없습니다:', error);
+      setHasCamera(false);
+      return false;
+    }
+  };
+
   const handleCancel = () => {
     if (content.trim() || images.length > 0) {
       if (confirm('작성 중인 내용이 있습니다. 정말 나가시겠습니까?')) {
         // 이미지 URL 정리
         imageUrls.forEach(url => URL.revokeObjectURL(url));
-        // 글 리스트 페이지로 이동
-        router.push(`/board/list?type=free&eventId=${eventId}`);
+        // handleBackClick 로직 실행
+        handleBackClick();
       }
     } else {
-      // 글 리스트 페이지로 이동
-      router.push(`/board/list?type=free&eventId=${eventId}`);
+      // handleBackClick 로직 실행
+      handleBackClick();
     }
   };
 
@@ -163,24 +182,22 @@ function BoardWriteContent() {
         onLeftClick={handleCancel}
       />
       
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 px-4">
         {/* 텍스트 입력 영역 - 남은 공간 채움 */}
-        <div className="flex-1 p-4 pt-6">
-          <div className="bg-black bg-opacity-20 rounded-lg p-4 h-full">
-            <textarea
-              placeholder="무슨 소식을 올리실건가요?"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full bg-transparent border-none outline-none resize-none text-white text-lg board-write-textarea h-full"
-              style={{ 
-                color: 'white'
-              }}
-            />
-          </div>
+        <div className="flex-1 pt-6">
+          <textarea
+            placeholder="무슨 소식을 올리실건가요?"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full bg-transparent border-none outline-none resize-none text-white text-lg board-write-textarea h-full"
+            style={{ 
+              color: 'white'
+            }}
+          />
         </div>
 
         {/* 이미지 업로드 영역 - 하단 고정 */}
-        <div className="flex-shrink-0 p-4 pb-6">
+        <div className="flex-shrink-0 pb-6">
           {/* 이미지 미리보기 */}
           {imageUrls.length > 0 && (
             <div className="mb-4">
@@ -214,11 +231,12 @@ function BoardWriteContent() {
           )}
 
           {/* 이미지 업로드 */}
-          <div className="bg-black bg-opacity-20 rounded-lg p-4">
+          <div className="bg-black bg-opacity-20 rounded-lg">
             <div className="flex items-center justify-between">
               <button
-                onClick={() => {
-                  if (hasCamera) {
+                onClick={async () => {
+                  const cameraSupported = await checkCameraSupport();
+                  if (cameraSupported) {
                     setShowActionSheet(true);
                   } else {
                     handleImageLibrary();

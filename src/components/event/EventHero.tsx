@@ -8,7 +8,7 @@ interface EventHeroProps {
 
 export default function EventHero({ event }: EventHeroProps) {
   return (
-    <div className="w-full aspect-square bg-gray-700 flex items-center justify-center">
+    <div className="w-full aspect-square bg-gray-700 flex items-center justify-center px-0">
       {event.imageUrl ? (
         <img 
           src={event.imageUrl} 
