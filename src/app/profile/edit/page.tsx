@@ -24,8 +24,8 @@ function ProfileEditContent() {
   // 사용자 정보로 폼 초기화
   useEffect(() => {
     if (user) {
-      setNickname(user.nickname || user.name || "");
-      setEmail(user.email || "");
+      setNickname((user.nickname || user.name || "") as string);
+      setEmail((user.email || "") as string);
     }
   }, [user]);
 
