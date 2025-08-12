@@ -11,7 +11,10 @@ import {
   BoardItem,
   TimelineItem,
   VendorItem,
-  CouponItem
+  CouponItem,
+  CreateShoutResponse,
+  ShoutItem,
+  ShoutDisplayResponse
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
@@ -122,20 +125,23 @@ export function saveTokens(accessToken: string, refreshToken?: string) {
 export function getAccessToken(): string | null {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('access_token');
-    logger.debug('🔑 Access Token 조회', { hasToken: !!token, length: token?.length || 0 });
+    // 로그 레벨을 INFO로 변경하여 DEBUG 로그 줄임
+    if (process.env.NODE_ENV === 'development') {
+      logger.debug('🔑 Access Token 조회', { hasToken: !!token, length: token?.length || 0 });
+    }
     return token;
   }
   return null;
 }
 
-export function getRefreshToken(): string | null {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('refresh_token');
-    logger.debug('🔑 Refresh Token 조회', { hasToken: !!token, length: token?.length || 0 });
-    return token;
+  export function getRefreshToken(): string | null {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('refresh_token');
+      logger.debug('🔑 Refresh Token 조회', { hasToken: !!token, length: token?.length || 0 });
+      return token;
+    }
+    return null;
   }
-  return null;
-}
 
 export function removeTokens() {
   if (typeof window !== 'undefined') {
@@ -156,6 +162,149 @@ export function getToken(): string | null {
 
 export function removeToken() {
   removeTokens();
+}
+
+// 토큰 갱신 함수
+export async function refreshAccessToken(): Promise<{ success: boolean; accessToken?: string; error?: string }> {
+  const refreshToken = getRefreshToken();
+  const currentAccessToken = getAccessToken();
+  
+  if (!refreshToken) {
+    return { success: false, error: 'Refresh Token이 없습니다.' };
+  }
+
+  const url = `${API_BASE_URL}/auth/refresh`;
+  
+  try {
+    // 디버깅: 요청 본문 로깅
+    const requestBody = { 
+      refreshToken: refreshToken,
+      accessToken: currentAccessToken 
+    };
+    logger.info('🔄 토큰 갱신 요청', { url, requestBody });
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.status === 200) {
+      const data = await response.json();
+      logger.info('🔄 토큰 갱신 응답', { data });
+      
+      const newAccessToken = data.data?.accessToken;
+      const newRefreshToken = data.data?.refreshToken;
+      
+      if (newAccessToken) {
+        // 새로운 Access Token 저장
+        localStorage.setItem('access_token', newAccessToken);
+        
+        // 새로운 Refresh Token도 저장 (있는 경우)
+        if (newRefreshToken) {
+          localStorage.setItem('refresh_token', newRefreshToken);
+        }
+        
+        logger.info('✅ Access Token 갱신 성공', { 
+          hasNewRefreshToken: !!newRefreshToken,
+          expiresIn: data.data?.expiresIn 
+        });
+        return { success: true, accessToken: newAccessToken };
+      } else {
+        logger.error('❌ 토큰 갱신 응답에서 Access Token을 찾을 수 없음', data);
+        return { success: false, error: '토큰 갱신 응답에서 Access Token을 찾을 수 없습니다.' };
+      }
+    } else if (response.status === 401) {
+      logger.error('❌ Refresh Token이 만료됨');
+      // Refresh Token도 만료되었으므로 모든 토큰 제거
+      removeTokens();
+      return { success: false, error: 'AUTH_REQUIRED' };
+    } else {
+      const errorData = await response.json();
+      logger.error('❌ 토큰 갱신 실패:', { 
+        status: response.status, 
+        errorData,
+        requestBody: { refreshToken: refreshToken ? '***' : 'null' }
+      });
+      return { success: false, error: errorData.message || '토큰 갱신에 실패했습니다.' };
+    }
+  } catch (error) {
+    logger.error('💥 토큰 갱신 중 오류:', error);
+    return { success: false, error: '토큰 갱신 중 오류가 발생했습니다.' };
+  }
+}
+
+// 공통 API 래퍼 함수 (토큰 갱신 포함)
+export async function apiRequest<T>(
+  url: string, 
+  options: RequestInit = {}
+): Promise<{ success: boolean; data?: T; error?: string; status?: number }> {
+  let accessToken = getAccessToken();
+  
+  if (!accessToken) {
+    return { success: false, error: 'AUTH_REQUIRED' };
+  }
+
+  const makeRequest = async (token: string) => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // options.headers가 있는 경우 추가
+    if (options.headers) {
+      Object.assign(headers, options.headers);
+    }
+
+    // Authorization 헤더 추가
+    headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    if (response.status === 401) {
+      return { status: 401 };
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { 
+        status: response.status, 
+        error: errorData.message || `API 요청에 실패했습니다. (${response.status})` 
+      };
+    }
+
+    const data = await response.json();
+    return { status: 200, data };
+  };
+
+  // 첫 번째 요청 시도
+  let response = await makeRequest(accessToken);
+
+  // 401 에러가 발생하면 토큰 갱신 시도
+  if (response.status === 401) {
+    console.log('🔄 Access Token 만료, 토큰 갱신 시도...');
+    const refreshResult = await refreshAccessToken();
+    
+    if (refreshResult.success && refreshResult.accessToken) {
+      console.log('✅ 토큰 갱신 성공, 재요청 시도...');
+      accessToken = refreshResult.accessToken;
+      response = await makeRequest(accessToken);
+    } else {
+      console.log('❌ 토큰 갱신 실패:', refreshResult.error);
+      return { success: false, error: 'AUTH_REQUIRED' };
+    }
+  }
+
+  // 최종 응답 처리
+  if (response.status === 200) {
+    return { success: true, data: response.data };
+  } else {
+    return { success: false, error: response.error || 'API 요청에 실패했습니다.' };
+  }
 }
 
 // 소셜 로그인 API 호출
@@ -274,78 +423,35 @@ export async function checkEventCode(eventCode: string): Promise<EventCodeRespon
 
 // 게시글 상세 정보 가져오기 API
 export async function getBoardDetail(eventId: string, boardType: string, postId: string): Promise<PostDetailResponse> {
-  const url = `${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`;
-  
   try {
-    // 네트워크 상태 체크
-    if (!apiDebugger.checkNetworkStatus()) {
-      return {
-        success: false,
-        error: '네트워크 연결을 확인해주세요.',
-      };
-    }
-
-    // 액세스 토큰 가져오기 (옵셔널)
-    const accessToken = getAccessToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    
-    // 토큰이 있으면 Authorization 헤더 추가
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-    
-    // 요청 로깅
-    apiDebugger.logRequest('GET', url, headers, null);
-
-    const response = await fetch(url, {
+    const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
       method: 'GET',
-      headers,
     });
 
-    const responseText = await response.text();
-    const responseHeaders = Object.fromEntries(response.headers.entries());
-    
-    // 응답 로깅
-    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
-
-    if (response.status === 200) {
-      const responseData = JSON.parse(responseText);
+    if (result.success && result.data) {
       console.log('🔍 getBoardDetail 응답:', {
-        hasToken: !!accessToken,
-        data: responseData.data || responseData,
-        isLiked: (responseData.data || responseData)?.isLiked
+        data: result.data.data || result.data,
+        isLiked: (result.data.data || result.data)?.isLiked
       });
-      logger.info('✅ 게시글 상세 정보 로드 성공', responseData);
+      logger.info('✅ 게시글 상세 정보 로드 성공', result.data);
       return {
         success: true,
-        data: responseData.data || responseData,
+        data: result.data.data || result.data,
       };
-    } else if (response.status === 404) {
+    } else if (result.status === 404) {
       logger.warn('⚠️ 게시글을 찾을 수 없음', { eventId, boardType, postId });
       return {
         success: false,
         error: '게시글을 찾을 수 없습니다.',
       };
     } else {
-      // 에러 응답 처리
-      try {
-        const errorData = JSON.parse(responseText);
-        const errorMessage = errorData.message || '게시글 정보를 가져오는데 실패했습니다.';
-        logger.error('❌ 게시글 상세 정보 로드 실패', { status: response.status, error: errorMessage });
-        return {
-          success: false,
-          error: errorMessage,
-        };
-      } catch (e) {
-        logger.error('❌ 에러 응답 파싱 실패', e);
-        return {
-          success: false,
-          error: '게시글 정보를 가져오는데 실패했습니다. 다시 시도해주세요.',
-        };
-      }
+      return {
+        success: false,
+        error: result.error || '게시글 정보를 가져오는데 실패했습니다.',
+      };
     }
   } catch (error) {
-    apiDebugger.logError(url, error);
+    apiDebugger.logError(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, error);
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
@@ -355,45 +461,15 @@ export async function getBoardDetail(eventId: string, boardType: string, postId:
 
 // 댓글 목록 가져오기 API
 export async function getComments(eventId: string, boardType: string, postId: string): Promise<CommentListResponse> {
-  const url = `${API_BASE_URL}/board/${eventId}/${boardType}/${postId}/comments`;
-  
   try {
-    // 네트워크 상태 체크
-    if (!apiDebugger.checkNetworkStatus()) {
-      return {
-        success: false,
-        error: '네트워크 연결을 확인해주세요.',
-      };
-    }
-
-    // 액세스 토큰 가져오기 (옵셔널)
-    const accessToken = getAccessToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    
-    // 토큰이 있으면 Authorization 헤더 추가
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-    
-    // 요청 로깅
-    apiDebugger.logRequest('GET', url, headers, null);
-
-    const response = await fetch(url, {
+    const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}/comments`, {
       method: 'GET',
-      headers,
     });
 
-    const responseText = await response.text();
-    const responseHeaders = Object.fromEntries(response.headers.entries());
-    
-    // 응답 로깅
-    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
-
-    if (response.status === 200) {
-      const responseData = JSON.parse(responseText);
-      logger.info('✅ 댓글 목록 로드 성공', responseData);
+    if (result.success && result.data) {
+      logger.info('✅ 댓글 목록 로드 성공', result.data);
       
-      const commentsData = responseData.data?.items || responseData.data || responseData;
+      const commentsData = result.data.data?.items || result.data.data || result.data;
       
       // 배열이 아닌 경우 빈 배열로 설정
       const safeCommentsData = Array.isArray(commentsData) ? commentsData : [];
@@ -402,32 +478,20 @@ export async function getComments(eventId: string, boardType: string, postId: st
         success: true,
         data: safeCommentsData,
       };
-    } else if (response.status === 404) {
+    } else if (result.status === 404) {
       logger.warn('⚠️ 댓글을 찾을 수 없음', { eventId, boardType, postId });
       return {
         success: false,
         error: '댓글을 찾을 수 없습니다.',
       };
     } else {
-      // 에러 응답 처리
-      try {
-        const errorData = JSON.parse(responseText);
-        const errorMessage = errorData.message || '댓글을 가져오는데 실패했습니다.';
-        logger.error('❌ 댓글 목록 로드 실패', { status: response.status, error: errorMessage });
-        return {
-          success: false,
-          error: errorMessage,
-        };
-      } catch (e) {
-        logger.error('❌ 에러 응답 파싱 실패', e);
-        return {
-          success: false,
-          error: '댓글을 가져오는데 실패했습니다. 다시 시도해주세요.',
-        };
-      }
+      return {
+        success: false,
+        error: result.error || '댓글을 가져오는데 실패했습니다.',
+      };
     }
   } catch (error) {
-    apiDebugger.logError(url, error);
+    apiDebugger.logError(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}/comments`, error);
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
@@ -437,64 +501,20 @@ export async function getComments(eventId: string, boardType: string, postId: st
 
 // 좋아요 토글 API
 export async function toggleLike(eventId: string, boardType: string, postId: string, isLiked: boolean): Promise<{ success: boolean; error?: string; updatedIsLiked?: boolean; updatedLikeCount?: number }> {
-  const url = `${API_BASE_URL}/board/${eventId}/${boardType}/${postId}/like`;
+  const method = isLiked ? 'DELETE' : 'POST';
   
   console.log('🔍 좋아요 API 호출:', { 
-    url, 
     isLiked, 
-    method: isLiked ? 'DELETE' : 'POST',
+    method,
     action: isLiked ? '좋아요 취소' : '좋아요 추가'
   });
   
   try {
-    // 네트워크 상태 체크
-    if (!apiDebugger.checkNetworkStatus()) {
-      console.error('❌ 네트워크 상태 체크 실패');
-      return {
-        success: false,
-        error: '네트워크 연결을 확인해주세요.',
-      };
-    }
-
-    const accessToken = getAccessToken();
-    console.log('🔍 토큰 확인:', accessToken ? '토큰 있음' : '토큰 없음');
-    if (!accessToken) {
-      return {
-        success: false,
-        error: '로그인이 필요합니다.',
-      };
-    }
-
-    const method = isLiked ? 'DELETE' : 'POST';
-    const headers = { 
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`
-    };
-    
-    console.log('🔍 요청 정보:', { method, url, headers: { ...headers, Authorization: 'Bearer ***' } });
-    
-    // 요청 로깅
-    apiDebugger.logRequest(method, url, headers, {});
-
-    const response = await fetch(url, {
+    const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}/like`, {
       method,
-      headers,
     });
 
-    const responseText = await response.text();
-    const responseHeaders = Object.fromEntries(response.headers.entries());
-    
-    console.log('🔍 응답 정보:', { 
-      status: response.status, 
-      statusText: response.statusText,
-      responseText,
-      headers: responseHeaders
-    });
-    
-    // 응답 로깅
-    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
-
-    if (response.status === 200 || response.status === 204) {
+    if (result.success) {
       console.log('✅ 좋아요 토글 성공');
       logger.info('✅ 좋아요 토글 성공', { isLiked: !isLiked });
       
@@ -502,18 +522,13 @@ export async function toggleLike(eventId: string, boardType: string, postId: str
       let updatedIsLiked = !isLiked;
       let updatedLikeCount = null;
       
-      if (responseText) {
-        try {
-          const responseData = JSON.parse(responseText);
-          console.log('🔍 좋아요 API 응답 데이터:', responseData);
-          
-          // 서버에서 업데이트된 상태를 반환하는 경우
-          if (responseData.data) {
-            updatedIsLiked = responseData.data.isLiked ?? updatedIsLiked;
-            updatedLikeCount = responseData.data.likeCount;
-          }
-        } catch (e) {
-          console.log('🔍 응답 파싱 실패, 기본값 사용');
+      if (result.data) {
+        console.log('🔍 좋아요 API 응답 데이터:', result.data);
+        
+        // 서버에서 업데이트된 상태를 반환하는 경우
+        if (result.data.data) {
+          updatedIsLiked = result.data.data.isLiked ?? updatedIsLiked;
+          updatedLikeCount = result.data.data.likeCount;
         }
       }
       
@@ -522,34 +537,15 @@ export async function toggleLike(eventId: string, boardType: string, postId: str
         updatedIsLiked,
         updatedLikeCount
       };
-    } else if (response.status === 401) {
-      console.error('❌ 좋아요 토글 실패 - 인증 오류:', response.status);
-      logger.error('❌ 좋아요 토글 실패 - 인증 오류', { status: response.status });
+    } else {
+      console.error('❌ 좋아요 토글 실패:', result.error);
       return {
         success: false,
-        error: '로그인이 만료되었습니다. 다시 로그인해주세요.',
+        error: result.error || '좋아요 처리에 실패했습니다.',
       };
-    } else {
-      console.error('❌ 좋아요 토글 실패 - 기타 오류:', response.status, responseText);
-      // 에러 응답 처리
-      try {
-        const errorData = JSON.parse(responseText);
-        const errorMessage = errorData.message || '좋아요 처리에 실패했습니다.';
-        logger.error('❌ 좋아요 토글 실패', { status: response.status, error: errorMessage });
-        return {
-          success: false,
-          error: errorMessage,
-        };
-      } catch (e) {
-        logger.error('❌ 에러 응답 파싱 실패', e);
-        return {
-          success: false,
-          error: '좋아요 처리에 실패했습니다. 다시 시도해주세요.',
-        };
-      }
     }
   } catch (error) {
-    apiDebugger.logError(url, error);
+    apiDebugger.logError(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}/like`, error);
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
@@ -557,81 +553,31 @@ export async function toggleLike(eventId: string, boardType: string, postId: str
   }
 }
 
-// 댓글 작성 API
+// 타임라인 목록 조회 API
 export async function getTimelineList(eventId: string, page: number = 1, limit: number = 10): Promise<{ success: boolean; error?: string; data?: { items: TimelineItem[]; hasNext: boolean; total: number } }> {
-  const url = `${API_BASE_URL}/timelines/${eventId}?page=${page}&limit=${limit}`;
-  
   try {
-    // 네트워크 상태 체크
-    if (!apiDebugger.checkNetworkStatus()) {
-      return {
-        success: false,
-        error: '네트워크 연결을 확인해주세요.',
-      };
-    }
-
-    // 액세스 토큰 가져오기
-    const accessToken = getAccessToken();
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-    
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-
-    // 요청 로깅
-    apiDebugger.logRequest('GET', url, headers);
-
-    const response = await fetch(url, {
+    const result = await apiRequest<any>(`${API_BASE_URL}/timelines/${eventId}?page=${page}&limit=${limit}`, {
       method: 'GET',
-      headers,
     });
 
-    const responseText = await response.text();
-    const responseHeaders = Object.fromEntries(response.headers.entries());
-    
-    // 응답 로깅
-    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
-
-    if (response.status === 200) {
-      const responseData = JSON.parse(responseText);
-      logger.info('✅ 타임라인 목록 조회 성공', responseData);
+    if (result.success && result.data) {
+      logger.info('✅ 타임라인 목록 조회 성공', result.data);
       return {
         success: true,
         data: {
-          items: responseData.data?.items || responseData.items || [],
-          hasNext: responseData.data?.hasNext || responseData.hasNext || false,
-          total: responseData.data?.total || responseData.total || 0
+          items: result.data.data?.items || result.data.items || [],
+          hasNext: result.data.data?.hasNext || result.data.hasNext || false,
+          total: result.data.data?.total || result.data.total || 0
         }
       };
-    } else if (response.status === 401) {
-      // 인증 오류
-      logger.error('❌ 인증 오류 (401)', { status: response.status });
+    } else {
       return {
         success: false,
-        error: '인증이 필요합니다. 다시 로그인해주세요.',
+        error: result.error || '타임라인 목록을 불러오는데 실패했습니다.',
       };
-    } else {
-      // 기타 에러 응답 처리
-      try {
-        const errorData = JSON.parse(responseText);
-        const errorMessage = errorData.message || '타임라인 목록을 불러오는데 실패했습니다.';
-        logger.error('❌ 타임라인 목록 조회 실패', { status: response.status, error: errorMessage });
-        return {
-          success: false,
-          error: errorMessage,
-        };
-      } catch (e) {
-        logger.error('❌ 에러 응답 파싱 실패', e);
-        return {
-          success: false,
-          error: '타임라인 목록을 불러오는데 실패했습니다. 다시 시도해주세요.',
-        };
-      }
     }
   } catch (error) {
-    apiDebugger.logError(url, error);
+    apiDebugger.logError(`${API_BASE_URL}/timelines/${eventId}?page=${page}&limit=${limit}`, error);
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
@@ -640,79 +586,29 @@ export async function getTimelineList(eventId: string, page: number = 1, limit: 
 }
 
 export async function getBoardList(eventId: string, boardType: string, page: number = 1, limit: number = 10): Promise<{ success: boolean; error?: string; data?: { items: BoardItem[]; hasNext: boolean; total: number } }> {
-  const url = `${API_BASE_URL}/board/${eventId}/${boardType}?page=${page}&limit=${limit}`;
-  
   try {
-    // 네트워크 상태 체크
-    if (!apiDebugger.checkNetworkStatus()) {
-      return {
-        success: false,
-        error: '네트워크 연결을 확인해주세요.',
-      };
-    }
-
-    // 액세스 토큰 가져오기
-    const accessToken = getAccessToken();
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-    
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-
-    // 요청 로깅
-    apiDebugger.logRequest('GET', url, headers);
-
-    const response = await fetch(url, {
+    const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}?page=${page}&limit=${limit}`, {
       method: 'GET',
-      headers,
     });
 
-    const responseText = await response.text();
-    const responseHeaders = Object.fromEntries(response.headers.entries());
-    
-    // 응답 로깅
-    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
-
-    if (response.status === 200) {
-      const responseData = JSON.parse(responseText);
-      logger.info('✅ 게시글 목록 조회 성공', responseData);
+    if (result.success && result.data) {
+      logger.info('✅ 게시글 목록 조회 성공', result.data);
       return {
         success: true,
         data: {
-          items: responseData.data?.items || responseData.items || [],
-          hasNext: responseData.data?.hasNext || responseData.hasNext || false,
-          total: responseData.data?.total || responseData.total || 0
+          items: result.data.data?.items || result.data.items || [],
+          hasNext: result.data.data?.hasNext || result.data.hasNext || false,
+          total: result.data.data?.total || result.data.total || 0
         }
       };
-    } else if (response.status === 401) {
-      // 인증 오류
-      logger.error('❌ 인증 오류 (401)', { status: response.status });
+    } else {
       return {
         success: false,
-        error: '인증이 필요합니다. 다시 로그인해주세요.',
+        error: result.error || '게시글 목록을 불러오는데 실패했습니다.',
       };
-    } else {
-      // 기타 에러 응답 처리
-      try {
-        const errorData = JSON.parse(responseText);
-        const errorMessage = errorData.message || '게시글 목록을 불러오는데 실패했습니다.';
-        logger.error('❌ 게시글 목록 조회 실패', { status: response.status, error: errorMessage });
-        return {
-          success: false,
-          error: errorMessage,
-        };
-      } catch (e) {
-        logger.error('❌ 에러 응답 파싱 실패', e);
-        return {
-          success: false,
-          error: '게시글 목록을 불러오는데 실패했습니다. 다시 시도해주세요.',
-        };
-      }
     }
   } catch (error) {
-    apiDebugger.logError(url, error);
+    apiDebugger.logError(`${API_BASE_URL}/board/${eventId}/${boardType}?page=${page}&limit=${limit}`, error);
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
@@ -721,17 +617,7 @@ export async function getBoardList(eventId: string, boardType: string, page: num
 }
 
 export async function createPost(eventId: string, boardType: string, title: string | null, content: string, images: File[]): Promise<{ success: boolean; error?: string; data?: any }> {
-  const url = `${API_BASE_URL}/board/${eventId}/${boardType}`;
-  
   try {
-    // 네트워크 상태 체크
-    if (!apiDebugger.checkNetworkStatus()) {
-      return {
-        success: false,
-        error: '네트워크 연결을 확인해주세요.',
-      };
-    }
-
     // FormData 생성
     const formData = new FormData();
     
@@ -748,70 +634,69 @@ export async function createPost(eventId: string, boardType: string, title: stri
       formData.append('images', image);
     });
 
-    // 액세스 토큰 가져오기
+    // FormData를 사용하는 경우 직접 fetch 호출 (apiRequest 래퍼 사용하지 않음)
     const accessToken = getAccessToken();
-    const headers: Record<string, string> = {};
-    
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
+    if (!accessToken) {
+      return { success: false, error: 'AUTH_REQUIRED' };
     }
 
-    // 요청 로깅
-    apiDebugger.logRequest('POST', url, headers, { title, content, imageCount: images.length });
-
-    const response = await fetch(url, {
+    const response = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
       method: 'POST',
-      headers,
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        // Content-Type 헤더를 설정하지 않음 (브라우저가 자동으로 multipart/form-data 설정)
+      },
       body: formData,
     });
 
-    const responseText = await response.text();
-    const responseHeaders = Object.fromEntries(response.headers.entries());
-    
-    // 응답 로깅
-    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
+    if (response.status === 401) {
+      // 토큰 갱신 시도
+      const refreshResult = await refreshAccessToken();
+      if (refreshResult.success && refreshResult.accessToken) {
+        // 갱신된 토큰으로 재요청
+        const retryResponse = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${refreshResult.accessToken}`,
+          },
+          body: formData,
+        });
 
-    if (response.status === 201 || response.status === 200) {
-      const responseData = JSON.parse(responseText);
-      logger.info('✅ 게시글 작성 성공', responseData);
-      return {
-        success: true,
-        data: responseData.data || responseData,
-      };
-    } else if (response.status === 401) {
-      // 인증 오류
-      logger.error('❌ 인증 오류 (401)', { status: response.status });
-      return {
-        success: false,
-        error: '인증이 필요합니다. 다시 로그인해주세요.',
-      };
-    } else if (response.status === 403) {
-      // 권한 오류
-      logger.error('❌ 권한 오류 (403)', { status: response.status });
-      return {
-        success: false,
-        error: '권한이 없습니다. 다시 로그인해주세요.',
-      };
-    } else {
-      // 기타 에러 응답 처리
-      try {
-        const errorData = JSON.parse(responseText);
-        const errorMessage = errorData.message || '게시글 작성에 실패했습니다.';
-        logger.error('❌ 게시글 작성 실패', { status: response.status, error: errorMessage });
-        return {
-          success: false,
-          error: errorMessage,
-        };
-      } catch (e) {
-        logger.error('❌ 에러 응답 파싱 실패', e);
-        return {
-          success: false,
-          error: '게시글 작성에 실패했습니다. 다시 시도해주세요.',
-        };
+        if (retryResponse.ok) {
+          const data = await retryResponse.json();
+          logger.info('✅ 게시글 작성 성공 (토큰 갱신 후)', data);
+          return {
+            success: true,
+            data: data.data || data,
+          };
+        } else {
+          const errorData = await retryResponse.json();
+          return {
+            success: false,
+            error: errorData.message || '게시글 작성에 실패했습니다.',
+          };
+        }
+      } else {
+        return { success: false, error: 'AUTH_REQUIRED' };
       }
     }
+
+    if (response.ok) {
+      const data = await response.json();
+      logger.info('✅ 게시글 작성 성공', data);
+      return {
+        success: true,
+        data: data.data || data,
+      };
+    } else {
+      const errorData = await response.json();
+      return {
+        success: false,
+        error: errorData.message || '게시글 작성에 실패했습니다.',
+      };
+    }
   } catch (error) {
-    apiDebugger.logError(url, error);
+    apiDebugger.logError(`${API_BASE_URL}/board/${eventId}/${boardType}`, error);
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
@@ -820,81 +705,26 @@ export async function createPost(eventId: string, boardType: string, title: stri
 }
 
 export async function createComment(eventId: string, boardType: string, postId: string, content: string): Promise<CommentListResponse> {
-  const url = `${API_BASE_URL}/board/${eventId}/${boardType}/${postId}/comments`;
-  
   try {
-    // 네트워크 상태 체크
-    if (!apiDebugger.checkNetworkStatus()) {
-      return {
-        success: false,
-        error: '네트워크 연결을 확인해주세요.',
-      };
-    }
-
-    const accessToken = getAccessToken();
-    console.log('🔍 댓글 작성 - 토큰 확인:', accessToken ? '토큰 있음' : '토큰 없음');
-    if (!accessToken) {
-      return {
-        success: false,
-        error: '로그인이 필요합니다.',
-      };
-    }
-
-    const requestBody = { content };
-    const headers = { 
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`
-    };
-    
-    // 요청 로깅
-    apiDebugger.logRequest('POST', url, headers, requestBody);
-
-    const response = await fetch(url, {
+    const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}/comments`, {
       method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({ content }),
     });
 
-    const responseText = await response.text();
-    const responseHeaders = Object.fromEntries(response.headers.entries());
-    
-    // 응답 로깅
-    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
-
-    if (response.status === 201 || response.status === 200) {
-      const responseData = JSON.parse(responseText);
-      logger.info('✅ 댓글 작성 성공', responseData);
-      
+    if (result.success && result.data) {
+      logger.info('✅ 댓글 작성 성공', result.data);
       return {
         success: true,
-        data: responseData.data || responseData,
-      };
-    } else if (response.status === 401) {
-      logger.error('❌ 댓글 작성 실패 - 인증 오류', { status: response.status });
-      return {
-        success: false,
-        error: '로그인이 만료되었습니다. 다시 로그인해주세요.',
+        data: result.data.data || result.data,
       };
     } else {
-      // 에러 응답 처리
-      try {
-        const errorData = JSON.parse(responseText);
-        const errorMessage = errorData.message || '댓글 작성에 실패했습니다.';
-        logger.error('❌ 댓글 작성 실패', { status: response.status, error: errorMessage });
-        return {
-          success: false,
-          error: errorMessage,
-        };
-      } catch (e) {
-        logger.error('❌ 에러 응답 파싱 실패', e);
-        return {
-          success: false,
-          error: '댓글 작성에 실패했습니다. 다시 시도해주세요.',
-        };
-      }
+      return {
+        success: false,
+        error: result.error || '댓글 작성에 실패했습니다.',
+      };
     }
   } catch (error) {
-    apiDebugger.logError(url, error);
+    apiDebugger.logError(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}/comments`, error);
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
@@ -910,51 +740,21 @@ export async function participateRaffle(eventId: string, raffleId: string, data:
   phoneNumber: string;
   privacyAgreement: boolean;
 }): Promise<{ success: boolean; error?: string }> {
-  const accessToken = getAccessToken();
-  
-  if (!accessToken) {
-    return {
-      success: false,
-      error: '인증 토큰이 없습니다.',
-    };
-  }
-
-  const url = `${API_BASE_URL}/raffles/${eventId}/${raffleId}/participate`;
-  
   try {
-    const response = await fetch(url, {
+    const result = await apiRequest<any>(`${API_BASE_URL}/raffles/${eventId}/${raffleId}/participate`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(data),
     });
 
-    const responseText = await response.text();
-    
-    if (response.status === 200 || response.status === 201) {
+    if (result.success) {
       return {
         success: true,
       };
-    } else if (response.status === 401 || response.status === 403) {
+    } else {
       return {
         success: false,
-        error: '인증이 만료되었습니다. 다시 로그인해주세요.',
+        error: result.error || '래플 응모에 실패했습니다.',
       };
-    } else {
-      try {
-        const errorData = JSON.parse(responseText);
-        return {
-          success: false,
-          error: errorData.message || '래플 응모에 실패했습니다.',
-        };
-      } catch (e) {
-        return {
-          success: false,
-          error: '래플 응모에 실패했습니다.',
-        };
-      }
     }
   } catch (error) {
     return {
@@ -966,44 +766,26 @@ export async function participateRaffle(eventId: string, raffleId: string, data:
 
 // 래플 정보 및 참여 상태 확인
 export async function getRaffleInfo(eventId: string): Promise<{ success: boolean; error?: string; isParticipated?: boolean; raffle?: any }> {
-  const accessToken = getAccessToken();
-  
-  if (!accessToken) {
-    return {
-      success: false,
-      error: '인증 토큰이 없습니다.',
-    };
-  }
-
-  const url = `${API_BASE_URL}/raffles/${eventId}`;
-  
   try {
-    const response = await fetch(url, {
+    const result = await apiRequest<any>(`${API_BASE_URL}/raffles/${eventId}`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
     });
 
-    const responseText = await response.text();
-    
-    if (response.status === 200) {
-      const responseData = JSON.parse(responseText);
-      console.log('서버 응답 데이터:', responseData);
+    if (result.success && result.data) {
+      console.log('서버 응답 데이터:', result.data);
       
       // 응답 구조에 따라 isParticipated 추출
       let isParticipated = false;
       let raffleData = null;
       
-      if (responseData.data && responseData.data.items && responseData.data.items.length > 0) {
+      if (result.data.data && result.data.data.items && result.data.data.items.length > 0) {
         // 배열 형태로 오는 경우 (첫 번째 아이템 사용)
-        raffleData = responseData.data.items[0];
+        raffleData = result.data.data.items[0];
         isParticipated = raffleData.isParticipated || false;
-      } else if (responseData.isParticipated !== undefined) {
+      } else if (result.data.isParticipated !== undefined) {
         // 단일 객체로 오는 경우
-        raffleData = responseData;
-        isParticipated = responseData.isParticipated;
+        raffleData = result.data;
+        isParticipated = result.data.isParticipated;
       }
       
       console.log('추출된 isParticipated 값:', isParticipated);
@@ -1014,24 +796,11 @@ export async function getRaffleInfo(eventId: string): Promise<{ success: boolean
         isParticipated: isParticipated,
         raffle: raffleData,
       };
-    } else if (response.status === 401 || response.status === 403) {
+    } else {
       return {
         success: false,
-        error: '인증이 만료되었습니다. 다시 로그인해주세요.',
+        error: result.error || '래플 정보를 가져오는데 실패했습니다.',
       };
-    } else {
-      try {
-        const errorData = JSON.parse(responseText);
-        return {
-          success: false,
-          error: errorData.message || '래플 정보를 가져오는데 실패했습니다.',
-        };
-      } catch (e) {
-        return {
-          success: false,
-          error: '래플 정보를 가져오는데 실패했습니다.',
-        };
-      }
     }
   } catch (error) {
     return {
@@ -1060,75 +829,39 @@ export async function getVendorsSimple(eventId: string, vendorType?: string): Pr
       };
     }
 
-    const accessToken = getAccessToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-
-    // 요청 로깅
-    apiDebugger.logRequest('GET', url, headers);
-
-    const response = await fetch(url, {
+    const result = await apiRequest<any>(url, {
       method: 'GET',
-      headers,
     });
 
-    const responseText = await response.text();
-    const responseHeaders = Object.fromEntries(response.headers.entries());
-    
-    // 응답 로깅
-    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
-
-    if (response.status === 200) {
-      const responseData = JSON.parse(responseText);
-      logger.info('✅ 벤더 목록 조회 성공', responseData);
+    if (result.success && result.data) {
+      logger.info('✅ 벤더 목록 조회 성공', result.data);
       
       // 응답 데이터 구조 확인 및 안전한 배열 반환
       let vendorArray: VendorItem[] = [];
       
-      if (responseData.data && responseData.data.vendors) {
+      if (result.data.data && result.data.data.vendors) {
         // {"data": {"vendors": [...]}} 구조
-        vendorArray = Array.isArray(responseData.data.vendors) ? responseData.data.vendors : [];
-      } else if (responseData.data) {
+        vendorArray = Array.isArray(result.data.data.vendors) ? result.data.data.vendors : [];
+      } else if (result.data.data) {
         // {"data": [...]} 구조
-        vendorArray = Array.isArray(responseData.data) ? responseData.data : [];
-      } else if (Array.isArray(responseData)) {
+        vendorArray = Array.isArray(result.data.data) ? result.data.data : [];
+      } else if (Array.isArray(result.data)) {
         // [...] 구조
-        vendorArray = responseData;
-      } else if (responseData.items && Array.isArray(responseData.items)) {
+        vendorArray = result.data;
+      } else if (result.data.items && Array.isArray(result.data.items)) {
         // {"items": [...]} 구조
-        vendorArray = responseData.items;
+        vendorArray = result.data.items;
       }
       
       return {
         success: true,
         data: vendorArray,
       };
-    } else if (response.status === 401 || response.status === 403) {
-      logger.error('❌ 인증 오류', { status: response.status });
+    } else {
       return {
         success: false,
-        error: '인증이 필요합니다. 다시 로그인해주세요.',
+        error: result.error || '벤더 목록을 불러오는데 실패했습니다.',
       };
-    } else {
-      // 에러 응답 처리
-      try {
-        const errorData = JSON.parse(responseText);
-        const errorMessage = errorData.message || '벤더 목록을 불러오는데 실패했습니다.';
-        logger.error('❌ 벤더 목록 조회 실패', { status: response.status, error: errorMessage });
-        return {
-          success: false,
-          error: errorMessage,
-        };
-      } catch (e) {
-        logger.error('❌ 에러 응답 파싱 실패', e);
-        return {
-          success: false,
-          error: '벤더 목록을 불러오는데 실패했습니다. 다시 시도해주세요.',
-        };
-      }
     }
   } catch (error) {
     apiDebugger.logError(url, error);
@@ -1141,45 +874,23 @@ export async function getVendorsSimple(eventId: string, vendorType?: string): Pr
 
 // 쿠폰 사용
 export async function useCoupon(eventId: string, couponId: string, vendorId?: string): Promise<{ success: boolean; error?: string }> {
-  const url = `${API_BASE_URL}/events/${eventId}/coupons/${couponId}/use`;
-  
   try {
-    const accessToken = getAccessToken();
-    if (!accessToken) {
-      return {
-        success: false,
-        error: 'AUTH_REQUIRED',
-      };
-    }
-
-    const headers = { 
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`
-    };
-
     const body: any = {};
     if (vendorId) {
       body.vendorId = vendorId;
     }
 
-    const response = await fetch(url, {
+    const result = await apiRequest<any>(`${API_BASE_URL}/coupons/${eventId}/${couponId}/use`, {
       method: 'POST',
-      headers,
       body: JSON.stringify(body),
     });
 
-    if (response.status === 200) {
+    if (result.success) {
       return { success: true };
-    } else if (response.status === 401 || response.status === 403) {
-      return {
-        success: false,
-        error: 'AUTH_REQUIRED',
-      };
     } else {
-      const errorData = await response.json();
       return {
         success: false,
-        error: errorData.message || '쿠폰 사용에 실패했습니다.',
+        error: result.error || '쿠폰 사용에 실패했습니다.',
       };
     }
   } catch (error) {
@@ -1192,80 +903,78 @@ export async function useCoupon(eventId: string, couponId: string, vendorId?: st
 }
 
 export async function getFeaturedEvent(eventId: string): Promise<FeaturedResponse> {
-  const url = `${API_BASE_URL}/featured/${eventId}`;
-  const accessToken = getAccessToken();
-  
   try {
-    // 네트워크 상태 체크
-    if (!apiDebugger.checkNetworkStatus()) {
+    // 네트워크 상태 체크 (클라이언트 사이드에서만)
+    if (typeof window !== 'undefined' && !navigator.onLine) {
       return {
         success: false,
         error: '네트워크 연결을 확인해주세요.',
       };
     }
 
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    
-    // Access token이 있으면 헤더에 추가
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-    
-    // 요청 로깅
-    apiDebugger.logRequest('GET', url, headers, null);
-
-    const response = await fetch(url, {
+    const result = await apiRequest<any>(`${API_BASE_URL}/featured/${eventId}`, {
       method: 'GET',
-      headers,
     });
 
-    const responseText = await response.text();
-    const responseHeaders = Object.fromEntries(response.headers.entries());
-    
-    // 응답 로깅
-    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
-
-    if (response.status === 200) {
-      const responseData = JSON.parse(responseText);
-      logger.info('✅ 이벤트 상세 정보 로드 성공', responseData);
+    if (result.success && result.data) {
+      logger.info('✅ 이벤트 상세 정보 로드 성공', result.data);
       return {
         success: true,
-        featured: responseData.data || responseData,
-      };
-    } else if (response.status === 401 || response.status === 403) {
-      return {
-        success: false,
-        error: '인증이 만료되었습니다. 다시 로그인해주세요.',
-      };
-    } else if (response.status === 404) {
-      logger.warn('⚠️ 이벤트를 찾을 수 없음', { eventId });
-      return {
-        success: false,
-        error: '이벤트를 찾을 수 없습니다.',
+        featured: result.data.data || result.data,
       };
     } else {
-      // 에러 응답 처리
-      try {
-        const errorData = JSON.parse(responseText);
-        const errorMessage = errorData.message || '이벤트 정보를 가져오는데 실패했습니다.';
-        logger.error('❌ 이벤트 상세 정보 로드 실패', { status: response.status, error: errorMessage });
-        return {
-          success: false,
-          error: errorMessage,
-        };
-      } catch (e) {
-        logger.error('❌ 에러 응답 파싱 실패', e);
-        return {
-          success: false,
-          error: '이벤트 정보를 가져오는데 실패했습니다. 다시 시도해주세요.',
-        };
-      }
+      return {
+        success: false,
+        error: result.error || '이벤트 정보를 가져오는데 실패했습니다.',
+      };
     }
   } catch (error) {
-    apiDebugger.logError(url, error);
+    apiDebugger.logError(`${API_BASE_URL}/featured/${eventId}`, error);
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
     };
   }
 } 
+
+// 외치기 관련 API
+export const createShout = async (eventId: string, message: string): Promise<CreateShoutResponse> => {
+  try {
+    const result = await apiRequest<any>(`${API_BASE_URL}/shout/${eventId}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        content: message,
+      }),
+    });
+
+    if (result.success && result.data) {
+      return { success: true, data: result.data };
+    } else {
+      return { success: false, error: result.error || '외치기 생성에 실패했습니다.' };
+    }
+  } catch (error) {
+    console.error('외치기 생성 중 오류:', error);
+    return { success: false, error: '외치기 생성 중 오류가 발생했습니다.' };
+  }
+};
+
+export const getShouts = async (eventId: string): Promise<{ success: boolean; data?: ShoutItem[]; error?: string }> => {
+  try {
+    const result = await apiRequest<ShoutDisplayResponse>(`${API_BASE_URL}/shout/${eventId}/display?limit=5`, {
+      method: 'GET',
+    });
+
+    if (result.success && result.data) {
+      if (result.data.code === 200 && result.data.data) {
+        return { success: true, data: result.data.data.messages };
+      } else {
+        return { success: false, error: result.data.message || '외치기 목록을 불러오는데 실패했습니다.' };
+      }
+    } else {
+      return { success: false, error: result.error || '외치기 목록을 불러오는데 실패했습니다.' };
+    }
+  } catch (error) {
+    console.error('외치기 목록 로드 중 오류:', error);
+    return { success: false, error: '외치기 목록을 불러오는데 실패했습니다.' };
+  }
+}; 

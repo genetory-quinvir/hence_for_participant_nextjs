@@ -5,15 +5,24 @@ export interface BaseApiResponse {
 }
 
 // 사용자 정보 타입
-export interface User {
+export interface UserItem {
   id: string;
   email: string;
+  provider?: string;
+  profileImageUrl?: string | null;
   nickname?: string;
-  phone?: string;
-  profileImageUrl?: string;
+  gender?: string | null;
+  age?: number | null;
+  introduction?: string | null;
+  contact?: string | null;
+  marketingConsent?: boolean | null;
+  marketingConsentDate?: string | null;
+  role?: string;
+  eventCount?: number;
+  postCount?: number;
+  commentCount?: number;
   createdAt?: string;
   updatedAt?: string;
-  role?: string;
   [key: string]: unknown;
 }
 
@@ -27,7 +36,7 @@ export interface TokenInfo {
 
 // 로그인 응답 타입
 export interface LoginResponse extends BaseApiResponse {
-  data?: User;
+  data?: UserItem;
   access_token?: string;
   refresh_token?: string;
   error?: string;
@@ -35,7 +44,7 @@ export interface LoginResponse extends BaseApiResponse {
 
 // 회원가입 응답 타입
 export interface SignUpResponse extends BaseApiResponse {
-  data?: User;
+  data?: UserItem;
   access_token?: string;
   refresh_token?: string;
   error?: string;
@@ -43,7 +52,7 @@ export interface SignUpResponse extends BaseApiResponse {
 
 // 소셜 로그인 응답 타입
 export interface SocialLoginResponse extends BaseApiResponse {
-  data?: User;
+  data?: UserItem;
   access_token?: string;
   refresh_token?: string;
   error?: string;
@@ -58,7 +67,7 @@ export interface RefreshTokenResponse extends BaseApiResponse {
 
 // 사용자 프로필 응답 타입
 export interface UserProfileResponse extends BaseApiResponse {
-  data?: User;
+  data?: UserItem;
   error?: string;
 }
 
@@ -187,7 +196,7 @@ export interface EventItem {
   createdAt?: string;
   updatedAt?: string;
   expiredAt?: string;
-  host?: User;
+  host?: UserItem;
   contact?: ContactInfo;
   faqs?: FaqItem[];
   emergencyInfo?: EmergencyInfo;
@@ -251,7 +260,7 @@ export interface CouponItem {
 export interface ParticipantItem {
   id?: string;
   eventId?: string;
-  user?: User;
+  user?: UserItem;
   status?: string;
   joinedAt?: string;
   createdAt?: string;
@@ -384,5 +393,41 @@ export interface FeaturedItem {
 export interface FeaturedResponse {
   success: boolean;
   featured?: FeaturedItem;
+  error?: string;
+}
+
+export interface ShoutUser {
+  id: string;
+  nickname: string;
+  profileImageUrl: string | null;
+}
+
+export interface ShoutItem {
+  id: string;
+  content: string;
+  user: ShoutUser;
+  createdAt: string;
+}
+
+export interface ShoutDisplayData {
+  messages: ShoutItem[];
+  totalCount: number;
+  lastUpdated: string;
+}
+
+export interface ShoutDisplayResponse {
+  data: ShoutDisplayData;
+  code: number;
+  message: string;
+}
+
+export interface CreateShoutRequest {
+  message: string;
+  eventId: string;
+}
+
+export interface CreateShoutResponse {
+  success: boolean;
+  data?: ShoutItem;
   error?: string;
 } 

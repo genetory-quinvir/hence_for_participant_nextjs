@@ -84,7 +84,7 @@ export default function EventRaffle({ raffle, eventId }: EventRaffleProps) {
           ) : (
             // 응모하지 않은 경우
             <button
-              className="w-full px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-lg"
+              className="w-full px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-md"
               onClick={() => {
                 console.log('경품 이벤트 응모하러가기 버튼 클릭');
                 const raffleId = raffle.id || 'default-raffle';

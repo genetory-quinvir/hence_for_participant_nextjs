@@ -259,7 +259,7 @@ function BoardWriteContent() {
                 </span>
                 <button
                   onClick={handleSubmit}
-                  className={`text-md font-medium transition-all duration-200 px-6 py-3 rounded-lg ${
+                  className={`text-md font-semibold transition-all duration-200 px-6 py-3 rounded-lg ${
                     isSubmitting || !content.trim()
                       ? 'text-gray-400 cursor-not-allowed bg-gray-600'
                       : 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'

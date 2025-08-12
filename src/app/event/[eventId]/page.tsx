@@ -15,6 +15,7 @@ import EventParticipants from "@/components/event/EventParticipants";
 import EventTimeline from "@/components/event/EventTimeline";
 import EventFoodTrucks from "@/components/event/EventFoodTrucks";
 import EventCommunity from "@/components/event/EventCommunity";
+import EventShout from "@/components/event/EventShout";
 import EventHelp from "@/components/event/EventHelp";
 
 function EventPageContent() {
@@ -37,7 +38,7 @@ function EventPageContent() {
   useEffect(() => {
     const eventId = params.eventId as string;
     
-    if (eventId) {
+    if (eventId && !authLoading) {
       setIsLoading(true);
       setError(null);
       
@@ -60,7 +61,7 @@ function EventPageContent() {
           setIsLoading(false);
         });
     }
-  }, [params.eventId]);
+  }, [params.eventId, authLoading]);
 
   const handleBackClick = () => {
     router.push("/");
@@ -196,6 +197,9 @@ function EventPageContent() {
 
         {/* 이벤트 정보 섹션 */}
         <EventInfo event={featuredData.event} />
+
+        {/* 외치기 섹션 */}
+        {/* <EventShout eventId={Array.isArray(params.eventId) ? params.eventId[0] || 'default-event' : params.eventId || 'default-event'} /> */}
 
         {/* 공지사항 섹션 */}
         {featuredData.notices && (

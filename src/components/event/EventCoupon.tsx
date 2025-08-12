@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CouponItem, VendorItem } from "@/types/api";
 import { getVendorsSimple, useCoupon, getAccessToken } from "@/lib/api";
 import CouponActionSheet from "@/components/CouponActionSheet";
+import CommonAlert from "@/components/CommonAlert";
 
 interface EventCouponProps {
   coupons: CouponItem[];
@@ -19,6 +20,9 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
   const [selectedCoupon, setSelectedCoupon] = useState<CouponItem | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<VendorItem | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showExchangeAlert, setShowExchangeAlert] = useState(false);
+  const [exchangeCoupon, setExchangeCoupon] = useState<CouponItem | null>(null);
+  const [usedCoupons, setUsedCoupons] = useState<Set<string>>(new Set());
 
   // 액션시트 디버깅
   useEffect(() => {
@@ -50,24 +54,10 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
       return;
     }
 
-    // EXCHANGE 타입은 바로 사용
+    // EXCHANGE 타입은 커스텀 알림 표시
     if (coupon.discountType === 'EXCHANGE') {
-      setLoading(true);
-      try {
-        const result = await useCoupon(eventId, coupon.id!, undefined);
-        if (result.success) {
-          alert('쿠폰이 사용되었습니다!');
-        } else if (result.error === 'AUTH_REQUIRED') {
-          alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
-          router.push('/sign');
-        } else {
-          alert(result.error || '쿠폰 사용에 실패했습니다.');
-        }
-      } catch (error) {
-        alert('쿠폰 사용에 실패했습니다.');
-      } finally {
-        setLoading(false);
-      }
+      setExchangeCoupon(coupon);
+      setShowExchangeAlert(true);
       return;
     }
 
@@ -110,6 +100,44 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
     setSelectedVendor(vendor);
   };
 
+  // 쿠폰을 사용된 것으로 표시
+  const markCouponAsUsed = (couponId: string) => {
+    setUsedCoupons(prev => new Set(prev).add(couponId));
+  };
+
+  // 교환권 사용 처리
+  const handleExchangeCouponUse = async () => {
+    if (!exchangeCoupon) return;
+    
+    setShowExchangeAlert(false);
+    setLoading(true);
+    
+    try {
+      const result = await useCoupon(eventId, exchangeCoupon.id!, undefined);
+      if (result.success) {
+        alert('교환권이 사용되었습니다!');
+        markCouponAsUsed(exchangeCoupon.id!);
+      } else if (result.error === 'AUTH_REQUIRED') {
+        alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+        router.push('/sign');
+      } else {
+        alert(result.error || '교환권 사용에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('교환권 사용 중 오류:', error);
+      alert('교환권 사용 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+      setExchangeCoupon(null);
+    }
+  };
+
+  // 교환권 사용 취소 처리
+  const handleExchangeCouponCancel = () => {
+    setShowExchangeAlert(false);
+    setExchangeCoupon(null);
+  };
+
   // 선택된 벤더로 쿠폰 사용
   const handleUseSelectedVendor = async () => {
     if (!selectedCoupon || !selectedVendor) return;
@@ -121,6 +149,7 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
       const result = await useCoupon(eventId, selectedCoupon.id!, selectedVendor.id);
       if (result.success) {
         alert('쿠폰이 사용되었습니다!');
+        markCouponAsUsed(selectedCoupon.id!);
       } else if (result.error === 'AUTH_REQUIRED') {
         alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
         router.push('/sign');
@@ -128,7 +157,8 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
         alert(result.error || '쿠폰 사용에 실패했습니다.');
       }
     } catch (error) {
-      alert('쿠폰 사용에 실패했습니다.');
+      console.error('쿠폰 사용 중 오류:', error);
+      alert('쿠폰 사용 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
       setSelectedCoupon(null);
@@ -185,13 +215,13 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
                  {/* 쿠폰 사용 버튼 */}
                  {(() => {
                    const isActive = coupon.status?.toLowerCase() === 'active';
-                   const isNotUsed = !coupon.isUsed;
+                   const isNotUsed = !coupon.isUsed && !usedCoupons.has(coupon.id!);
                    const isNotLoading = !loading;
                    const canUse = isActive && isNotUsed && isNotLoading;
                    
                    return (
                      <button
-                       className={`w-full py-3 mt-4 px-4 rounded-lg text-sm font-bold transition-colors ${
+                       className={`w-full py-3 mt-4 px-4 rounded-lg text-md font-semibold transition-colors ${
                          canUse
                            ? 'bg-purple-600 text-white hover:bg-purple-700'
                            : 'bg-gray-600 text-gray-400 cursor-not-allowed'
@@ -202,8 +232,8 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
                        }}
                      >
                        {loading ? '처리 중...' : 
-                        coupon.isUsed ? '이미 사용됨' :
-                        coupon.status?.toLowerCase() === 'active' ? '쿠폰 사용하기' : '사용 불가'}
+                        coupon.isUsed || usedCoupons.has(coupon.id!) ? '이미 사용한 쿠폰' :
+                        coupon.status?.toLowerCase() === 'active' ? '쿠폰 사용하기' : '사용 불가능한 쿠폰'}
                      </button>
                    );
                  })()}
@@ -234,7 +264,18 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
           };
           return item;
         })}
-      />
-    </section>
-  );
-} 
+              />
+
+        {/* 교환권 사용 커스텀 알림 */}
+        <CommonAlert
+          isOpen={showExchangeAlert}
+          title={`${exchangeCoupon?.title} 교환권을 사용하시겠습니까?`}
+          message={`한 번 사용하면 취소할 수 없습니다.`}
+          confirmText="교환권 사용"
+          cancelText="취소"
+          onConfirm={handleExchangeCouponUse}
+          onCancel={handleExchangeCouponCancel}
+        />
+      </section>
+    );
+  } 

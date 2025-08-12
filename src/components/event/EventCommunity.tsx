@@ -157,7 +157,7 @@ export default function EventCommunity({
             console.log('🔗 소식 올리기 클릭:', url);
             router.push(url);
           }}
-          className="w-full py-4 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+          className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-md"
         >
           <span>소식 올리기</span>
         </button>

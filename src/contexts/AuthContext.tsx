@@ -2,16 +2,11 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { getAccessToken, getRefreshToken, removeTokens } from '@/lib/api';
+import { UserItem } from '@/types/api';
 import { logger } from '@/utils/logger';
 
-// 사용자 정보 타입
-interface User {
-  id: string;
-  name?: string;
-  nickname?: string;
-  email: string;
-  // 필요한 다른 사용자 정보들
-}
+// 사용자 정보 타입 (AuthContext용)
+type User = UserItem;
 
 // 인증 상태 타입
 interface AuthState {
@@ -152,26 +147,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [logout]);
 
-  // 토큰 유효성 검증 (실제 구현에서는 서버 API 호출)
+  // 토큰 유효성 검증 (apiRequest 래퍼 사용)
   const validateToken = async (token: string): Promise<boolean> => {
     try {
-      // 실제로는 서버에 토큰 유효성 검증 요청
-      // 예: GET /auth/me 또는 /auth/validate
+      // apiRequest 래퍼를 사용하여 자동 토큰 갱신 지원
+      const { apiRequest } = await import('@/lib/api');
       const API_BASE_URL = 'https://api-participant.hence.events';
-      console.log('🔍 API URL 확인:', API_BASE_URL);
-      console.log('🔍 환경 변수 확인:', process.env.NEXT_PUBLIC_API_URL);
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      
+      const result = await apiRequest<any>(`${API_BASE_URL}/auth/me`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      if (result.success && result.data) {
         // 사용자 정보 저장
-        storeUser(data.data || data.user);
+        storeUser(result.data.data || result.data.user || result.data);
         return true;
       } else {
         return false;
@@ -186,6 +175,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const storeUser = (user: User) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('user', JSON.stringify(user));
+      logger.info('💾 사용자 정보 저장됨', { 
+        userId: user.id, 
+        eventCount: user.eventCount, 
+        postCount: user.postCount, 
+        commentCount: user.commentCount 
+      });
     }
   };
 
@@ -195,7 +190,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userStr = localStorage.getItem('user');
       if (userStr) {
         try {
-          return JSON.parse(userStr);
+          const user = JSON.parse(userStr);
+          logger.info('📖 저장된 사용자 정보 로드됨', { 
+            userId: user.id, 
+            eventCount: user.eventCount, 
+            postCount: user.postCount, 
+            commentCount: user.commentCount 
+          });
+          return user;
         } catch (error) {
           logger.error('사용자 정보 파싱 실패', error);
           return null;

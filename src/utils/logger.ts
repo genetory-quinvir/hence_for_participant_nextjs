@@ -97,6 +97,10 @@ export const apiDebugger = {
   },
 
   checkNetworkStatus: (): boolean => {
-    return typeof window !== 'undefined' && navigator.onLine;
+    // SSR 환경에서는 항상 true 반환
+    if (typeof window === 'undefined') {
+      return true;
+    }
+    return navigator.onLine;
   },
 }; 

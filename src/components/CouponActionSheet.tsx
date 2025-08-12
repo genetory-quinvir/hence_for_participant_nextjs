@@ -138,6 +138,22 @@ export default function CouponActionSheet({
             </div>
           )}
           
+          {/* 선택된 쿠폰 안내 메시지 */}
+          {selectedItem && (
+            <div className="mb-4 p-4 rounded-lg" style={{backgroundColor: 'rgba(255,255,255,0.05)'}}>
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                <span className="text-purple-600 text-sm font-medium">선택된 쿠폰</span>
+              </div>
+              <div className="text-white font-semibold text-md">
+                {selectedItem.label}
+              </div>
+              <div className="text-gray-400 text-sm mt-1">
+                아래에서 사용할 벤더를 선택하세요
+              </div>
+            </div>
+          )}
+          
           {/* 액션 아이템들 */}
           <div className="space-y-2">
             {items && items.length > 0 ? (
