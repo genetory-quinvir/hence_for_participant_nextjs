@@ -14,7 +14,10 @@ import {
   CouponItem,
   CreateShoutResponse,
   ShoutItem,
-  ShoutDisplayResponse
+  ShoutDisplayResponse,
+  UserItem,
+  EventItem,
+  CommentItem
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
@@ -243,7 +246,19 @@ export async function apiRequest<T>(
 ): Promise<{ success: boolean; data?: T; error?: string; status?: number }> {
   let accessToken = getAccessToken();
   
+  // auth/me 호출인 경우 특별 로깅
+  const isAuthMe = url.includes('/auth/me');
+  if (isAuthMe) {
+    console.log('🔑 auth/me 호출 - Access Token 확인:', { 
+      hasToken: !!accessToken, 
+      tokenLength: accessToken?.length || 0 
+    });
+  }
+  
   if (!accessToken) {
+    if (isAuthMe) {
+      console.error('❌ auth/me 호출 실패: Access Token 없음');
+    }
     return { success: false, error: 'AUTH_REQUIRED' };
   }
 
@@ -286,23 +301,41 @@ export async function apiRequest<T>(
 
   // 401 에러가 발생하면 토큰 갱신 시도
   if (response.status === 401) {
-    console.log('🔄 Access Token 만료, 토큰 갱신 시도...');
+    if (isAuthMe) {
+      console.log('🔄 auth/me - Access Token 만료, 토큰 갱신 시도...');
+    } else {
+      console.log('🔄 Access Token 만료, 토큰 갱신 시도...');
+    }
     const refreshResult = await refreshAccessToken();
     
     if (refreshResult.success && refreshResult.accessToken) {
-      console.log('✅ 토큰 갱신 성공, 재요청 시도...');
+      if (isAuthMe) {
+        console.log('✅ auth/me - 토큰 갱신 성공, 재요청 시도...');
+      } else {
+        console.log('✅ 토큰 갱신 성공, 재요청 시도...');
+      }
       accessToken = refreshResult.accessToken;
       response = await makeRequest(accessToken);
     } else {
-      console.log('❌ 토큰 갱신 실패:', refreshResult.error);
+      if (isAuthMe) {
+        console.log('❌ auth/me - 토큰 갱신 실패:', refreshResult.error);
+      } else {
+        console.log('❌ 토큰 갱신 실패:', refreshResult.error);
+      }
       return { success: false, error: 'AUTH_REQUIRED' };
     }
   }
 
   // 최종 응답 처리
   if (response.status === 200) {
+    if (isAuthMe) {
+      console.log('✅ auth/me - 최종 응답 성공:', response.data);
+    }
     return { success: true, data: response.data };
   } else {
+    if (isAuthMe) {
+      console.error('❌ auth/me - 최종 응답 실패:', response.error);
+    }
     return { success: false, error: response.error || 'API 요청에 실패했습니다.' };
   }
 }
@@ -585,20 +618,26 @@ export async function getTimelineList(eventId: string, page: number = 1, limit: 
   }
 }
 
-export async function getBoardList(eventId: string, boardType: string, page: number = 1, limit: number = 10): Promise<{ success: boolean; error?: string; data?: { items: BoardItem[]; hasNext: boolean; total: number } }> {
+export async function getBoardList(eventId: string, boardType: string, cursor?: string | null, limit: number = 10): Promise<{ success: boolean; error?: string; data?: { items: BoardItem[]; hasNext: boolean; total: number; nextCursor?: string | null } }> {
   try {
-    const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}?page=${page}&limit=${limit}`, {
+    const url = cursor 
+      ? `${API_BASE_URL}/board/${eventId}/${boardType}?cursor=${cursor}&limit=${limit}`
+      : `${API_BASE_URL}/board/${eventId}/${boardType}?limit=${limit}`;
+      
+    const result = await apiRequest<any>(url, {
       method: 'GET',
     });
 
     if (result.success && result.data) {
       logger.info('✅ 게시글 목록 조회 성공', result.data);
+      const responseData = result.data.data || result.data;
       return {
         success: true,
         data: {
-          items: result.data.data?.items || result.data.items || [],
-          hasNext: result.data.data?.hasNext || result.data.hasNext || false,
-          total: result.data.data?.total || result.data.total || 0
+          items: responseData.items || [],
+          hasNext: responseData.pagination?.hasNext || responseData.hasNext || false,
+          total: responseData.pagination?.totalCount || responseData.total || 0,
+          nextCursor: responseData.pagination?.nextCursor || null
         }
       };
     } else {
@@ -608,7 +647,10 @@ export async function getBoardList(eventId: string, boardType: string, page: num
       };
     }
   } catch (error) {
-    apiDebugger.logError(`${API_BASE_URL}/board/${eventId}/${boardType}?page=${page}&limit=${limit}`, error);
+    const url = cursor 
+      ? `${API_BASE_URL}/board/${eventId}/${boardType}?cursor=${cursor}&limit=${limit}`
+      : `${API_BASE_URL}/board/${eventId}/${boardType}?limit=${limit}`;
+    apiDebugger.logError(url, error);
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
@@ -937,6 +979,71 @@ export async function getFeaturedEvent(eventId: string): Promise<FeaturedRespons
   }
 } 
 
+// 사용자 프로필 정보 가져오기 API (auth/me 사용)
+export async function getUserProfile(): Promise<{ success: boolean; data?: UserItem; error?: string }> {
+  const url = `${API_BASE_URL}/auth/me`;
+  console.log('🔄 getUserProfile 시작:', { url });
+  
+  try {
+    // 리프레시 토큰 확인
+    const refreshToken = getRefreshToken();
+    const accessToken = getAccessToken();
+    
+    console.log('🔑 토큰 상태 확인:', {
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
+      accessTokenLength: accessToken?.length || 0,
+      refreshTokenLength: refreshToken?.length || 0
+    });
+    
+    if (!accessToken) {
+      console.error('❌ Access Token이 없습니다.');
+      return {
+        success: false,
+        error: 'AUTH_REQUIRED',
+      };
+    }
+    
+    if (!refreshToken) {
+      console.error('❌ Refresh Token이 없습니다.');
+      return {
+        success: false,
+        error: 'AUTH_REQUIRED',
+      };
+    }
+    
+    console.log('📡 auth/me API 호출 중...');
+    const result = await apiRequest<any>(url, {
+      method: 'GET',
+    });
+    
+    console.log('📡 auth/me API 응답:', result);
+
+    if (result.success && result.data) {
+      const userData = result.data.data || result.data.user || result.data;
+      console.log('✅ auth/me 사용자 데이터 추출:', userData);
+      logger.info('✅ 사용자 프로필 정보 로드 성공', result.data);
+      return {
+        success: true,
+        data: userData,
+      };
+    } else {
+      console.error('❌ auth/me API 실패:', result.error);
+      return {
+        success: false,
+        error: result.error || '사용자 프로필 정보를 가져오는데 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('💥 auth/me API 호출 중 예외 발생:', error);
+    logger.error('사용자 프로필 정보 로드 중 오류:', error);
+    return {
+      success: false,
+      error: '사용자 프로필 정보를 불러오는데 실패했습니다.',
+    };
+  }
+}
+
 // 외치기 관련 API
 export const createShout = async (eventId: string, message: string): Promise<CreateShoutResponse> => {
   try {
@@ -976,5 +1083,134 @@ export const getShouts = async (eventId: string): Promise<{ success: boolean; da
   } catch (error) {
     console.error('외치기 목록 로드 중 오류:', error);
     return { success: false, error: '외치기 목록을 불러오는데 실패했습니다.' };
+  }
+};
+
+// 사용자 이벤트 목록 가져오기
+export const getUserEvents = async (userId: string, cursor?: string | null, limit: number = 10): Promise<{ success: boolean; data?: EventItem[]; error?: string; hasNext?: boolean; total?: number; nextCursor?: string | null }> => {
+  try {
+    const url = cursor 
+      ? `${API_BASE_URL}/events/user/${userId}?cursor=${cursor}&limit=${limit}`
+      : `${API_BASE_URL}/events/user/${userId}?limit=${limit}`;
+      
+    const result = await apiRequest<any>(url, {
+      method: 'GET',
+    });
+
+    if (result.success && result.data) {
+      logger.info('✅ 사용자 이벤트 목록 로드 성공', result.data);
+      
+      // API 응답 구조에 맞게 데이터 추출
+      const responseData = result.data.data || result.data;
+      const eventsData = responseData.items || responseData;
+      
+      return {
+        success: true,
+        data: Array.isArray(eventsData) ? eventsData : [],
+        hasNext: responseData.pagination?.hasNext || false,
+        total: responseData.pagination?.totalCount || 0,
+        nextCursor: responseData.pagination?.nextCursor || null,
+      };
+    } else {
+      return {
+        success: false,
+        error: result.error || '사용자 이벤트 목록을 불러오는데 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    const url = cursor 
+      ? `${API_BASE_URL}/events/user/${userId}?cursor=${cursor}&limit=${limit}`
+      : `${API_BASE_URL}/events/user/${userId}?limit=${limit}`;
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+};
+
+// 사용자 게시글 목록 가져오기
+export const getUserPosts = async (userId: string, cursor?: string | null, limit: number = 10): Promise<{ success: boolean; data?: BoardItem[]; error?: string; hasNext?: boolean; total?: number; nextCursor?: string | null }> => {
+  try {
+    const url = cursor 
+      ? `${API_BASE_URL}/board/user/${userId}?cursor=${cursor}&limit=${limit}`
+      : `${API_BASE_URL}/board/user/${userId}?limit=${limit}`;
+      
+    const result = await apiRequest<any>(url, {
+      method: 'GET',
+    });
+
+    if (result.success && result.data) {
+      logger.info('✅ 사용자 게시글 목록 로드 성공', result.data);
+      
+      // API 응답 구조에 맞게 데이터 추출
+      const responseData = result.data.data || result.data;
+      const postsData = responseData.items || responseData;
+      
+      return {
+        success: true,
+        data: Array.isArray(postsData) ? postsData : [],
+        hasNext: responseData.pagination?.hasNext || false,
+        total: responseData.pagination?.totalCount || 0,
+        nextCursor: responseData.pagination?.nextCursor || null,
+      };
+    } else {
+      return {
+        success: false,
+        error: result.error || '사용자 게시글 목록을 불러오는데 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    const url = cursor 
+      ? `${API_BASE_URL}/board/user/${userId}?cursor=${cursor}&limit=${limit}`
+      : `${API_BASE_URL}/board/user/${userId}?limit=${limit}`;
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+};
+
+// 사용자 댓글 목록 가져오기
+export const getUserComments = async (userId: string, cursor?: string | null, limit: number = 10): Promise<{ success: boolean; data?: CommentItem[]; error?: string; hasNext?: boolean; total?: number; nextCursor?: string | null }> => {
+  try {
+    const url = cursor 
+      ? `${API_BASE_URL}/board/comments/user/${userId}?cursor=${cursor}&limit=${limit}`
+      : `${API_BASE_URL}/board/comments/user/${userId}?limit=${limit}`;
+      
+    const result = await apiRequest<any>(url, {
+      method: 'GET',
+    });
+
+    if (result.success && result.data) {
+      logger.info('✅ 사용자 댓글 목록 로드 성공', result.data);
+      
+      // API 응답 구조에 맞게 데이터 추출
+      const responseData = result.data.data || result.data;
+      const commentsData = responseData.items || responseData;
+      
+      return {
+        success: true,
+        data: Array.isArray(commentsData) ? commentsData : [],
+        hasNext: responseData.pagination?.hasNext || false,
+        total: responseData.pagination?.totalCount || 0,
+        nextCursor: responseData.pagination?.nextCursor || null,
+      };
+    } else {
+      return {
+        success: false,
+        error: result.error || '사용자 댓글 목록을 불러오는데 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    const url = cursor 
+      ? `${API_BASE_URL}/board/comments/user/${userId}?cursor=${cursor}&limit=${limit}`
+      : `${API_BASE_URL}/board/comments/user/${userId}?limit=${limit}`;
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
   }
 }; 

@@ -210,6 +210,8 @@ export default function QRPage() {
         const eventId = result.event.id;
         if (eventId) {
           console.log('이벤트 페이지로 이동:', `/event/${eventId}`);
+          // QR 페이지에서 온 것을 표시
+          sessionStorage.setItem('previousPage', '/qr');
           // router.replace와 window.location 모두 시도
           router.replace(`/event/${eventId}`);
           setTimeout(() => {
@@ -217,6 +219,8 @@ export default function QRPage() {
           }, 100);
         } else {
           console.log('이벤트 페이지로 이동:', `/event?code=${qrCode.trim()}`);
+          // QR 페이지에서 온 것을 표시
+          sessionStorage.setItem('previousPage', '/qr');
           // router.replace와 window.location 모두 시도
           router.replace(`/event?code=${qrCode.trim()}`);
           setTimeout(() => {

@@ -113,16 +113,35 @@ function BoardDetailContent() {
 
 
   const handleBackClick = () => {
-    // URL 파라미터에서 이전 페이지 정보 확인
-    const fromEvent = searchParams.get('fromEvent');
-    const eventId = searchParams.get('eventId') || 'default-event';
+    // sessionStorage에서 이전 페이지 정보 확인
+    const previousPage = sessionStorage.getItem('previousPage');
     
-    if (fromEvent === 'true') {
-      // 이벤트 페이지에서 온 경우 이벤트 페이지로 돌아가기
-      router.push(`/event/${eventId}`);
+    if (previousPage) {
+      // 이전 페이지가 프로필인 경우
+      if (previousPage.startsWith('/profile')) {
+        router.push('/profile');
+      } else if (previousPage === '/qr') {
+        // QR 페이지에서 온 경우 메인 페이지로
+        router.push('/');
+      } else if (previousPage === '/') {
+        // 이전 페이지가 메인 페이지인 경우
+        router.push('/');
+      } else {
+        // 다른 페이지인 경우 해당 페이지로 이동
+        router.push(previousPage);
+      }
     } else {
-      // board list에서 온 경우 board list로 돌아가기
-      router.push(`/board/list?type=${postType}&eventId=${eventId}`);
+      // 이전 페이지 정보가 없으면 기존 로직 사용
+      const fromEvent = searchParams.get('fromEvent');
+      const eventId = searchParams.get('eventId') || 'default-event';
+      
+      if (fromEvent === 'true') {
+        // 이벤트 페이지에서 온 경우 이벤트 페이지로 돌아가기
+        router.push(`/event/${eventId}`);
+      } else {
+        // board list에서 온 경우 board list로 돌아가기
+        router.push(`/board/list?type=${postType}&eventId=${eventId}`);
+      }
     }
   };
 

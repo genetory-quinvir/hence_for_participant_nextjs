@@ -64,7 +64,27 @@ function EventPageContent() {
   }, [params.eventId, authLoading]);
 
   const handleBackClick = () => {
-    router.push("/");
+    // sessionStorage에서 이전 페이지 정보 확인
+    const previousPage = sessionStorage.getItem('previousPage');
+    
+    if (previousPage) {
+      // 이전 페이지가 프로필인 경우
+      if (previousPage.startsWith('/profile')) {
+        router.push('/profile');
+      } else if (previousPage === '/qr') {
+        // QR 페이지에서 온 경우 메인 페이지로
+        router.push('/');
+      } else if (previousPage === '/') {
+        // 이전 페이지가 메인 페이지인 경우
+        router.push('/');
+      } else {
+        // 다른 페이지인 경우 해당 페이지로 이동
+        router.push(previousPage);
+      }
+    } else {
+      // 이전 페이지 정보가 없으면 메인 페이지로
+      router.push('/');
+    }
   };
 
   const handleProfileClick = () => {

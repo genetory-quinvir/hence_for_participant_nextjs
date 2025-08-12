@@ -1,24 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
-import { UserItem } from "@/types/api";
+import { UserItem, EventItem, BoardItem, CommentItem } from "@/types/api";
+import { getUserProfile, getUserEvents, getUserPosts, getUserComments } from "@/lib/api";
+import PostHeader from "@/components/common/PostHeader";
+import Image from "next/image";
 
 // 탭 타입 정의
-type TabType = 'events' | 'posts' | 'comments' | 'likes' | 'bookmarks';
+type TabType = 'events' | 'posts' | 'comments';
 
-// 이벤트 아이템 타입
-interface EventItem {
-  id: string;
-  title: string;
-  description: string;
-  createdAt: string;
-  status: 'active' | 'inactive';
-}
-
-// 게시글 아이템 타입
+// 로컬 PostItem 타입 (BoardItem과 구분)
 interface PostItem {
   id: string;
   title?: string;
@@ -30,168 +24,304 @@ interface PostItem {
   commentCount: number;
 }
 
-// 댓글 아이템 타입
-interface CommentItem {
-  id: string;
-  content: string;
-  postId: string;
-  postTitle?: string;
-  boardType: string;
-  eventId: string;
-  createdAt: string;
-}
-
 function ProfilePageContent() {
   const router = useRouter();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
+  const tabContainerRef = useRef<HTMLDivElement>(null);
+  
+  // 모든 useState 훅들을 최상단에 배치
   const [activeTab, setActiveTab] = useState<TabType>('events');
+  const [profileData, setProfileData] = useState<UserItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [userEvents, setUserEvents] = useState<EventItem[]>([]);
+  const [userPosts, setUserPosts] = useState<BoardItem[]>([]);
+  const [userComments, setUserComments] = useState<CommentItem[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  
+  // 무한 스크롤 관련 상태
+  const [eventsCursor, setEventsCursor] = useState<string | null>(null);
+  const [postsCursor, setPostsCursor] = useState<string | null>(null);
+  const [commentsCursor, setCommentsCursor] = useState<string | null>(null);
+  const [eventsHasNext, setEventsHasNext] = useState(true);
+  const [postsHasNext, setPostsHasNext] = useState(true);
+  const [commentsHasNext, setCommentsHasNext] = useState(true);
+  const [eventsLoadingMore, setEventsLoadingMore] = useState(false);
+  const [postsLoadingMore, setPostsLoadingMore] = useState(false);
+  const [commentsLoadingMore, setCommentsLoadingMore] = useState(false);
   
   // UserItem 타입으로 캐스팅
   const userData = user as UserItem | null;
-  
-  // 디버깅: 사용자 데이터 확인
-  console.log('🔍 Profile Page - User Data:', userData);
-  console.log('🔍 Profile Page - User Stats:', {
-    eventCount: userData?.eventCount,
-    postCount: userData?.postCount,
-    commentCount: userData?.commentCount
-  });
 
-  // 인증되지 않은 경우 메인 페이지로 리다이렉트
+  // 사용자 프로필 정보 가져오기
   useEffect(() => {
-    if (!isAuthenticated || !user) {
-      router.push("/");
-    }
-  }, [isAuthenticated, user, router]);
+    const loadUserProfile = async () => {
+      if (!isAuthenticated || !user) return;
+      
+      try {
+        setIsLoading(true);
+        const result = await getUserProfile();
+        
+        if (result.success && result.data) {
+          setProfileData(result.data);
+        } else if (result.error === 'AUTH_REQUIRED') {
+          logout();
+        }
+      } catch (error) {
+        console.error('프로필 로드 실패:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // 인증되지 않은 경우 로딩 표시
-  if (!isAuthenticated || !user) {
+    loadUserProfile();
+  }, [isAuthenticated, user, logout]);
+
+  // 사용자 활동 데이터 가져오기 (초기 로드)
+  useEffect(() => {
+    const loadUserActivity = async () => {
+      const userId = profileData?.id || userData?.id;
+      if (!userId) return;
+
+      // 이벤트 데이터 로드
+      setEventsLoading(true);
+      setEventsCursor(null);
+      setEventsHasNext(true);
+      try {
+        const eventsResult = await getUserEvents(userId, null, 10);
+        if (eventsResult.success && eventsResult.data) {
+          setUserEvents(eventsResult.data);
+          setEventsHasNext(eventsResult.hasNext || false);
+          setEventsCursor(eventsResult.nextCursor || null);
+        }
+      } catch (error) {
+        console.error('이벤트 로드 실패:', error);
+      } finally {
+        setEventsLoading(false);
+      }
+
+      // 게시글 데이터 로드
+      setPostsLoading(true);
+      setPostsCursor(null);
+      setPostsHasNext(true);
+      try {
+        const postsResult = await getUserPosts(userId, null, 10);
+        if (postsResult.success && postsResult.data) {
+          setUserPosts(postsResult.data);
+          setPostsHasNext(postsResult.hasNext || false);
+          setPostsCursor(postsResult.nextCursor || null);
+        }
+      } catch (error) {
+        console.error('게시글 로드 실패:', error);
+      } finally {
+        setPostsLoading(false);
+      }
+
+      // 댓글 데이터 로드
+      setCommentsLoading(true);
+      setCommentsCursor(null);
+      setCommentsHasNext(true);
+      try {
+        const commentsResult = await getUserComments(userId, null, 10);
+        if (commentsResult.success && commentsResult.data) {
+          setUserComments(commentsResult.data);
+          setCommentsHasNext(commentsResult.hasNext || false);
+          setCommentsCursor(commentsResult.nextCursor || null);
+        }
+      } catch (error) {
+        console.error('댓글 로드 실패:', error);
+      } finally {
+        setCommentsLoading(false);
+      }
+    };
+
+    loadUserActivity();
+  }, [profileData?.id, userData?.id]);
+
+  // 무한 스크롤 함수들
+  const loadMoreEvents = async () => {
+    const userId = profileData?.id || userData?.id;
+    if (!userId || eventsLoadingMore || !eventsHasNext || !eventsCursor) return;
+
+    try {
+      setEventsLoadingMore(true);
+      
+      const result = await getUserEvents(userId, eventsCursor, 10);
+      
+      if (result.success && result.data) {
+        setUserEvents(prev => {
+          // 중복 제거를 위해 기존 ID들과 비교
+          const existingIds = new Set(prev.map(item => item.id));
+          const newItems = result.data!.filter(item => !existingIds.has(item.id!));
+          return [...prev, ...newItems];
+        });
+        setEventsHasNext(result.hasNext || false);
+        setEventsCursor(result.nextCursor || null);
+      }
+    } catch (error) {
+      console.error('추가 이벤트 로드 실패:', error);
+    } finally {
+      setEventsLoadingMore(false);
+    }
+  };
+
+  const loadMorePosts = async () => {
+    const userId = profileData?.id || userData?.id;
+    if (!userId || postsLoadingMore || !postsHasNext || !postsCursor) return;
+
+    try {
+      setPostsLoadingMore(true);
+      
+      const result = await getUserPosts(userId, postsCursor, 10);
+      
+      if (result.success && result.data) {
+        setUserPosts(prev => {
+          // 중복 제거를 위해 기존 ID들과 비교
+          const existingIds = new Set(prev.map(item => item.id));
+          const newItems = result.data!.filter(item => !existingIds.has(item.id));
+          return [...prev, ...newItems];
+        });
+        setPostsHasNext(result.hasNext || false);
+        setPostsCursor(result.nextCursor || null);
+      }
+    } catch (error) {
+      console.error('추가 게시글 로드 실패:', error);
+    } finally {
+      setPostsLoadingMore(false);
+    }
+  };
+
+  const loadMoreComments = async () => {
+    const userId = profileData?.id || userData?.id;
+    if (!userId || commentsLoadingMore || !commentsHasNext || !commentsCursor) return;
+
+    try {
+      setCommentsLoadingMore(true);
+      
+      const result = await getUserComments(userId, commentsCursor, 10);
+      
+      if (result.success && result.data) {
+        setUserComments(prev => {
+          // 중복 제거를 위해 기존 ID들과 비교
+          const existingIds = new Set(prev.map(item => item.id));
+          const newItems = result.data!.filter(item => !existingIds.has(item.id));
+          return [...prev, ...newItems];
+        });
+        setCommentsHasNext(result.hasNext || false);
+        setCommentsCursor(result.nextCursor || null);
+      }
+    } catch (error) {
+      console.error('추가 댓글 로드 실패:', error);
+    } finally {
+      setCommentsLoadingMore(false);
+    }
+  };
+
+  // 스크롤 감지
+  const handleScroll = () => {
+    const scrollContainer = document.querySelector('.scrollbar-hide');
+    if (!scrollContainer) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainer as HTMLElement;
+    
+    if (scrollTop + clientHeight >= scrollHeight - 100) {
+      switch (activeTab) {
+        case 'events':
+          loadMoreEvents();
+          break;
+        case 'posts':
+          loadMorePosts();
+          break;
+        case 'comments':
+          loadMoreComments();
+          break;
+      }
+    }
+  };
+
+  // 스크롤 이벤트 리스너
+  useEffect(() => {
+    const scrollContainer = document.querySelector('.scrollbar-hide');
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
+      return () => scrollContainer.removeEventListener('scroll', handleScroll);
+    }
+  }, [activeTab, eventsCursor, postsCursor, commentsCursor, eventsHasNext, postsHasNext, commentsHasNext]);
+
+  // 인증 상태 확인 및 리다이렉트
+  useEffect(() => {
+    if (!authLoading && (!isAuthenticated || !user)) {
+      router.replace("/");
+    }
+  }, [isAuthenticated, user, router, authLoading]);
+
+  // 이벤트 핸들러들
+  const handleBackClick = () => {
+    router.replace("/");
+  };
+
+  const handleLogout = () => {
+    // 이전 페이지 정보 저장
+    sessionStorage.setItem('previousPage', '/profile');
+    router.push("/settings");
+  };
+
+  const handleEditProfile = () => {
+    router.push("/profile/edit");
+  };
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    scrollActiveTabToCenter(tab);
+  };
+
+  // 탭 스크롤 함수
+  const scrollActiveTabToCenter = (tab: TabType) => {
+    setTimeout(() => {
+      try {
+        const tabContainer = tabContainerRef.current;
+        if (!tabContainer) return;
+
+        const activeTabElement = tabContainer.querySelector(`[data-tab="${tab}"]`) as HTMLElement;
+        if (!activeTabElement) return;
+
+        const containerWidth = tabContainer.clientWidth;
+        const tabLeft = activeTabElement.offsetLeft;
+        const tabWidth = activeTabElement.clientWidth;
+        const scrollLeft = tabLeft - (containerWidth / 2) + (tabWidth / 2);
+        
+        tabContainer.scrollTo({
+          left: scrollLeft,
+          behavior: 'smooth'
+        });
+      } catch (error) {
+        console.error('탭 스크롤 오류:', error);
+      }
+    }, 100);
+  };
+
+  // 사용자 데이터
+  const finalUserData = profileData || userData;
+  const userStats = {
+    eventCount: finalUserData?.eventCount || 0,
+    postCount: finalUserData?.postCount || 0,
+    commentCount: finalUserData?.commentCount || 0
+  };
+
+  // 로딩 상태
+  if (authLoading || !isAuthenticated || !user) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-sm" style={{ opacity: 0.7 }}>메인 페이지로 이동 중...</p>
+          <p className="text-sm" style={{ opacity: 0.7 }}>
+            {authLoading ? '인증 확인 중...' : '메인 페이지로 이동 중...'}
+          </p>
         </div>
       </div>
     );
   }
-
-  const handleBackClick = () => {
-    router.back();
-  };
-
-  const handleLogout = () => {
-    if (confirm("로그아웃하시겠습니까?")) {
-      router.push("/");
-      logout();
-    }
-  };
-
-  const handleEditProfile = () => {
-    console.log("프로필 수정 클릭");
-    router.push("/profile/edit");
-  };
-
-  // 탭 변경 핸들러
-  const handleTabChange = (tab: TabType) => {
-    setActiveTab(tab);
-  };
-
-  // 실제 사용자 데이터 사용
-  const userEvents: EventItem[] = Array.from({ length: userData?.eventCount || 0 }, (_, index) => ({
-    id: `${index + 1}`,
-    title: '서울과학기술대학교 횃불제',
-    description: '서울과학기술대학교의 대표 축제인 횃불제는 동아리 연합회를 중심으로 매년 봄에 개최되는 대규모 축제입니다. 다양한 공연과 부스 활동을 통해 학생들의 창의성과 협력을 기를 수 있는 기회를 제공합니다.',
-    createdAt: '2024-04-10',
-    status: 'active'
-  }));
-
-  const userPosts: PostItem[] = Array.from({ length: userData?.postCount || 0 }, (_, index) => ({
-    id: `${index + 1}`,
-    content: '오늘 축제 정말 재미있었어요! 다음에도 참여하고 싶습니다.',
-    boardType: 'free',
-    eventId: '1',
-    createdAt: '2024-06-15T10:30:00Z',
-    likeCount: 5,
-    commentCount: 3
-  }));
-
-  const userComments: CommentItem[] = Array.from({ length: userData?.commentCount || 0 }, (_, index) => ({
-    id: `${index + 1}`,
-    content: '정말 좋은 글이네요!',
-    postId: '1',
-    postTitle: '축제 후기',
-    boardType: 'free',
-    eventId: '1',
-    createdAt: '2024-06-15T11:00:00Z'
-  }));
-
-  // 사용자 통계 정보
-  const userStats = {
-    eventCount: userData?.eventCount || 0,
-    postCount: userData?.postCount || 0,
-    commentCount: userData?.commentCount || 0
-  };
-
-  // 좋아요한 글 아이템 타입
-  interface LikeItem {
-    id: string;
-    title?: string;
-    content: string;
-    boardType: string;
-    eventId: string;
-    createdAt: string;
-    likeCount: number;
-    commentCount: number;
-  }
-
-  // 북마크 아이템 타입
-  interface BookmarkItem {
-    id: string;
-    title?: string;
-    content: string;
-    boardType: string;
-    eventId: string;
-    createdAt: string;
-    likeCount: number;
-    commentCount: number;
-  }
-
-  const mockLikes: LikeItem[] = [
-    {
-      id: '1',
-      content: '정말 멋진 축제였어요! 다음에도 참여하고 싶습니다.',
-      boardType: 'free',
-      eventId: '1',
-      createdAt: '2024-06-15T10:30:00Z',
-      likeCount: 15,
-      commentCount: 5
-    },
-    {
-      id: '2',
-      title: '축제 후기',
-      content: '정말 좋은 경험이었습니다.',
-      boardType: 'notice',
-      eventId: '1',
-      createdAt: '2024-06-14T15:20:00Z',
-      likeCount: 8,
-      commentCount: 3
-    }
-  ];
-
-  const mockBookmarks: BookmarkItem[] = [
-    {
-      id: '1',
-      title: '중요한 공지사항',
-      content: '이번 주 주말에 특별한 이벤트가 있습니다.',
-      boardType: 'notice',
-      eventId: '1',
-      createdAt: '2024-06-13T09:00:00Z',
-      likeCount: 25,
-      commentCount: 12
-    }
-  ];
 
   // 날짜 포맷팅 함수
   const formatDate = (dateString: string) => {
@@ -203,50 +333,89 @@ function ProfilePageContent() {
     });
   };
 
-  // 탭 렌더링 함수
+  // 상대적 시간 표시 함수
+  const getRelativeTime = (dateString: string): string => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) {
+      return `${diffInSeconds}초 전`;
+    }
+
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes}분 전`;
+    }
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) {
+      return `${diffInHours}시간 전`;
+    }
+
+    // 24시간 이상 지난 경우 날짜로 표시
+    return date.toLocaleDateString('ko-KR');
+  };
+
+  // 탭 컨텐츠 렌더링
   const renderTabContent = () => {
     switch (activeTab) {
       case 'events':
         return (
           <div className="space-y-4">
-            {userEvents.length > 0 ? (
+            {eventsLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+                <p className="text-white text-opacity-50">이벤트 로딩 중...</p>
+              </div>
+            ) : userEvents.length > 0 ? (
               userEvents.map((event) => (
-                <div key={event.id} className="flex gap-4 p-4 bg-white bg-opacity-5 rounded-xl border border-white border-opacity-10">
-                  {/* 썸네일 이미지 */}
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-2xl">🎪</span>
-                  </div>
-                  
-                  {/* 컨텐츠 */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-white font-bold text-lg truncate">{event.title}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        event.status === 'active' 
-                          ? 'bg-green-600 text-white' 
-                          : 'bg-gray-600 text-gray-300'
-                      }`}>
-                        {event.status === 'active' ? '진행중' : '종료'}
-                      </span>
+                <div 
+                  key={event.id} 
+                  className="p-4 bg-opacity-5 rounded-xl cursor-pointer transition-all hover:bg-opacity-10" 
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+                  onClick={() => {
+                    // 이전 페이지 정보 저장
+                    sessionStorage.setItem('previousPage', '/profile');
+                    router.push(`/event/${event.id}`);
+                  }}
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    {/* 이벤트 이미지 또는 기본 아이콘 */}
+                    {event.imageUrl ? (
+                      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                        <Image 
+                          src={event.imageUrl} 
+                          alt="이벤트 이미지"
+                          width={48}
+                          height={48}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-lg">🎪</span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white font-bold text-lg truncate">{event.title || '제목 없음'}</h3>
                     </div>
-                    <p className="text-white text-opacity-70 text-sm mb-3 line-clamp-2">
-                      {event.description}
-                    </p>
-                    
-                    {/* 상세 정보 */}
-                    <div className="flex items-center gap-4 text-xs text-white text-opacity-50">
-                      <div className="flex items-center gap-1">
-                        <span>📍</span>
-                        <span>서울과학기술대학교</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span>🗓️</span>
-                        <span>{formatDate(event.createdAt)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span>👥</span>
-                        <span>2/200명 참가</span>
-                      </div>
+                  </div>
+                  <p className="text-white text-opacity-70 text-md mb-4 mt-4 line-clamp-2">
+                    {event.description || '설명이 없습니다.'}
+                  </p>
+                  <div className="space-y-2 text-xs text-white text-opacity-50">
+                    <div className="flex items-center gap-2">
+                      <span className="font-light text-sm" style={{ opacity: 0.6 }}>장소</span>
+                      <span className="font-light text-sm">{event.location || '장소 정보 없음'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-light text-sm" style={{ opacity: 0.6 }}>일정</span>
+                      <span className="font-light text-sm">{event.startDate ? formatDate(event.startDate) : '일정 정보 없음'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-light text-sm" style={{ opacity: 0.6 }}>참여</span>
+                      <span className="font-light text-sm">{event.participantCount || 0}/{event.maxParticipantCount || 0}명 참가</span>
                     </div>
                   </div>
                 </div>
@@ -256,29 +425,120 @@ function ProfilePageContent() {
                 <p className="text-white text-opacity-50">만든 이벤트가 없습니다.</p>
               </div>
             )}
+            
+            {/* 추가 로딩 인디케이터 */}
+            {eventsLoadingMore && (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
+                <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+                  더 많은 이벤트를 불러오는 중...
+                </p>
+              </div>
+            )}
+            
+            {/* 더 이상 데이터가 없을 때 */}
+            {!eventsHasNext && userEvents.length > 0 && (
+              <div className="text-center py-8">
+                <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+                  모든 이벤트를 불러왔습니다
+                </p>
+              </div>
+            )}
           </div>
         );
 
       case 'posts':
         return (
           <div className="space-y-4">
-            {userPosts.length > 0 ? (
+            {postsLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+                <p className="text-white text-opacity-50">게시글 로딩 중...</p>
+              </div>
+            ) : userPosts.length > 0 ? (
               userPosts.map((post) => (
-                <div key={post.id} className="p-4 bg-white bg-opacity-5 rounded-lg border border-white border-opacity-10">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-white font-semibold text-lg">
-                      {post.title || '제목 없음'}
-                    </h3>
-                    <span className="px-2 py-1 rounded-full text-xs bg-purple-600 text-white">
-                      {post.boardType === 'free' ? '자유게시판' : '공지사항'}
-                    </span>
-                  </div>
-                  <p className="text-white text-opacity-70 text-sm mb-2 line-clamp-2">
-                    {post.content}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-white text-opacity-50">
-                    <span>❤️ {post.likeCount} 💬 {post.commentCount}</span>
-                    <span>{formatDate(post.createdAt)}</span>
+                <div
+                  key={post.id}
+                  className="rounded-xl overflow-hidden transition-all duration-300 hover:bg-white hover:bg-opacity-5 cursor-pointer"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+                  onClick={() => {
+                    // 이전 페이지 정보 저장
+                    sessionStorage.setItem('previousPage', '/profile');
+                    router.push(`/board/${post.eventId}/${post.type.toLowerCase()}/${post.id}`);
+                  }}
+                >
+                  <div className="p-4 h-full flex flex-col">
+                    {/* 게시글 헤더 */}
+                    <PostHeader 
+                      nickname={post.user?.nickname}
+                      createdAt={post.createdAt}
+                      className="mb-4"
+                      showMoreButton={true}
+                      isNotice={post.type === 'NOTICE'}
+                      onMoreClick={() => {
+                        // TODO: 더보기 메뉴 표시
+                        console.log('더보기 클릭');
+                      }}
+                    />
+                    
+                    {/* 공지사항인 경우 제목과 내용 표시 */}
+                    {post.type === 'NOTICE' ? (
+                      <div className="flex-1">
+                        <h3 className="text-white font-bold text-lg mb-1 line-clamp-2">
+                          {post.title || '제목 없음'}
+                        </h3>
+                        <p className="text-sm text-white whitespace-pre-wrap" style={{ opacity: 0.8 }}>
+                          {post.content || '내용 없음'}
+                        </p>
+                      </div>
+                    ) : (
+                      /* 커뮤니티인 경우 내용과 이미지 표시 */
+                      <div className="flex-1 flex space-x-3">
+                        <div className="flex-1 min-w-0">
+                          {post.content && (
+                            <div className="text-md text-white font-regular line-clamp-3 whitespace-pre-wrap">
+                              {post.content}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* 이미지가 있는 경우 */}
+                        {post.images && post.images.length > 0 && (
+                          <div className="flex-shrink-0">
+                            <Image 
+                              src={post.images[0]} 
+                              alt="게시글 이미지"
+                              width={80}
+                              height={80}
+                              className="w-20 h-20 object-cover rounded-lg"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* 액션 버튼 - 고정 높이 */}
+                    <div className="mt-auto pt-3">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center">
+                          <svg className="w-4 h-4 text-white mr-1" style={{ opacity: 0.6 }} fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                          </svg>
+                          <span className="text-xs font-regular text-white" style={{ opacity: 0.8 }}>
+                            {post.likeCount || 0}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white mr-1" style={{ opacity: 0.6 }}>
+                            <path fillRule="evenodd" d="M5.337 21.718a6.707 6.707 0 0 1-.533-.074.75.75 0 0 1-.44-1.223 3.73 3.73 0 0 0 .814-1.686c.023-.115-.022-.317-.254-.543C3.274 16.587 2.25 14.41 2.25 12c0-5.03 4.428-9 9.75-9s9.75 3.97 9.75 9c0 5.03-4.428 9-9.75 9-.833 0-1.643-.097-2.417-.279a6.721 6.721 0 0 1-4.246.997Z" clipRule="evenodd" />
+                          </svg>
+                          <span className="text-xs font-regular text-white" style={{ opacity: 0.8 }}>
+                            {post.commentCount || 0}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))
@@ -287,27 +547,59 @@ function ProfilePageContent() {
                 <p className="text-white text-opacity-50">작성한 글이 없습니다.</p>
               </div>
             )}
+            
+            {/* 추가 로딩 인디케이터 */}
+            {postsLoadingMore && (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
+                <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+                  더 많은 게시글을 불러오는 중...
+                </p>
+              </div>
+            )}
+            
+            {/* 더 이상 데이터가 없을 때 */}
+            {!postsHasNext && userPosts.length > 0 && (
+              <div className="text-center py-8">
+                <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+                  모든 게시글을 불러왔습니다
+                </p>
+              </div>
+            )}
           </div>
         );
 
       case 'comments':
         return (
           <div className="space-y-4">
-            {userComments.length > 0 ? (
+            {commentsLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+                <p className="text-white text-opacity-50">댓글 로딩 중...</p>
+              </div>
+            ) : userComments.length > 0 ? (
               userComments.map((comment) => (
-                <div key={comment.id} className="p-4 bg-white bg-opacity-5 rounded-lg border border-white border-opacity-10">
-                  <div className="mb-2">
-                    <p className="text-white text-sm font-medium mb-1">
-                      {comment.postTitle ? `"${comment.postTitle}"에 댓글` : '댓글'}
-                    </p>
-                  </div>
-                  <p className="text-white text-opacity-70 text-sm mb-2">{comment.content}</p>
-                  <div className="flex items-center justify-between text-xs text-white text-opacity-50">
-                    <span className="px-2 py-1 rounded-full bg-purple-600 bg-opacity-20 text-purple-300">
-                      {comment.boardType === 'free' ? '자유게시판' : '공지사항'}
-                    </span>
-                    <span>{formatDate(comment.createdAt)}</span>
-                  </div>
+                <div 
+                  key={comment.id} 
+                  className="p-4 rounded-lg" 
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+                >
+                  <PostHeader 
+                    nickname={comment.user?.nickname}
+                    createdAt={comment.createdAt}
+                    size="md"
+                    className="mb-3"
+                    showMoreButton={true}
+                    onMoreClick={() => {
+                      // TODO: 댓글 더보기 메뉴 표시
+                      console.log('댓글 더보기 클릭');
+                    }}
+                  />
+                  <p className="text-md text-white whitespace-pre-wrap">{comment.content || ''}</p>
+                  <p className="text-xs text-white text-opacity-50 mt-2">
+                    {/* TODO: 게시글 정보가 있으면 해당 게시글로 이동하는 링크 추가 */}
+                    댓글을 클릭하여 원본 게시글 보기
+                  </p>
                 </div>
               ))
             ) : (
@@ -315,73 +607,30 @@ function ProfilePageContent() {
                 <p className="text-white text-opacity-50">작성한 댓글이 없습니다.</p>
               </div>
             )}
+            
+            {/* 추가 로딩 인디케이터 */}
+            {commentsLoadingMore && (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
+                <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+                  더 많은 댓글을 불러오는 중...
+                </p>
+              </div>
+            )}
+            
+            {/* 더 이상 데이터가 없을 때 */}
+            {!commentsHasNext && userComments.length > 0 && (
+              <div className="text-center py-8">
+                <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+                  모든 댓글을 불러왔습니다
+                </p>
+              </div>
+            )}
           </div>
         );
 
-              case 'likes':
-          return (
-            <div className="space-y-4">
-              {mockLikes.length > 0 ? (
-                mockLikes.map((like) => (
-                  <div key={like.id} className="p-4 bg-white bg-opacity-5 rounded-xl border border-white border-opacity-10">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-white font-semibold text-lg">
-                        {like.title || '제목 없음'}
-                      </h3>
-                      <span className="px-2 py-1 rounded-full text-xs bg-red-600 text-white">
-                        ❤️ 좋아요
-                      </span>
-                    </div>
-                    <p className="text-white text-opacity-70 text-sm mb-2 line-clamp-2">
-                      {like.content}
-                    </p>
-                    <div className="flex items-center justify-between text-xs text-white text-opacity-50">
-                      <span>❤️ {like.likeCount} 💬 {like.commentCount}</span>
-                      <span>{formatDate(like.createdAt)}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-white text-opacity-50">좋아요한 글이 없습니다.</p>
-                </div>
-              )}
-            </div>
-          );
-
-        case 'bookmarks':
-          return (
-            <div className="space-y-4">
-              {mockBookmarks.length > 0 ? (
-                mockBookmarks.map((bookmark) => (
-                  <div key={bookmark.id} className="p-4 bg-white bg-opacity-5 rounded-xl border border-white border-opacity-10">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-white font-semibold text-lg">
-                        {bookmark.title || '제목 없음'}
-                      </h3>
-                      <span className="px-2 py-1 rounded-full text-xs bg-yellow-600 text-white">
-                        🔖 북마크
-                      </span>
-                    </div>
-                    <p className="text-white text-opacity-70 text-sm mb-2 line-clamp-2">
-                      {bookmark.content}
-                    </p>
-                    <div className="flex items-center justify-between text-xs text-white text-opacity-50">
-                      <span>❤️ {bookmark.likeCount} 💬 {bookmark.commentCount}</span>
-                      <span>{formatDate(bookmark.createdAt)}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-white text-opacity-50">북마크한 글이 없습니다.</p>
-                </div>
-              )}
-            </div>
-          );
-
-        default:
-          return null;
+      default:
+        return null;
     }
   };
 
@@ -420,20 +669,20 @@ function ProfilePageContent() {
 
       {/* 메인 컨텐츠 */}
       <main className="w-full h-full flex flex-col px-4 py-4">
-        <div className="w-full">
+        <div className="w-full h-full flex flex-col">
           {/* 프로필 아바타 섹션 */}
           <div className="flex items-center mb-6">
-            <div className="w-[56px] h-[56px] bg-gradient-to-br from-purple-600 to-pink-500 rounded-full flex items-center justify-center mr-3">
+            <div className="w-[56px] h-[56px] bg-gray-600 rounded-full flex items-center justify-center mr-3">
               <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
               </svg>
             </div>
             <div className="flex-1">
-              <h1 className="text-xl font-bold text-white">
-                {userData?.nickname || '사용자'}
+              <h1 className="text-xl font-bold text-white text-md">
+                {finalUserData?.nickname || '사용자'}
               </h1>
-              <p className="text-white font-normal text-xs" style={{ opacity: 0.6 }}>
-                {userData?.email || '이메일 정보 없음'}
+              <p className="text-white font-normal text-sm" style={{ opacity: 0.6 }}>
+                {finalUserData?.email || '이메일 정보 없음'}
               </p>
             </div>
             <button
@@ -445,14 +694,19 @@ function ProfilePageContent() {
           </div>
 
           {/* 내 활동 섹션 */}
-          <div className="mb-4 mt-12">
+          <div className="mb-4 mt-4">
             <h2 className="text-xl font-bold text-white">내 활동</h2>
           </div>
 
           {/* 탭 네비게이션 캐러셀 */}
           <div className="relative mb-6">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+            <div ref={tabContainerRef} className="flex gap-2 overflow-x-auto" style={{ 
+              scrollbarWidth: 'none', 
+              msOverflowStyle: 'none',
+              WebkitOverflowScrolling: 'touch'
+            }}>
               <button
+                data-tab="events"
                 onClick={() => handleTabChange('events')}
                 className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                   activeTab === 'events'
@@ -460,10 +714,10 @@ function ProfilePageContent() {
                     : 'bg-gray-800 text-white text-opacity-70 hover:text-opacity-90'
                 }`}
               >
-                <span>🗓️</span>
-                <span>내가 만든 이벤트 {userEvents.length}</span>
+                <span>내가 만든 이벤트 <span className="font-bold">{userStats.eventCount}</span></span>
               </button>
               <button
+                data-tab="posts"
                 onClick={() => handleTabChange('posts')}
                 className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                   activeTab === 'posts'
@@ -471,10 +725,10 @@ function ProfilePageContent() {
                     : 'bg-gray-800 text-white text-opacity-70 hover:text-opacity-90'
                 }`}
               >
-                <span>✏️</span>
-                <span>내가 쓴 글 {userPosts.length}</span>
+                <span>내가 쓴 글 <span className="font-bold">{userStats.postCount}</span></span>
               </button>
               <button
+                data-tab="comments"
                 onClick={() => handleTabChange('comments')}
                 className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                   activeTab === 'comments'
@@ -482,14 +736,17 @@ function ProfilePageContent() {
                     : 'bg-gray-800 text-white text-opacity-70 hover:text-opacity-90'
                 }`}
               >
-                <span>💬</span>
-                <span>내가 쓴 댓글 {userComments.length}</span>
+                <span>내가 쓴 댓글 <span className="font-bold">{userStats.commentCount}</span></span>
               </button>
             </div>
           </div>
 
           {/* 탭 컨텐츠 */}
-          <div className="flex-1">
+          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 pb-8" style={{ 
+            scrollbarWidth: 'none', 
+            msOverflowStyle: 'none',
+            WebkitOverflowScrolling: 'touch'
+          }}>
             {isLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
@@ -505,7 +762,7 @@ function ProfilePageContent() {
   );
 }
 
-// 직접 내보내기 (ProtectedRoute 제거)
+// 직접 내보내기
 export default function ProfilePage() {
   return <ProfilePageContent />;
 } 

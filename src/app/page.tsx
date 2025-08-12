@@ -2,12 +2,24 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomePage() {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
+
+  // 홈 페이지 진입 시 히스토리 정리
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // 현재 URL이 홈이 아닌 경우 히스토리 정리
+      if (window.location.pathname !== '/') {
+        console.log('🏠 홈 페이지 진입 - 히스토리 정리');
+        window.history.replaceState(null, '', '/');
+      }
+    }
+  }, []);
 
   const handleProfileClick = () => {
     if (isAuthenticated && user) {
@@ -72,6 +84,18 @@ export default function HomePage() {
       );
     }
   };
+
+  // 인증 로딩 중일 때 로딩 화면 표시
+  if (authLoading) {
+    return (
+      <div className="fixed inset-0 w-full h-full bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-sm" style={{ opacity: 0.7 }}>로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 w-full h-full bg-black text-white overflow-hidden">

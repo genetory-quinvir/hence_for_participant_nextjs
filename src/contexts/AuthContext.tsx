@@ -97,9 +97,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const accessToken = getAccessToken();
       const refreshToken = getRefreshToken();
 
+      logger.info('🔑 토큰 상태 확인:', {
+        hasAccessToken: !!accessToken,
+        hasRefreshToken: !!refreshToken,
+        accessTokenLength: accessToken?.length || 0,
+        refreshTokenLength: refreshToken?.length || 0
+      });
+
       if (!accessToken) {
         logger.info('❌ Access Token 없음 - 로그아웃 상태');
         setAuthState(prev => ({ ...prev, isLoading: false }));
+        return false;
+      }
+      
+      if (!refreshToken) {
+        logger.info('❌ Refresh Token 없음 - 로그아웃 상태');
+        logout();
         return false;
       }
 
@@ -150,6 +163,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 토큰 유효성 검증 (apiRequest 래퍼 사용)
   const validateToken = async (token: string): Promise<boolean> => {
     try {
+      // 리프레시 토큰 확인
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        logger.warn('❌ Refresh Token이 없어서 토큰 검증을 건너뜁니다.');
+        return false;
+      }
+      
+      logger.info('🔑 토큰 검증 시작', {
+        hasAccessToken: !!token,
+        hasRefreshToken: !!refreshToken,
+        accessTokenLength: token?.length || 0,
+        refreshTokenLength: refreshToken?.length || 0
+      });
+      
       // apiRequest 래퍼를 사용하여 자동 토큰 갱신 지원
       const { apiRequest } = await import('@/lib/api');
       const API_BASE_URL = 'https://api-participant.hence.events';
@@ -161,12 +188,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (result.success && result.data) {
         // 사용자 정보 저장
         storeUser(result.data.data || result.data.user || result.data);
+        logger.info('✅ 토큰 검증 성공');
         return true;
       } else {
+        logger.warn('❌ 토큰 검증 실패', result.error);
         return false;
       }
     } catch (error) {
-      logger.error('토큰 검증 실패', error);
+      logger.error('💥 토큰 검증 중 오류 발생', error);
       return false;
     }
   };

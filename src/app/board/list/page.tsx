@@ -16,7 +16,7 @@ function BoardListContent() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortType, setSortType] = useState<'latest' | 'popular' | 'comments'>('latest');
-  const [page, setPage] = useState(1);
+  const [cursor, setCursor] = useState<string | null>(null);
   const [hasNext, setHasNext] = useState(true);
   const [total, setTotal] = useState(0);
 
@@ -30,15 +30,16 @@ function BoardListContent() {
       try {
         setLoading(true);
         setError(null);
-        setPage(1);
+        setCursor(null);
         setHasNext(true);
         
-        const result = await getBoardList(eventId, type, 1, 10);
+        const result = await getBoardList(eventId, type, null, 10);
         
         if (result.success && result.data) {
           setBoardItems(result.data.items);
           setHasNext(result.data.hasNext);
           setTotal(result.data.total);
+          setCursor(result.data.nextCursor || null);
         } else {
           setError(result.error || '게시글을 불러오는데 실패했습니다.');
         }
@@ -55,13 +56,12 @@ function BoardListContent() {
 
   // 추가 데이터 로딩
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasNext) return;
+    if (loadingMore || !hasNext || !cursor) return;
 
     try {
       setLoadingMore(true);
-      const nextPage = page + 1;
       
-      const result = await getBoardList(eventId, type, nextPage, 10);
+      const result = await getBoardList(eventId, type, cursor, 10);
       
       if (result.success && result.data) {
         setBoardItems(prev => {
@@ -71,7 +71,7 @@ function BoardListContent() {
           return [...prev, ...newItems];
         });
         setHasNext(result.data.hasNext);
-        setPage(nextPage);
+        setCursor(result.data.nextCursor || null);
       } else {
         console.error("추가 데이터 로드 실패:", result.error);
       }
@@ -80,7 +80,7 @@ function BoardListContent() {
     } finally {
       setLoadingMore(false);
     }
-  }, [eventId, type, hasNext, loadingMore]);
+  }, [eventId, type, hasNext, loadingMore, cursor]);
 
   // 스크롤 감지
   const handleScroll = useCallback(() => {
@@ -250,74 +250,76 @@ function BoardListContent() {
                 style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
                 onClick={() => handlePostClick(post)}
               >
-                {/* 게시글 헤더 */}
-                <PostHeader 
-                  nickname={post.user?.nickname}
-                  createdAt={post.createdAt}
-                  className="p-4"
-                  showMoreButton={true}
-                  isNotice={type === 'notice'}
-                  onMoreClick={() => {
-                    // TODO: 더보기 메뉴 표시
-                    console.log('더보기 클릭');
-                  }}
-                />
-                
-                {/* 공지사항인 경우 제목과 내용 표시 */}
-                {type === 'notice' ? (
-                  <div className="px-4 pb-2">
-                    <h3 className="text-white font-bold text-lg mb-1 line-clamp-2">
-                      {post.title || '제목 없음'}
-                    </h3>
-                    <p className="text-sm text-white whitespace-pre-wrap" style={{ opacity: 0.8 }}>
-                      {post.content || '내용 없음'}
-                    </p>
-                  </div>
-                ) : (
-                  /* 커뮤니티인 경우 내용과 이미지 표시 */
-                  <div className="flex-1 flex space-x-3 px-4 pb-6 pt-3">
-                    <div className="flex-1 min-w-0">
-                      {post.content && (
-                        <div className="text-md text-white font-regular line-clamp-3 whitespace-pre-wrap">
-                          {post.content}
+                <div className="p-4 h-full flex flex-col">
+                  {/* 게시글 헤더 */}
+                  <PostHeader 
+                    nickname={post.user?.nickname}
+                    createdAt={post.createdAt}
+                    className="mb-4"
+                    showMoreButton={true}
+                    isNotice={type === 'notice'}
+                    onMoreClick={() => {
+                      // TODO: 더보기 메뉴 표시
+                      console.log('더보기 클릭');
+                    }}
+                  />
+                  
+                  {/* 공지사항인 경우 제목과 내용 표시 */}
+                  {type === 'notice' ? (
+                    <div className="flex-1">
+                      <h3 className="text-white font-bold text-lg mb-1 line-clamp-2">
+                        {post.title || '제목 없음'}
+                      </h3>
+                      <p className="text-sm text-white whitespace-pre-wrap" style={{ opacity: 0.8 }}>
+                        {post.content || '내용 없음'}
+                      </p>
+                    </div>
+                  ) : (
+                    /* 커뮤니티인 경우 내용과 이미지 표시 */
+                    <div className="flex-1 flex space-x-3">
+                      <div className="flex-1 min-w-0">
+                        {post.content && (
+                          <div className="text-md text-white font-regular line-clamp-3 whitespace-pre-wrap">
+                            {post.content}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* 이미지가 있는 경우 */}
+                      {post.images && post.images.length > 0 && (
+                        <div className="flex-shrink-0">
+                          <Image 
+                            src={post.images[0]} 
+                            alt="게시글 이미지"
+                            width={80}
+                            height={80}
+                            className="w-20 h-20 object-cover rounded-lg"
+                          />
                         </div>
                       )}
                     </div>
-                    
-                    {/* 이미지가 있는 경우 */}
-                    {post.images && post.images.length > 0 && (
-                      <div className="flex-shrink-0">
-                        <Image 
-                          src={post.images[0]} 
-                          alt="게시글 이미지"
-                          width={80}
-                          height={80}
-                          className="w-20 h-20 object-cover rounded-lg"
-                        />
+                  )}
+                  
+                  {/* 액션 버튼 - 고정 높이 */}
+                  <div className="mt-auto pt-3">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 text-white mr-1" style={{ opacity: 0.6 }} fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                        <span className="text-xs font-regular text-white" style={{ opacity: 0.8 }}>
+                          {post.likeCount || 0}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                )}
-                
-                {/* 액션 버튼 */}
-                <div className="px-4 pb-5 mt-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <svg className="w-5 h-5 text-white mr-2" style={{ opacity: 0.6 }} fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
-                      <span className="text-sm font-regular text-white" style={{ opacity: 0.8 }}>
-                        {post.likeCount || 0}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-white mr-2" style={{ opacity: 0.6 }}>
-                        <path fillRule="evenodd" d="M5.337 21.718a6.707 6.707 0 0 1-.533-.074.75.75 0 0 1-.44-1.223 3.73 3.73 0 0 0 .814-1.686c.023-.115-.022-.317-.254-.543C3.274 16.587 2.25 14.41 2.25 12c0-5.03 4.428-9 9.75-9s9.75 3.97 9.75 9c0 5.03-4.428 9-9.75 9-.833 0-1.643-.097-2.417-.279a6.721 6.721 0 0 1-4.246.997Z" clipRule="evenodd" />
-                      </svg>
-                      <span className="text-sm font-regular text-white" style={{ opacity: 0.8 }}>
-                        {post.commentCount || 0}
-                      </span>
+                      
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white mr-1" style={{ opacity: 0.6 }}>
+                          <path fillRule="evenodd" d="M5.337 21.718a6.707 6.707 0 0 1-.533-.074.75.75 0 0 1-.44-1.223 3.73 3.73 0 0 0 .814-1.686c.023-.115-.022-.317-.254-.543C3.274 16.587 2.25 14.41 2.25 12c0-5.03 4.428-9 9.75-9s9.75 3.97 9.75 9c0 5.03-4.428 9-9.75 9-.833 0-1.643-.097-2.417-.279a6.721 6.721 0 0 1-4.246.997Z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-xs font-regular text-white" style={{ opacity: 0.8 }}>
+                          {post.commentCount || 0}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
