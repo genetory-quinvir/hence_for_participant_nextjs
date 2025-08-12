@@ -1,16 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigation, NavigationManager } from "@/utils/navigation";
 
 export default function HomePage() {
-  const router = useRouter();
+  const { navigate, goTo } = useNavigation();
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
 
-  // 홈 페이지 진입 시 히스토리 정리
+  // 홈 페이지 진입 시 히스토리 정리 및 추가
   useEffect(() => {
     if (typeof window !== 'undefined') {
       // 현재 URL이 홈이 아닌 경우 히스토리 정리
@@ -18,16 +18,19 @@ export default function HomePage() {
         console.log('🏠 홈 페이지 진입 - 히스토리 정리');
         window.history.replaceState(null, '', '/');
       }
+      
+      // 홈 페이지를 히스토리에 추가
+      NavigationManager.addToHistory('/');
     }
   }, []);
 
   const handleProfileClick = () => {
     if (isAuthenticated && user) {
       console.log("프로필 버튼 클릭 - 프로필 페이지로 이동");
-      router.push("/profile");
+      navigate("/profile");
     } else {
       console.log("프로필 버튼 클릭 - 로그인 페이지로 이동");
-      router.push("/sign");
+      navigate("/sign");
     }
   };
 
@@ -37,12 +40,12 @@ export default function HomePage() {
     // 로그인 상태 확인
     if (!isAuthenticated || !user) {
       console.log("로그인이 필요합니다 - 로그인 페이지로 이동");
-      router.push("/sign");
+      navigate("/sign");
       return;
     }
     
     console.log("로그인된 사용자 - QR 페이지로 이동");
-    router.push("/qr");
+    navigate("/qr");
   };
 
   // 로그인 상태에 따른 프로필 버튼 렌더링

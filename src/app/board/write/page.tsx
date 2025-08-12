@@ -165,7 +165,7 @@ function BoardWriteContent() {
   };
 
   return (
-    <div className="h-screen bg-black text-white flex flex-col">
+    <div className="fixed inset-0 w-full h-full bg-black text-white flex flex-col overflow-hidden">
       <CommonNavigationBar 
         title="글쓰기"
         leftButton={
@@ -182,9 +182,9 @@ function BoardWriteContent() {
         onLeftClick={handleCancel}
       />
       
-      <div className="flex flex-col flex-1 px-4">
+      <div className="flex flex-col flex-1 px-4 min-h-0">
         {/* 텍스트 입력 영역 - 남은 공간 채움 */}
-        <div className="flex-1 pt-6">
+        <div className="flex-1 pt-6 min-h-0">
           <textarea
             placeholder="무슨 소식을 올리실건가요?"
             value={content}

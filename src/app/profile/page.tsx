@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
@@ -8,6 +7,7 @@ import { UserItem, EventItem, BoardItem, CommentItem } from "@/types/api";
 import { getUserProfile, getUserEvents, getUserPosts, getUserComments } from "@/lib/api";
 import PostHeader from "@/components/common/PostHeader";
 import Image from "next/image";
+import { useNavigation, NavigationManager } from "@/utils/navigation";
 
 // 탭 타입 정의
 type TabType = 'events' | 'posts' | 'comments';
@@ -25,7 +25,7 @@ interface PostItem {
 }
 
 function ProfilePageContent() {
-  const router = useRouter();
+  const { navigate, goBack } = useNavigation();
   const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
   const tabContainerRef = useRef<HTMLDivElement>(null);
   
@@ -252,23 +252,28 @@ function ProfilePageContent() {
   // 인증 상태 확인 및 리다이렉트
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || !user)) {
-      router.replace("/");
+      navigate("/");
     }
-  }, [isAuthenticated, user, router, authLoading]);
+  }, [isAuthenticated, user, navigate, authLoading]);
+
+  // 프로필 페이지 진입 시 히스토리에 추가
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      NavigationManager.addToHistory('/profile');
+    }
+  }, [isAuthenticated, user]);
 
   // 이벤트 핸들러들
   const handleBackClick = () => {
-    router.replace("/");
+    goBack();
   };
 
   const handleLogout = () => {
-    // 이전 페이지 정보 저장
-    sessionStorage.setItem('previousPage', '/profile');
-    router.push("/settings");
+    navigate("/settings");
   };
 
   const handleEditProfile = () => {
-    router.push("/profile/edit");
+    navigate("/profile/edit");
   };
 
   const handleTabChange = (tab: TabType) => {
@@ -375,9 +380,7 @@ function ProfilePageContent() {
                   className="p-4 bg-opacity-5 rounded-xl cursor-pointer transition-all hover:bg-opacity-10" 
                   style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
                   onClick={() => {
-                    // 이전 페이지 정보 저장
-                    sessionStorage.setItem('previousPage', '/profile');
-                    router.push(`/event/${event.id}`);
+                    navigate(`/event/${event.id}`);
                   }}
                 >
                   <div className="flex items-start gap-3 mb-3">
@@ -462,9 +465,7 @@ function ProfilePageContent() {
                   className="rounded-xl overflow-hidden transition-all duration-300 hover:bg-white hover:bg-opacity-5 cursor-pointer"
                   style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
                   onClick={() => {
-                    // 이전 페이지 정보 저장
-                    sessionStorage.setItem('previousPage', '/profile');
-                    router.push(`/board/${post.eventId}/${post.type.toLowerCase()}/${post.id}`);
+                    navigate(`/board/${post.eventId}/${post.type.toLowerCase()}/${post.id}`);
                   }}
                 >
                   <div className="p-4 h-full flex flex-col">

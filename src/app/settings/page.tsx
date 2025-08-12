@@ -1,46 +1,36 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
+import { useNavigation, NavigationManager } from "@/utils/navigation";
 
 export default function SettingsPage() {
-  const router = useRouter();
+  const { navigate, goBack } = useNavigation();
   const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
 
   // 인증되지 않은 경우 메인 페이지로 리다이렉트
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || !user)) {
-      router.replace("/");
+      navigate("/");
     }
-  }, [isAuthenticated, user, router, authLoading]);
+  }, [isAuthenticated, user, navigate, authLoading]);
+
+  // 설정 페이지 진입 시 히스토리에 추가
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      NavigationManager.addToHistory('/settings');
+    }
+  }, [isAuthenticated, user]);
 
   const handleBackClick = () => {
-    // sessionStorage에서 이전 페이지 정보 확인
-    const previousPage = sessionStorage.getItem('previousPage');
-    
-    if (previousPage) {
-      // 이전 페이지가 프로필인 경우
-      if (previousPage.startsWith('/profile')) {
-        router.push('/profile');
-      } else if (previousPage === '/') {
-        // 이전 페이지가 메인 페이지인 경우
-        router.push('/');
-      } else {
-        // 다른 페이지인 경우 해당 페이지로 이동
-        router.push(previousPage);
-      }
-    } else {
-      // 이전 페이지 정보가 없으면 메인 페이지로
-      router.push('/');
-    }
+    goBack('/');
   };
 
   const handleLogout = () => {
     if (confirm("로그아웃하시겠습니까?")) {
       logout();
-      router.replace("/");
+      navigate("/"); // 메인으로 이동
     }
   };
 
