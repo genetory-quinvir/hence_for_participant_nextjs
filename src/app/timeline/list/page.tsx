@@ -115,8 +115,8 @@ function TimelineListContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
-          backgroundColor="transparent"
-          backgroundOpacity={0}
+          backgroundColor="black"
+          backgroundOpacity={1}
           textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
@@ -145,8 +145,8 @@ function TimelineListContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
-          backgroundColor="transparent"
-          backgroundOpacity={0}
+          backgroundColor="black"
+          backgroundOpacity={1}
           textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
@@ -180,8 +180,8 @@ function TimelineListContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
-        backgroundColor="transparent"
-        backgroundOpacity={0}
+        backgroundColor="black"
+        backgroundOpacity={1}
         textColor="text-white"
       />
       

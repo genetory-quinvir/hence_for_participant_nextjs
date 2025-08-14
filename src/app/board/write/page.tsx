@@ -164,6 +164,9 @@ function BoardWriteContent() {
         }
         rightButton={null}
         onLeftClick={handleCancel}
+        backgroundColor="black"
+        backgroundOpacity={1}
+        textColor="text-white"
       />
       
       <div className="flex flex-col flex-1 px-4 min-h-0">

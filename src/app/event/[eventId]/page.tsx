@@ -336,8 +336,8 @@ function EventPageContent() {
         <CommonNavigationBar
           rightButton={renderProfileButton()}
           onRightClick={handleProfileClick}
-          backgroundColor="transparent"
-          backgroundOpacity={0}
+          backgroundColor="black"
+          backgroundOpacity={1}
           textColor="text-white"
         />
       </div>

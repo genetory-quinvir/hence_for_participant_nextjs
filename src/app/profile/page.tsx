@@ -702,8 +702,8 @@ function ProfilePageContent() {
         }
         onLeftClick={handleBackClick}
         onRightClick={handleLogout}
-        backgroundColor="transparent"
-        backgroundOpacity={0}
+        backgroundColor="black"
+        backgroundOpacity={1}
         textColor="text-white"
       />
 

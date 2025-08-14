@@ -127,8 +127,8 @@ function ProfileEditContent() {
         }
         onLeftClick={handleCancel}
         onRightClick={handleSave}
-        backgroundColor="transparent"
-        backgroundOpacity={0}
+        backgroundColor="black"
+        backgroundOpacity={1}
         textColor="text-white"
       />
 

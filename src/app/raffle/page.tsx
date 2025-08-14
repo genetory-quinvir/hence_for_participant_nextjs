@@ -252,8 +252,8 @@ function RaffleContent() {
       <div className="absolute top-0 left-0 right-0 z-50">
         <CommonNavigationBar 
           title="래플"
-          backgroundColor="transparent"
-          backgroundOpacity={0}
+          backgroundColor="black"
+          backgroundOpacity={1}
           textColor="text-white"
         />
       </div>

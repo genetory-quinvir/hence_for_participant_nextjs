@@ -123,8 +123,8 @@ function FoodTruckDetailContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
-        backgroundColor="transparent"
-        backgroundOpacity={0}
+        backgroundColor="black"
+        backgroundOpacity={1}
         textColor="text-white"
       />
       
