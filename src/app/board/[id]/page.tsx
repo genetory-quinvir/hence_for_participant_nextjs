@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { BoardItem, CommentItem } from "@/types/api";
 import { getBoardDetail, getComments, createComment, getAccessToken } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import PostDetail from "@/components/board/PostDetail";
 import CommentSection from "@/components/board/CommentSection";
+import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
 
 function BoardDetailContent() {
   const params = useParams();
-  const router = useRouter();
+  const { navigate, goBack } = useSimpleNavigation();
   const searchParams = useSearchParams();
   const [post, setPost] = useState<BoardItem | null>(null);
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -20,6 +21,14 @@ function BoardDetailContent() {
 
   // URL에서 타입 확인 (free 또는 notice)
   const postType = searchParams.get('type') || 'free';
+
+  // 게시글 상세 페이지 진입 시 히스토리에 추가
+  useEffect(() => {
+    if (params.id) {
+      const currentPath = `/board/${params.id}`;
+      SimpleNavigation.addPage(currentPath);
+    }
+  }, [params.id]);
 
   useEffect(() => {
     const fetchPostDetail = async () => {
@@ -113,36 +122,7 @@ function BoardDetailContent() {
 
 
   const handleBackClick = () => {
-    // sessionStorage에서 이전 페이지 정보 확인
-    const previousPage = sessionStorage.getItem('previousPage');
-    
-    if (previousPage) {
-      // 이전 페이지가 프로필인 경우
-      if (previousPage.startsWith('/profile')) {
-        router.push('/profile');
-      } else if (previousPage === '/qr') {
-        // QR 페이지에서 온 경우 메인 페이지로
-        router.push('/');
-      } else if (previousPage === '/') {
-        // 이전 페이지가 메인 페이지인 경우
-        router.push('/');
-      } else {
-        // 다른 페이지인 경우 해당 페이지로 이동
-        router.push(previousPage);
-      }
-    } else {
-      // 이전 페이지 정보가 없으면 기존 로직 사용
-      const fromEvent = searchParams.get('fromEvent');
-      const eventId = searchParams.get('eventId') || 'default-event';
-      
-      if (fromEvent === 'true') {
-        // 이벤트 페이지에서 온 경우 이벤트 페이지로 돌아가기
-        router.push(`/event/${eventId}`);
-      } else {
-        // board list에서 온 경우 board list로 돌아가기
-        router.push(`/board/list?type=${postType}&eventId=${eventId}`);
-      }
-    }
+    goBack();
   };
 
   const getPageTitle = () => {
@@ -162,7 +142,7 @@ function BoardDetailContent() {
         alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
         // 현재 페이지 URL을 쿼리 파라미터로 전달
         const currentUrl = window.location.pathname + window.location.search;
-        router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+        navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         return;
       }
 
@@ -183,7 +163,7 @@ function BoardDetailContent() {
           alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
           // 현재 페이지 URL을 쿼리 파라미터로 전달
           const currentUrl = window.location.pathname + window.location.search;
-          router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+          navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         } else {
           alert(result.error || '댓글 작성에 실패했습니다.');
         }

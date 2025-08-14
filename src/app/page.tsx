@@ -4,10 +4,10 @@ import Image from "next/image";
 import { useEffect } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigation, NavigationManager } from "@/utils/navigation";
+import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
 
 export default function HomePage() {
-  const { navigate, goTo } = useNavigation();
+  const { navigate } = useSimpleNavigation();
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
 
   // 홈 페이지 진입 시 히스토리 정리 및 추가
@@ -20,7 +20,7 @@ export default function HomePage() {
       }
       
       // 홈 페이지를 히스토리에 추가
-      NavigationManager.addToHistory('/');
+      SimpleNavigation.addPage('/');
     }
   }, []);
 

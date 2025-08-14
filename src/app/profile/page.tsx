@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { UserItem, EventItem, BoardItem, CommentItem } from "@/types/api";
 import { getUserProfile, getUserEvents, getUserPosts, getUserComments } from "@/lib/api";
 import PostHeader from "@/components/common/PostHeader";
 import Image from "next/image";
-import { useNavigation, NavigationManager } from "@/utils/navigation";
+import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
 
 // 탭 타입 정의
 type TabType = 'events' | 'posts' | 'comments';
@@ -25,7 +25,7 @@ interface PostItem {
 }
 
 function ProfilePageContent() {
-  const { navigate, goBack } = useNavigation();
+  const { navigate, goBack } = useSimpleNavigation();
   const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
   const tabContainerRef = useRef<HTMLDivElement>(null);
   
@@ -51,9 +51,6 @@ function ProfilePageContent() {
   const [postsLoadingMore, setPostsLoadingMore] = useState(false);
   const [commentsLoadingMore, setCommentsLoadingMore] = useState(false);
   
-  // UserItem 타입으로 캐스팅
-  const userData = user as UserItem | null;
-
   // 사용자 프로필 정보 가져오기
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -81,15 +78,17 @@ function ProfilePageContent() {
   // 사용자 활동 데이터 가져오기 (초기 로드)
   useEffect(() => {
     const loadUserActivity = async () => {
-      const userId = profileData?.id || userData?.id;
-      if (!userId) return;
+      // profileData가 로드된 후에만 실행
+      if (!profileData?.id) return;
+
+      console.log('🔄 사용자 활동 데이터 로드 시작:', profileData.id);
 
       // 이벤트 데이터 로드
       setEventsLoading(true);
       setEventsCursor(null);
       setEventsHasNext(true);
       try {
-        const eventsResult = await getUserEvents(userId, null, 10);
+        const eventsResult = await getUserEvents(profileData.id, null, 20);
         if (eventsResult.success && eventsResult.data) {
           setUserEvents(eventsResult.data);
           setEventsHasNext(eventsResult.hasNext || false);
@@ -106,7 +105,7 @@ function ProfilePageContent() {
       setPostsCursor(null);
       setPostsHasNext(true);
       try {
-        const postsResult = await getUserPosts(userId, null, 10);
+        const postsResult = await getUserPosts(profileData.id, null, 20);
         if (postsResult.success && postsResult.data) {
           setUserPosts(postsResult.data);
           setPostsHasNext(postsResult.hasNext || false);
@@ -123,7 +122,7 @@ function ProfilePageContent() {
       setCommentsCursor(null);
       setCommentsHasNext(true);
       try {
-        const commentsResult = await getUserComments(userId, null, 10);
+        const commentsResult = await getUserComments(profileData.id, null, 20);
         if (commentsResult.success && commentsResult.data) {
           setUserComments(commentsResult.data);
           setCommentsHasNext(commentsResult.hasNext || false);
@@ -137,17 +136,16 @@ function ProfilePageContent() {
     };
 
     loadUserActivity();
-  }, [profileData?.id, userData?.id]);
+  }, [profileData?.id]); // profileData.id만 의존
 
   // 무한 스크롤 함수들
-  const loadMoreEvents = async () => {
-    const userId = profileData?.id || userData?.id;
-    if (!userId || eventsLoadingMore || !eventsHasNext || !eventsCursor) return;
+  const loadMoreEvents = useCallback(async () => {
+    if (!profileData?.id || eventsLoadingMore || !eventsHasNext || !eventsCursor) return;
 
     try {
       setEventsLoadingMore(true);
       
-      const result = await getUserEvents(userId, eventsCursor, 10);
+      const result = await getUserEvents(profileData.id, eventsCursor, 20);
       
       if (result.success && result.data) {
         setUserEvents(prev => {
@@ -164,16 +162,15 @@ function ProfilePageContent() {
     } finally {
       setEventsLoadingMore(false);
     }
-  };
+  }, [profileData?.id, eventsLoadingMore, eventsHasNext, eventsCursor]);
 
-  const loadMorePosts = async () => {
-    const userId = profileData?.id || userData?.id;
-    if (!userId || postsLoadingMore || !postsHasNext || !postsCursor) return;
+  const loadMorePosts = useCallback(async () => {
+    if (!profileData?.id || postsLoadingMore || !postsHasNext || !postsCursor) return;
 
     try {
       setPostsLoadingMore(true);
       
-      const result = await getUserPosts(userId, postsCursor, 10);
+      const result = await getUserPosts(profileData.id, postsCursor, 20);
       
       if (result.success && result.data) {
         setUserPosts(prev => {
@@ -190,16 +187,15 @@ function ProfilePageContent() {
     } finally {
       setPostsLoadingMore(false);
     }
-  };
+  }, [profileData?.id, postsLoadingMore, postsHasNext, postsCursor]);
 
-  const loadMoreComments = async () => {
-    const userId = profileData?.id || userData?.id;
-    if (!userId || commentsLoadingMore || !commentsHasNext || !commentsCursor) return;
+  const loadMoreComments = useCallback(async () => {
+    if (!profileData?.id || commentsLoadingMore || !commentsHasNext || !commentsCursor) return;
 
     try {
       setCommentsLoadingMore(true);
       
-      const result = await getUserComments(userId, commentsCursor, 10);
+      const result = await getUserComments(profileData.id, commentsCursor, 20);
       
       if (result.success && result.data) {
         setUserComments(prev => {
@@ -216,38 +212,78 @@ function ProfilePageContent() {
     } finally {
       setCommentsLoadingMore(false);
     }
-  };
+  }, [profileData?.id, commentsLoadingMore, commentsHasNext, commentsCursor]);
 
   // 스크롤 감지
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     const scrollContainer = document.querySelector('.scrollbar-hide');
-    if (!scrollContainer) return;
+    if (!scrollContainer) {
+      console.log('❌ 스크롤 컨테이너를 찾을 수 없습니다');
+      return;
+    }
 
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer as HTMLElement;
+    const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
     
-    if (scrollTop + clientHeight >= scrollHeight - 100) {
+    console.log('📜 스크롤 상태:', {
+      scrollTop,
+      scrollHeight,
+      clientHeight,
+      scrollPercentage,
+      activeTab,
+      hasNext: {
+        events: eventsHasNext,
+        posts: postsHasNext,
+        comments: commentsHasNext
+      },
+      loading: {
+        events: eventsLoadingMore,
+        posts: postsLoadingMore,
+        comments: commentsLoadingMore
+      }
+    });
+    
+    // 스크롤이 80% 이상일 때 추가 로드
+    if (scrollPercentage >= 0.8) {
+      console.log('🔄 무한 스크롤 트리거:', activeTab);
+      
       switch (activeTab) {
         case 'events':
-          loadMoreEvents();
+          if (eventsHasNext && !eventsLoadingMore) {
+            console.log('📥 이벤트 추가 로드 시작');
+            loadMoreEvents();
+          }
           break;
         case 'posts':
-          loadMorePosts();
+          if (postsHasNext && !postsLoadingMore) {
+            console.log('📥 게시글 추가 로드 시작');
+            loadMorePosts();
+          }
           break;
         case 'comments':
-          loadMoreComments();
+          if (commentsHasNext && !commentsLoadingMore) {
+            console.log('📥 댓글 추가 로드 시작');
+            loadMoreComments();
+          }
           break;
       }
     }
-  };
+  }, [activeTab, eventsHasNext, postsHasNext, commentsHasNext, eventsLoadingMore, postsLoadingMore, commentsLoadingMore, loadMoreEvents, loadMorePosts, loadMoreComments]);
 
   // 스크롤 이벤트 리스너
   useEffect(() => {
     const scrollContainer = document.querySelector('.scrollbar-hide');
     if (scrollContainer) {
+      console.log('📜 스크롤 이벤트 리스너 등록:', activeTab);
       scrollContainer.addEventListener('scroll', handleScroll);
-      return () => scrollContainer.removeEventListener('scroll', handleScroll);
+      return () => {
+        console.log('📜 스크롤 이벤트 리스너 제거:', activeTab);
+        scrollContainer.removeEventListener('scroll', handleScroll);
+      };
+    } else {
+      console.log('❌ 스크롤 컨테이너를 찾을 수 없어 이벤트 리스너를 등록하지 않습니다');
     }
-  }, [activeTab, eventsCursor, postsCursor, commentsCursor, eventsHasNext, postsHasNext, commentsHasNext]);
+  }, [activeTab, handleScroll]); // activeTab만 의존
 
   // 인증 상태 확인 및 리다이렉트
   useEffect(() => {
@@ -259,7 +295,7 @@ function ProfilePageContent() {
   // 프로필 페이지 진입 시 히스토리에 추가
   useEffect(() => {
     if (isAuthenticated && user) {
-      NavigationManager.addToHistory('/profile');
+      SimpleNavigation.addPage('/profile');
     }
   }, [isAuthenticated, user]);
 
@@ -307,7 +343,7 @@ function ProfilePageContent() {
   };
 
   // 사용자 데이터
-  const finalUserData = profileData || userData;
+  const finalUserData = profileData || user;
   const userStats = {
     eventCount: finalUserData?.eventCount || 0,
     postCount: finalUserData?.postCount || 0,

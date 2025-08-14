@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
+import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
 
 function ProfileEditContent() {
-  const router = useRouter();
+  const { navigate, goBack, replace } = useSimpleNavigation();
   const { user, updateUser, isAuthenticated } = useAuth();
   
   const [nickname, setNickname] = useState("");
@@ -17,9 +17,9 @@ function ProfileEditContent() {
   // 인증되지 않은 경우 메인 페이지로 리다이렉트
   useEffect(() => {
     if (!isAuthenticated || !user) {
-      router.push("/");
+      navigate("/");
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, navigate]);
 
   // 사용자 정보로 폼 초기화
   useEffect(() => {
@@ -42,7 +42,8 @@ function ProfileEditContent() {
   }
 
   const handleBackClick = () => {
-    router.back();
+    // 프로필 페이지로 교체 (히스토리에 추가하지 않음)
+    replace("/profile");
   };
 
   const handleSave = async () => {
@@ -83,8 +84,8 @@ function ProfileEditContent() {
       // 성공 메시지 표시
       alert("프로필이 성공적으로 수정되었습니다.");
       
-      // 프로필 페이지로 돌아가기
-      router.back();
+      // 프로필 페이지로 교체 (히스토리에 추가하지 않음)
+      replace("/profile");
       
     } catch (error) {
       console.error("프로필 수정 오류:", error);
@@ -97,10 +98,10 @@ function ProfileEditContent() {
   const handleCancel = () => {
     if (nickname !== (user?.nickname || user?.name || "") || email !== (user?.email || "")) {
       if (confirm("변경사항이 있습니다. 정말 취소하시겠습니까?")) {
-        router.back();
+        replace("/profile");
       }
     } else {
-      router.back();
+      replace("/profile");
     }
   };
 

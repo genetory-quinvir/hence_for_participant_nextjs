@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,9 +17,10 @@ import EventFoodTrucks from "@/components/event/EventFoodTrucks";
 import EventCommunity from "@/components/event/EventCommunity";
 import EventShout from "@/components/event/EventShout";
 import EventHelp from "@/components/event/EventHelp";
+import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
 
 function EventPageContent() {
-  const router = useRouter();
+  const { navigate, goBack } = useSimpleNavigation();
   const params = useParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [featuredData, setFeaturedData] = useState<FeaturedItem | null>(null);
@@ -30,9 +31,16 @@ function EventPageContent() {
   useEffect(() => {
     // 인증 상태 확인이 완료된 후에만 리다이렉트 처리
     if (!authLoading && (!isAuthenticated || !user)) {
-      router.push("/");
+      navigate("/");
     }
-  }, [isAuthenticated, user, authLoading, router]);
+  }, [isAuthenticated, user, authLoading, navigate]);
+
+  // 이벤트 페이지 진입 시 히스토리에 추가
+  useEffect(() => {
+    if (isAuthenticated && user && params.eventId) {
+      SimpleNavigation.addPage(`/event/${params.eventId}`);
+    }
+  }, [isAuthenticated, user, params.eventId]);
 
   // 이벤트 데이터 가져오기
   useEffect(() => {
@@ -64,36 +72,16 @@ function EventPageContent() {
   }, [params.eventId, authLoading]);
 
   const handleBackClick = () => {
-    // sessionStorage에서 이전 페이지 정보 확인
-    const previousPage = sessionStorage.getItem('previousPage');
-    
-    if (previousPage) {
-      // 이전 페이지가 프로필인 경우
-      if (previousPage.startsWith('/profile')) {
-        router.push('/profile');
-      } else if (previousPage === '/qr') {
-        // QR 페이지에서 온 경우 메인 페이지로
-        router.push('/');
-      } else if (previousPage === '/') {
-        // 이전 페이지가 메인 페이지인 경우
-        router.push('/');
-      } else {
-        // 다른 페이지인 경우 해당 페이지로 이동
-        router.push(previousPage);
-      }
-    } else {
-      // 이전 페이지 정보가 없으면 메인 페이지로
-      router.push('/');
-    }
+    goBack();
   };
 
   const handleProfileClick = () => {
     if (user) {
       console.log("프로필 버튼 클릭 - 프로필 페이지로 이동");
-      router.push("/profile");
+      navigate("/profile");
     } else {
       console.log("프로필 버튼 클릭 - 로그인 페이지로 이동");
-      router.push("/sign");
+      navigate("/sign");
     }
   };
 
@@ -169,7 +157,7 @@ function EventPageContent() {
           <div className="text-red-400 text-lg mb-4">⚠️</div>
           <p className="text-white text-lg mb-4">{error}</p>
           <button
-            onClick={() => router.push("/")}
+            onClick={() => navigate("/")}
             className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             메인으로 돌아가기
@@ -186,7 +174,7 @@ function EventPageContent() {
         <div className="text-center px-4">
           <p className="text-white text-lg mb-4">이벤트 정보를 찾을 수 없습니다.</p>
           <button
-            onClick={() => router.push("/")}
+            onClick={() => navigate("/")}
             className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             메인으로 돌아가기
@@ -227,7 +215,7 @@ function EventPageContent() {
             notices={featuredData.notices} 
             showViewAllButton={true}
             onViewAllClick={() => {
-              router.push(`/board/list?eventId=${featuredData.event.id || 'default-event'}&type=notice`);
+              navigate(`/board/list?eventId=${featuredData.event.id || 'default-event'}&type=notice`);
             }}
           />
         )}
@@ -252,7 +240,7 @@ function EventPageContent() {
             timelines={featuredData.timelines} 
             showViewAllButton={true}
             onViewAllClick={() => {
-              router.push(`/timeline/list?eventId=${featuredData.event.id || 'default-event'}`);
+              navigate(`/timeline/list?eventId=${featuredData.event.id || 'default-event'}`);
             }}
           />
         )}
@@ -264,7 +252,7 @@ function EventPageContent() {
             showViewAllButton={true}
             eventId={featuredData.event.id || 'default-event'}
             onViewAllClick={() => {
-              router.push(`/foodtrucks/list?eventId=${featuredData.event.id || 'default-event'}`);
+              navigate(`/foodtrucks/list?eventId=${featuredData.event.id || 'default-event'}`);
             }}
           />
         )}
@@ -275,7 +263,7 @@ function EventPageContent() {
             freeBoard={featuredData.freeBoard} 
             showViewAllButton={true}
             onViewAllClick={() => {
-              router.push(`/board/list?eventId=${featuredData.event.id || 'default-event'}`);
+              navigate(`/board/list?eventId=${featuredData.event.id || 'default-event'}`);
             }}
           />
         )}
