@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense, useRef } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,11 +18,12 @@ import EventCommunity from "@/components/event/EventCommunity";
 import EventShout from "@/components/event/EventShout";
 import EventHelp from "@/components/event/EventHelp";
 import EventAdvertisements from "@/components/event/EventAdvertisements";
-import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
+import { useSimpleNavigation } from "@/utils/navigation";
 
 function EventPageContent() {
   const { navigate, goBack } = useSimpleNavigation();
   const params = useParams();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [featuredData, setFeaturedData] = useState<FeaturedItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,12 +48,10 @@ function EventPageContent() {
     }
   }, [isAuthenticated, user, authLoading, navigate]);
 
-  // 이벤트 페이지 진입 시 히스토리에 추가
+  // 이벤트 상세 페이지 진입 시 히스토리에 추가
   useEffect(() => {
-    if (isAuthenticated && user && params.eventId) {
-      SimpleNavigation.addPage(`/event/${params.eventId}`);
-    }
-  }, [isAuthenticated, user, params.eventId]);
+    // 브라우저 히스토리만 사용하므로 별도 관리 불필요
+  }, [params.eventId]);
 
   // 이벤트 데이터 가져오기 (단순화)
   useEffect(() => {
@@ -117,10 +116,6 @@ function EventPageContent() {
       };
     }
   }, [params.eventId]); // 단순한 의존성 배열
-
-  const handleBackClick = () => {
-    goBack();
-  };
 
   const handleProfileClick = () => {
     if (user) {
@@ -246,15 +241,9 @@ function EventPageContent() {
             display: none; /* Chrome, Safari, Opera */
           }
         `}</style>
-        
-        {/* 이벤트 히어로 섹션 */}
+
+        {/* 히어로 섹션 */}
         <EventHero event={featuredData.event} />
-
-        {/* 이벤트 정보 섹션 */}
-        <EventInfo event={featuredData.event} />
-
-        {/* 외치기 섹션 */}
-        {/* <EventShout eventId={Array.isArray(params.eventId) ? params.eventId[0] || 'default-event' : params.eventId || 'default-event'} /> */}
 
         {/* 공지사항 섹션 */}
         {featuredData.notices && (
@@ -267,16 +256,13 @@ function EventPageContent() {
           />
         )}
 
-        {/* 래플 섹션 */}
-        {featuredData.raffle && (
-          <EventRaffle 
-            raffle={featuredData.raffle} 
+        {/* 쿠폰 섹션 */}
+        {featuredData.coupons && (
+          <EventCoupon 
+            coupons={featuredData.coupons} 
             eventId={featuredData.event.id || 'default-event'}
           />
         )}
-
-        {/* 쿠폰 섹션 */}
-        {featuredData.coupons && <EventCoupon coupons={featuredData.coupons} eventId={Array.isArray(params.eventId) ? params.eventId[0] || 'default-event' : params.eventId || 'default-event'} />}
 
         {/* 광고 섹션 1 */}
         {featuredData.advertisements && featuredData.advertisements.length > 0 && (
@@ -348,18 +334,7 @@ function EventPageContent() {
       {/* 네비게이션바 - 오버레이 */}
       <div className="absolute top-0 left-0 right-0 z-50">
         <CommonNavigationBar
-          leftButton={
-            <svg
-              className="w-6 h-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          }
           rightButton={renderProfileButton()}
-          onLeftClick={handleBackClick}
           onRightClick={handleProfileClick}
           backgroundColor="transparent"
           backgroundOpacity={0}

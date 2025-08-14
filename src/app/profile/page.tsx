@@ -7,7 +7,7 @@ import { UserItem, EventItem, BoardItem, CommentItem } from "@/types/api";
 import { getUserProfile, getUserEvents, getUserPosts, getUserComments, getPostByCommentId } from "@/lib/api";
 import PostHeader from "@/components/common/PostHeader";
 import Image from "next/image";
-import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
+import { useSimpleNavigation } from "@/utils/navigation";
 
 // 탭 타입 정의
 type TabType = 'events' | 'posts' | 'comments';
@@ -294,16 +294,10 @@ function ProfilePageContent() {
 
   // 프로필 페이지 진입 시 히스토리에 추가
   useEffect(() => {
-    if (isAuthenticated && user) {
-      SimpleNavigation.addPage('/profile');
-    }
-  }, [isAuthenticated, user]);
+    // 브라우저 히스토리만 사용하므로 별도 관리 불필요
+  }, [profileData?.id]);
 
   // 이벤트 핸들러들
-  const handleBackClick = () => {
-    goBack();
-  };
-
   const handleLogout = () => {
     navigate("/settings");
   };
@@ -315,6 +309,10 @@ function ProfilePageContent() {
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     scrollActiveTabToCenter(tab);
+  };
+
+  const handleBackClick = () => {
+    goBack();
   };
 
   // 탭 스크롤 함수
@@ -620,21 +618,10 @@ function ProfilePageContent() {
                   key={comment.id} 
                   className="p-4 rounded-lg cursor-pointer transition-all hover:bg-white hover:bg-opacity-10" 
                   style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
-                  onClick={async () => {
-                    // 댓글의 postId를 사용하여 게시글로 이동
+                  onClick={() => {
+                    // 댓글의 postId와 eventId를 사용하여 게시글 상세 화면으로 이동
                     if (comment.postId) {
-                      try {
-                        const postResult = await getPostByCommentId(comment.postId);
-                        if (postResult.success && postResult.data) {
-                          navigate(`/board/${postResult.data.id}?type=${postResult.data.type.toLowerCase()}&eventId=${postResult.data.eventId}`);
-                        } else {
-                          console.error('댓글 게시글 정보를 가져올 수 없습니다:', comment.postId);
-                          navigate(`/board/${comment.postId}`); // 임시 처리
-                        }
-                      } catch (error) {
-                        console.error('댓글 게시글 정보를 가져올 수 없습니다:', error);
-                        navigate(`/board/${comment.postId}`); // 임시 처리
-                      }
+                      navigate(`/board/${comment.postId}?eventId=${comment.eventId}`);
                     }
                   }}
                 >
@@ -665,7 +652,7 @@ function ProfilePageContent() {
             {commentsLoadingMore && (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
-                <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+                <p className="text-sm" style={{ opacity: 0.6 }}>
                   더 많은 댓글을 불러오는 중...
                 </p>
               </div>
@@ -674,7 +661,7 @@ function ProfilePageContent() {
             {/* 더 이상 데이터가 없을 때 */}
             {!commentsHasNext && userComments.length > 0 && (
               <div className="text-center py-8">
-                <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+                <p className="text-sm" style={{ opacity: 0.6 }}>
                   모든 댓글을 불러왔습니다
                 </p>
               </div>
@@ -691,7 +678,7 @@ function ProfilePageContent() {
     <div className="fixed inset-0 w-full h-full bg-black text-white overflow-hidden">
       {/* 네비게이션바 */}
       <CommonNavigationBar
-        title="내 프로필"
+        title="프로필"
         leftButton={
           <svg
             className="w-6 h-6 text-white"
@@ -738,12 +725,14 @@ function ProfilePageContent() {
                 {finalUserData?.email || '이메일 정보 없음'}
               </p>
             </div>
-            <button
-              onClick={handleEditProfile}
-              className="px-4 py-3 rounded-xl bg-purple-600 font-semibold text-white text-sm transition-all hover:bg-purple-700"
-            >
-              프로필 편집
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleEditProfile}
+                className="px-4 py-3 rounded-xl bg-purple-600 font-semibold text-white text-sm transition-all hover:bg-purple-700"
+              >
+                프로필 편집
+              </button>
+            </div>
           </div>
 
           {/* 내 활동 섹션 */}

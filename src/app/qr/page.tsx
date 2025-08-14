@@ -1,29 +1,29 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { checkEventCode } from "@/lib/api";
-import { Html5QrcodeScanner, Html5QrcodeScanType } from "html5-qrcode";
+import { BrowserQRCodeReader } from "@zxing/library";
 import CodeInputModal from "@/components/common/CodeInputModal";
+import { useSimpleNavigation } from "@/utils/navigation";
 
 export default function QRPage() {
-  const router = useRouter();
+  const { navigate, goBack, replace } = useSimpleNavigation();
   const { isAuthenticated, user } = useAuth();
   const [isChecking, setIsChecking] = useState(false);
   const [hasCamera, setHasCamera] = useState<boolean | null>(null); // null: 확인 중, true: 지원, false: 미지원
   const [isScanning, setIsScanning] = useState(false);
   const [showCodeModal, setShowCodeModal] = useState(false);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-  const qrContainerRef = useRef<HTMLDivElement>(null);
+  const codeReaderRef = useRef<BrowserQRCodeReader | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // 인증되지 않은 경우 메인 페이지로 리다이렉트
   useEffect(() => {
     if (!isAuthenticated || !user) {
-      router.push("/");
+      navigate("/");
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, navigate]);
 
   // 카메라 지원 여부 확인
   useEffect(() => {
@@ -31,7 +31,6 @@ export default function QRPage() {
       try {
         console.log("카메라 권한 요청 중...");
         
-        // 사파리 호환성을 위한 더 간단한 설정
         const stream = await navigator.mediaDevices.getUserMedia({ 
           video: {
             facingMode: { ideal: 'environment' }, // 후면 카메라 우선
@@ -49,7 +48,6 @@ export default function QRPage() {
       }
     };
 
-    // 약간의 지연 후 카메라 확인 시작
     const timer = setTimeout(() => {
       checkCameraSupport();
     }, 500);
@@ -57,51 +55,17 @@ export default function QRPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // 카메라가 지원되면 QR 스캐너 시작 (여러 번 시도)
+  // 카메라가 지원되면 QR 스캐너 시작
   useEffect(() => {
     if (hasCamera === true && !isScanning) {
-      // 즉시 시도
       startScanner();
-      
-      // 1초 후 재시도
-      const timer1 = setTimeout(() => {
-        if (!isScanning) {
-          console.log("1초 후 스캐너 재시도");
-          startScanner();
-        }
-      }, 1000);
-
-      // 2초 후 재시도
-      const timer2 = setTimeout(() => {
-        if (!isScanning) {
-          console.log("2초 후 스캐너 재시도");
-          startScanner();
-        }
-      }, 2000);
-
-      // 3초 후 재시도
-      const timer3 = setTimeout(() => {
-        if (!isScanning) {
-          console.log("3초 후 스캐너 재시도");
-          startScanner();
-        }
-      }, 3000);
-
-      return () => {
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-        clearTimeout(timer3);
-      };
     }
   }, [hasCamera, isScanning]);
 
   // 컴포넌트 언마운트 시 스캐너 정리
   useEffect(() => {
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear();
-        scannerRef.current = null;
-      }
+      stopScanner();
     };
   }, []);
 
@@ -118,30 +82,18 @@ export default function QRPage() {
   }
 
   const handleBackClick = () => {
-    // 스캐너가 실행 중이면 정리
-    if (scannerRef.current) {
-      scannerRef.current.clear();
-      scannerRef.current = null;
-    }
-    router.back();
+    stopScanner();
+    goBack();
   };
 
   // QR 스캐너 시작
-  const startScanner = () => {
-    if (!hasCamera) {
-      console.log("카메라가 지원되지 않습니다.");
+  const startScanner = async () => {
+    if (!hasCamera || !videoRef.current) {
+      console.log("카메라가 지원되지 않거나 비디오 요소가 없습니다.");
       return;
     }
 
-    // DOM 요소가 준비되었는지 확인
-    const qrReaderElement = document.getElementById("qr-reader");
-    if (!qrReaderElement) {
-      console.log("QR reader 요소가 아직 준비되지 않았습니다.");
-      return;
-    }
-
-    // 이미 스캐너가 실행 중이면 중단
-    if (scannerRef.current) {
+    if (codeReaderRef.current) {
       console.log("이미 스캐너가 실행 중입니다.");
       return;
     }
@@ -150,30 +102,16 @@ export default function QRPage() {
     console.log("QR 스캐너 시작 중...");
     
     try {
-      scannerRef.current = new Html5QrcodeScanner(
-        "qr-reader",
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-          showTorchButtonIfSupported: true,
-          showZoomSliderIfSupported: true,
-          // 사파리 호환성을 위한 설정
-          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
-          rememberLastUsedCamera: true,
-        },
-        false
-      );
-
-      scannerRef.current.render(
-        (decodedText) => {
-          // QR 코드 스캔 성공
-          console.log("QR 코드 스캔 성공:", decodedText);
-          handleQRCodeScanned(decodedText);
-        },
-        (error) => {
-          // 스캔 오류 (무시)
-          console.log("QR 스캔 오류:", error);
+      codeReaderRef.current = new BrowserQRCodeReader();
+      
+      await codeReaderRef.current.decodeFromVideoDevice(
+        null, // 기본 카메라 사용
+        videoRef.current,
+        (result) => {
+          if (result) {
+            console.log("QR 코드 스캔 성공:", result.getText());
+            handleQRCodeScanned(result.getText());
+          }
         }
       );
 
@@ -186,9 +124,13 @@ export default function QRPage() {
 
   // QR 스캐너 정리
   const stopScanner = () => {
-    if (scannerRef.current) {
-      scannerRef.current.clear();
-      scannerRef.current = null;
+    if (codeReaderRef.current) {
+      try {
+        codeReaderRef.current.reset();
+        codeReaderRef.current = null;
+      } catch (error) {
+        console.log("스캐너 정리 중 오류:", error);
+      }
     }
     setIsScanning(false);
   };
@@ -212,20 +154,12 @@ export default function QRPage() {
           console.log('이벤트 페이지로 이동:', `/event/${eventId}`);
           // QR 페이지에서 온 것을 표시
           sessionStorage.setItem('previousPage', '/qr');
-          // router.replace와 window.location 모두 시도
-          router.replace(`/event/${eventId}`);
-          setTimeout(() => {
-            window.location.href = `/event/${eventId}`;
-          }, 100);
+          replace(`/event/${eventId}`);
         } else {
           console.log('이벤트 페이지로 이동:', `/event?code=${qrCode.trim()}`);
           // QR 페이지에서 온 것을 표시
           sessionStorage.setItem('previousPage', '/qr');
-          // router.replace와 window.location 모두 시도
-          router.replace(`/event?code=${qrCode.trim()}`);
-          setTimeout(() => {
-            window.location.href = `/event?code=${qrCode.trim()}`;
-          }, 100);
+          replace(`/event?code=${qrCode.trim()}`);
         }
       } else {
         console.log("이벤트 확인 실패:", result.error);
@@ -250,8 +184,6 @@ export default function QRPage() {
       setIsChecking(false);
     }
   };
-
-
 
   const handleManualEntry = () => {
     console.log("수동 입력 모달 열기");
@@ -305,8 +237,32 @@ export default function QRPage() {
               </div>
             ) : hasCamera === true ? (
               // 카메라 지원 - QR 스캐너 표시
-              <div ref={qrContainerRef} className="w-full">
-                <div id="qr-reader" className="w-full"></div>
+              <div className="w-full">
+                <div className="relative bg-black rounded-xl overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    className="w-full aspect-square object-cover"
+                    autoPlay
+                    playsInline
+                    muted
+                  />
+                  {/* QR 스캔 프레임 오버레이 */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-64 h-64 border-2 border-white rounded-lg relative">
+                      {/* 모서리 표시 */}
+                      <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-purple-500"></div>
+                      <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-purple-500"></div>
+                      <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-purple-500"></div>
+                      <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-purple-500"></div>
+                    </div>
+                  </div>
+                  {/* 스캔 안내 텍스트 */}
+                  <div className="absolute bottom-4 left-0 right-0 text-center">
+                    <p className="text-white text-sm" style={{ opacity: 0.8 }}>
+                      QR 코드를 프레임 안에 맞춰주세요
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : (
               // 카메라 미지원 - 안내 메시지 표시

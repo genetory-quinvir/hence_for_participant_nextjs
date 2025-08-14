@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
-import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
+import { useSimpleNavigation } from "@/utils/navigation";
 
 export default function SettingsPage() {
   const { navigate, goBack } = useSimpleNavigation();
@@ -18,20 +18,18 @@ export default function SettingsPage() {
 
   // 설정 페이지 진입 시 히스토리에 추가
   useEffect(() => {
-    if (isAuthenticated && user) {
-      SimpleNavigation.addPage('/settings');
-    }
+    // 브라우저 히스토리만 사용하므로 별도 관리 불필요
   }, [isAuthenticated, user]);
-
-  const handleBackClick = () => {
-    goBack();
-  };
 
   const handleLogout = () => {
     if (confirm("로그아웃하시겠습니까?")) {
       logout();
       navigate("/");
     }
+  };
+
+  const handleBackClick = () => {
+    goBack();
   };
 
   // 로딩 상태

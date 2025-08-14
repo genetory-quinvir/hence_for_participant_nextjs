@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { ParticipantItem } from "@/types/api";
 import { getParticipantsList } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
-import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
+import { useSimpleNavigation } from "@/utils/navigation";
 
 function ParticipantsListContent() {
   const searchParams = useSearchParams();
@@ -31,8 +31,7 @@ function ParticipantsListContent() {
 
   // 참여자 리스트 페이지 진입 시 히스토리에 추가
   useEffect(() => {
-    const currentPath = `/participants/list?eventId=${eventId}`;
-    SimpleNavigation.addPage(currentPath);
+    // 브라우저 히스토리만 사용하므로 별도 관리 불필요
   }, [eventId]);
 
   // 참여자 리스트 가져오기
@@ -147,10 +146,6 @@ function ParticipantsListContent() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [hasNext, loadingMore, cursor]);
 
-  const handleBackClick = () => {
-    goBack();
-  };
-
   // 상대적 시간 표시 함수
   const getRelativeTime = (dateString: string): string => {
     const now = new Date();
@@ -182,6 +177,11 @@ function ParticipantsListContent() {
     return '?';
   };
 
+  // 뒤로가기 함수
+  const handleBackClick = () => {
+    goBack();
+  };
+
   // 로딩 상태 표시
   if (loading) {
     return (
@@ -199,6 +199,9 @@ function ParticipantsListContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
@@ -227,6 +230,9 @@ function ParticipantsListContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-center px-4">
@@ -259,9 +265,12 @@ function ParticipantsListContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
+        backgroundColor="transparent"
+        backgroundOpacity={0}
+        textColor="text-white"
       />
       
-      <div className="px-4 py-6">
+      <div className="px-4 py-2">
         {/* 참여자 수 표시 */}
         <div className="mb-6">
           <p className="text-sm text-white" style={{ opacity: 0.7 }}>

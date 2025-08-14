@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
-import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
+import { useSimpleNavigation } from "@/utils/navigation";
 
 function ProfileEditContent() {
   const { navigate, goBack, replace } = useSimpleNavigation();
@@ -134,80 +134,75 @@ function ProfileEditContent() {
 
       {/* 메인 컨텐츠 */}
       <main className="w-full h-full flex flex-col px-4 py-4">
-        <div className="w-full">
-          {/* 프로필 아바타 섹션 */}
-          <div className="flex items-center mb-8">
-            <div className="w-[56px] h-[56px] bg-purple-600 rounded-full flex items-center justify-center mr-3">
-              <span className="text-white text-2xl font-bold">
-                {nickname.charAt(0).toUpperCase() || 'U'}
-              </span>
-            </div>
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-white">
-                프로필 편집
-              </h1>
-              <p className="text-white font-normal text-xs" style={{ opacity: 0.6 }}>
-                정보를 수정하고 저장하세요
-              </p>
-            </div>
+        {/* 프로필 아바타 섹션 */}
+        <div className="flex items-center mb-8">
+          <div className="w-[56px] h-[56px] bg-purple-600 rounded-full flex items-center justify-center mr-3">
+            <span className="text-white text-2xl font-bold">
+              {nickname.charAt(0).toUpperCase() || 'U'}
+            </span>
+          </div>
+          <div className="flex-1">
+            <p className="text-white font-normal text-xs" style={{ opacity: 0.6 }}>
+              정보를 수정하고 저장하세요
+            </p>
+          </div>
+        </div>
+
+        {/* 에러 메시지 */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-600 bg-opacity-20 border border-red-500 rounded-lg">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* 편집 폼 */}
+        <div className="space-y-6">
+          {/* 닉네임 입력 */}
+          <div>
+            <label className="block text-white text-sm font-medium mb-2">
+              닉네임
+            </label>
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:outline-none focus:border-purple-500 focus:bg-opacity-15 transition-all"
+              placeholder="닉네임을 입력하세요"
+              maxLength={20}
+            />
+            <p className="text-white text-xs mt-1" style={{ opacity: 0.6 }}>
+              {nickname.length}/20
+            </p>
           </div>
 
-          {/* 에러 메시지 */}
-          {error && (
-            <div className="mb-4 p-3 bg-red-600 bg-opacity-20 border border-red-500 rounded-lg">
-              <p className="text-red-400 text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* 편집 폼 */}
-          <div className="space-y-6">
-            {/* 닉네임 입력 */}
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">
-                닉네임
-              </label>
-              <input
-                type="text"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:outline-none focus:border-purple-500 focus:bg-opacity-15 transition-all"
-                placeholder="닉네임을 입력하세요"
-                maxLength={20}
-              />
-              <p className="text-white text-xs mt-1" style={{ opacity: 0.6 }}>
-                {nickname.length}/20
-              </p>
-            </div>
-
-            {/* 이메일 입력 */}
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">
-                이메일
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:outline-none focus:border-purple-500 focus:bg-opacity-15 transition-all"
-                placeholder="이메일을 입력하세요"
-              />
-            </div>
+          {/* 이메일 입력 */}
+          <div>
+            <label className="block text-white text-sm font-medium mb-2">
+              이메일
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:outline-none focus:border-purple-500 focus:bg-opacity-15 transition-all"
+              placeholder="이메일을 입력하세요"
+            />
           </div>
+        </div>
 
-          {/* 하단 버튼 */}
-          <div className="absolute bottom-8 left-4 right-4">
-            <button
-              onClick={handleSave}
-              disabled={isSubmitting || !nickname.trim() || !email.trim()}
-              className={`w-full py-4 rounded-lg font-semibold text-md transition-all ${
-                isSubmitting || !nickname.trim() || !email.trim()
-                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  : 'bg-purple-600 text-white hover:bg-purple-700 cursor-pointer'
-              }`}
-            >
-              {isSubmitting ? '저장 중...' : '저장'}
-            </button>
-          </div>
+        {/* 하단 버튼 */}
+        <div className="mt-auto pt-6">
+          <button
+            onClick={handleSave}
+            disabled={isSubmitting || !nickname.trim() || !email.trim()}
+            className={`w-full py-4 rounded-lg font-semibold text-md transition-all ${
+              isSubmitting || !nickname.trim() || !email.trim()
+                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                : 'bg-purple-600 text-white hover:bg-purple-700 cursor-pointer'
+            }`}
+          >
+            {isSubmitting ? '저장 중...' : '저장하기'}
+          </button>
         </div>
       </main>
     </div>

@@ -1,14 +1,15 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { loginUser, saveTokens } from "@/lib/api";
 import { SocialProvider } from "@/types/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSimpleNavigation } from "@/utils/navigation";
 
 function SignContent() {
-  const router = useRouter();
+  const { navigate, goBack, replace } = useSimpleNavigation();
   const searchParams = useSearchParams();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ function SignContent() {
   const [error, setError] = useState("");
 
   const handleBackClick = () => {
-    router.back();
+    goBack();
   };
 
   const handleLogin = async (e?: React.FormEvent) => {
@@ -71,10 +72,10 @@ function SignContent() {
         const redirectUrl = searchParams.get('redirect');
         if (redirectUrl) {
           // router.replace를 사용하여 히스토리에서 로그인 페이지를 교체
-          router.replace(decodeURIComponent(redirectUrl));
+          replace(decodeURIComponent(redirectUrl));
         } else {
           // router.replace를 사용하여 히스토리에서 로그인 페이지를 교체
-          router.replace("/");
+          replace("/");
         }
       } else {
         setError(response.error || "로그인에 실패했습니다.");

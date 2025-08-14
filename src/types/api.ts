@@ -372,6 +372,7 @@ export type NoticeItem = BoardItem;
 export interface CommentItem {
   id: string;
   postId: string;
+  eventId: string;
   content: string;
   user: {
     id: string;

@@ -4,24 +4,15 @@ import Image from "next/image";
 import { useEffect } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
+import { useSimpleNavigation } from "@/utils/navigation";
 
 export default function HomePage() {
   const { navigate } = useSimpleNavigation();
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
 
-  // 홈 페이지 진입 시 히스토리 정리 및 추가
+  // 메인 페이지 진입 시 히스토리에 추가
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // 현재 URL이 홈이 아닌 경우 히스토리 정리
-      if (window.location.pathname !== '/') {
-        console.log('🏠 홈 페이지 진입 - 히스토리 정리');
-        window.history.replaceState(null, '', '/');
-      }
-      
-      // 홈 페이지를 히스토리에 추가
-      SimpleNavigation.addPage('/');
-    }
+    // 브라우저 히스토리만 사용하므로 별도 관리 불필요
   }, []);
 
   const handleProfileClick = () => {

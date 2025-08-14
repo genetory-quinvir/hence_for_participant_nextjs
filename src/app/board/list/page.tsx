@@ -94,11 +94,6 @@ function BoardListContent() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  const handleBackClick = () => {
-    // 기본적으로 이벤트 페이지로 이동
-    router.push(`/event/${eventId}`);
-  };
-
   const handlePostClick = (post: BoardItem) => {
     const url = `/board/${post.id}?type=${type}&eventId=${post.eventId || eventId}`;
     router.push(url);
@@ -121,6 +116,10 @@ function BoardListContent() {
     }
     
     router.push(`/board/write?eventId=${eventId}&from=boardList`);
+  };
+
+  const handleBackClick = () => {
+    router.back();
   };
 
   // 정렬된 게시글 목록
@@ -169,6 +168,9 @@ function BoardListContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-lg">로딩 중...</div>
@@ -193,6 +195,9 @@ function BoardListContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-lg text-red-400">{error}</div>
@@ -216,6 +221,9 @@ function BoardListContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
+        backgroundColor="transparent"
+        backgroundOpacity={0}
+        textColor="text-white"
       />
       
       {/* 정렬 드롭다운 */}

@@ -7,7 +7,7 @@ import { getBoardDetail, getComments, createComment, getAccessToken } from "@/li
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import PostDetail from "@/components/board/PostDetail";
 import CommentSection from "@/components/board/CommentSection";
-import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
+import { useSimpleNavigation } from "@/utils/navigation";
 
 function BoardDetailContent() {
   const params = useParams();
@@ -24,11 +24,8 @@ function BoardDetailContent() {
 
   // 게시글 상세 페이지 진입 시 히스토리에 추가
   useEffect(() => {
-    if (params.id) {
-      const currentPath = window.location.pathname + window.location.search;
-      SimpleNavigation.addPage(currentPath);
-    }
-  }, [params.id, searchParams]);
+    // 브라우저 히스토리만 사용하므로 별도 관리 불필요
+  }, [params.id]);
 
   useEffect(() => {
     const fetchPostDetail = async () => {
@@ -121,11 +118,6 @@ function BoardDetailContent() {
 
 
 
-  const handleBackClick = () => {
-    console.log('🔄 뒤로가기 처리');
-    goBack();
-  };
-
   const getPageTitle = () => {
     if (postType === 'free') {
       return '자유게시판';
@@ -177,6 +169,10 @@ function BoardDetailContent() {
     }
   };
 
+  const handleBackClick = () => {
+    goBack();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white">
@@ -193,6 +189,9 @@ function BoardDetailContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-lg">로딩 중...</div>
@@ -217,6 +216,9 @@ function BoardDetailContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-lg text-red-400">{error || "게시글을 찾을 수 없습니다."}</div>
@@ -243,9 +245,12 @@ function BoardDetailContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
+        backgroundColor="transparent"
+        backgroundOpacity={0}
+        textColor="text-white"
       />
       
-            <div className={`pl-4 pr-6 ${isFreeBoardPost ? 'py-2' : 'py-2'}`}>
+      <div className={`pl-4 pr-6 ${isFreeBoardPost ? 'py-2' : 'py-2'}`}>
         {/* 게시글 디테일 */}
         <PostDetail 
           post={post} 

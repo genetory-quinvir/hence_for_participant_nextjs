@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { VendorItem } from "@/types/api";
 import { getFeaturedEvent } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
-import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
+import { useSimpleNavigation } from "@/utils/navigation";
 
 function FoodTrucksContent() {
   const { navigate, goBack } = useSimpleNavigation();
@@ -17,8 +17,7 @@ function FoodTrucksContent() {
 
   // 푸드트럭 리스트 페이지 진입 시 히스토리에 추가
   useEffect(() => {
-    const currentPath = `/foodtrucks/list?eventId=${eventId}`;
-    SimpleNavigation.addPage(currentPath);
+    // 브라우저 히스토리만 사용하므로 별도 관리 불필요
   }, [eventId]);
 
   useEffect(() => {
@@ -44,15 +43,7 @@ function FoodTrucksContent() {
   }, [eventId]);
 
   const handleBackClick = () => {
-    // 이전 페이지가 있으면 그 페이지로, 없으면 이벤트 페이지로
-    const previousPage = SimpleNavigation.getPreviousPage();
-    
-    if (previousPage && previousPage.includes('/event/')) {
-      goBack();
-    } else {
-      // 이벤트 페이지로 직접 이동
-      navigate(`/event/${eventId}`);
-    }
+    goBack();
   };
 
   if (loading) {
@@ -71,6 +62,9 @@ function FoodTrucksContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-lg">로딩 중...</div>
@@ -95,6 +89,9 @@ function FoodTrucksContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-lg text-red-400">{error}</div>
@@ -118,6 +115,9 @@ function FoodTrucksContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
+        backgroundColor="transparent"
+        backgroundOpacity={0}
+        textColor="text-white"
       />
       
       <div className="px-4 py-2">

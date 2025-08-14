@@ -90,13 +90,13 @@ function TimelineListContent() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  const handleBackClick = () => {
-    router.push(`/event/${eventId}`);
-  };
-
   const handleTimelineClick = (timeline: TimelineItem) => {
     // TODO: 타임라인 상세 페이지로 이동 (아직 구현되지 않음)
     console.log('타임라인 클릭:', timeline);
+  };
+
+  const handleBackClick = () => {
+    router.back();
   };
 
   if (loading) {
@@ -115,9 +115,15 @@ function TimelineListContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg">로딩 중...</div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-sm" style={{ opacity: 0.7 }}>타임라인을 불러오는 중...</p>
+          </div>
         </div>
       </div>
     );
@@ -139,9 +145,21 @@ function TimelineListContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg text-red-400">{error}</div>
+          <div className="text-center px-4">
+            <div className="text-red-400 text-lg mb-4">⚠️</div>
+            <p className="text-white text-lg mb-4">{error}</p>
+            <button
+              onClick={() => router.push("/")}
+              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              메인으로 돌아가기
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -162,6 +180,9 @@ function TimelineListContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
+        backgroundColor="transparent"
+        backgroundOpacity={0}
+        textColor="text-white"
       />
       
       <div className="px-4 py-2">

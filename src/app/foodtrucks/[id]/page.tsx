@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { VendorItem } from "@/types/api";
 import { getVendorDetail } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
-import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
+import { useSimpleNavigation } from "@/utils/navigation";
 
 function FoodTruckDetailContent() {
   const params = useParams();
@@ -20,12 +20,8 @@ function FoodTruckDetailContent() {
 
   // 푸드트럭 상세 페이지 진입 시 히스토리에 추가
   useEffect(() => {
-    console.log('📝 히스토리 추가 useEffect 실행:', { paramsId: params.id, eventId });
-    if (params.id) {
-      const currentPath = `/foodtrucks/${params.id}?eventId=${eventId}`;
-      SimpleNavigation.addPage(currentPath);
-    }
-  }, [params.id, eventId]);
+    // 브라우저 히스토리만 사용하므로 별도 관리 불필요
+  }, [params.id]);
 
   // 벤더 상세 정보 가져오기 (단순화)
   useEffect(() => {
@@ -73,15 +69,7 @@ function FoodTruckDetailContent() {
   }, [vendorId, eventId]); // 단순한 의존성 배열
 
   const handleBackClick = () => {
-    // 이전 페이지가 있으면 그 페이지로, 없으면 푸드트럭 리스트로
-    const previousPage = SimpleNavigation.getPreviousPage();
-    
-    if (previousPage && (previousPage.includes('/foodtrucks/list') || previousPage.includes('/event/'))) {
-      goBack();
-    } else {
-      // 푸드트럭 리스트로 직접 이동
-      navigate(`/foodtrucks/list?eventId=${eventId}`);
-    }
+    goBack();
   };
 
   // 로딩 상태 표시
@@ -90,17 +78,9 @@ function FoodTruckDetailContent() {
       <div className="min-h-screen bg-black text-white">
         <CommonNavigationBar 
           title="푸드트럭"
-          leftButton={
-            <svg
-              className="w-6 h-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          }
-          onLeftClick={handleBackClick}
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
@@ -117,17 +97,9 @@ function FoodTruckDetailContent() {
       <div className="min-h-screen bg-black text-white">
         <CommonNavigationBar 
           title="푸드트럭"
-          leftButton={
-            <svg
-              className="w-6 h-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          }
-          onLeftClick={handleBackClick}
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-lg text-red-400">{error || "푸드트럭을 찾을 수 없습니다."}</div>
@@ -151,6 +123,9 @@ function FoodTruckDetailContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
+        backgroundColor="transparent"
+        backgroundOpacity={0}
+        textColor="text-white"
       />
       
       <div className="px-4 py-6">
