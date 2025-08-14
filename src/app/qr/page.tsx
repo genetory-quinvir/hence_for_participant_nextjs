@@ -248,7 +248,7 @@ export default function QRPage() {
                   />
                   {/* QR 스캔 프레임 오버레이 */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-64 h-64 border-2 border-white rounded-lg relative">
+                    <div className="w-64 h-64 relative">
                       {/* 모서리 표시 */}
                       <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-purple-500"></div>
                       <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-purple-500"></div>

@@ -388,7 +388,8 @@ export async function socialLogin(provider: SocialProvider, token: string): Prom
 
 // 이벤트 코드 확인 API
 export async function checkEventCode(eventCode: string): Promise<EventCodeResponse> {
-  const url = `${API_BASE_URL}/events/code/${eventCode}`;
+  // const url = `${API_BASE_URL}/events/code/${eventCode}`;
+  const url = `${API_BASE_URL}/events/code/torch2025`;
   
   try {
     // 네트워크 상태 체크
