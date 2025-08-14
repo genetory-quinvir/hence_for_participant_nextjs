@@ -63,9 +63,9 @@ export default function EventFoodTrucks({
             >
               {/* 썸네일 이미지 */}
               <div className="w-full aspect-[4/3] overflow-hidden relative bg-black">
-                {vendor.thumb_image_url ? (
+                {vendor.thumbImageUrl ? (
                   <img 
-                    src={vendor.thumb_image_url} 
+                    src={vendor.thumbImageUrl} 
                     alt={vendor.name || '푸드트럭 이미지'} 
                     className="w-full h-full object-cover"
                   />
@@ -79,7 +79,7 @@ export default function EventFoodTrucks({
                 {/* 영업중 배지 */}
                 <div className="absolute top-3 right-3">
                   <span className="px-4 py-2 rounded-full text-xs font-medium bg-purple-600 text-white">
-                    {vendor.is_active ? '영업중' : '영업종료'}
+                    {vendor.isActive ? '영업중' : '영업종료'}
                   </span>
                 </div>
               </div>
@@ -110,21 +110,21 @@ export default function EventFoodTrucks({
                 {/* 운영시간 */}
                 <div className="flex items-center justify-start mb-2">
                   <span className="text-sm text-white" style={{ opacity: 0.7 }}>
-                    {vendor.operation_time || '10:00-18:00'}
+                    {vendor.operationTime || '10:00-18:00'}
                   </span>
                 </div>
 
                 {/* 가격 및 평점 */}
                 <div className="flex items-center justify-between pt-2">
                   <div className="text-white font-bold text-l">
-                    {vendor.price_average || '8,000원대'}
+                    {vendor.priceAverage || '8,000원대'}
                   </div>
                   <div className="flex items-center">
                     <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                     </svg>
                     <span className="text-l text-white" style={{ opacity: 0.7 }}>
-                      {vendor.rating ? `${vendor.rating} (${vendor.review_count || 0}개)` : '4.5 (12개)'}
+                      {vendor.rating ? `${vendor.rating} (${vendor.reviewCount || 0}개)` : '4.5 (12개)'}
                     </span>
                   </div>
                 </div>

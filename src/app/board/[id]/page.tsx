@@ -25,10 +25,10 @@ function BoardDetailContent() {
   // 게시글 상세 페이지 진입 시 히스토리에 추가
   useEffect(() => {
     if (params.id) {
-      const currentPath = `/board/${params.id}`;
+      const currentPath = window.location.pathname + window.location.search;
       SimpleNavigation.addPage(currentPath);
     }
-  }, [params.id]);
+  }, [params.id, searchParams]);
 
   useEffect(() => {
     const fetchPostDetail = async () => {
@@ -122,6 +122,7 @@ function BoardDetailContent() {
 
 
   const handleBackClick = () => {
+    console.log('🔄 뒤로가기 처리');
     goBack();
   };
 

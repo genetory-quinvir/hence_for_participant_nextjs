@@ -1,66 +1,90 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense, useCallback, useRef } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { VendorItem } from "@/types/api";
-import { getFeaturedEvent } from "@/lib/api";
+import { getVendorDetail } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
+import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
 
 function FoodTruckDetailContent() {
   const params = useParams();
-  const router = useRouter();
+  const { navigate, goBack } = useSimpleNavigation();
   const searchParams = useSearchParams();
   const [vendor, setVendor] = useState<VendorItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const eventId = searchParams.get('eventId') || 'default-event';
+  const vendorId = params.id as string;
+  const hasCalledApi = useRef(false);
 
+  // 푸드트럭 상세 페이지 진입 시 히스토리에 추가
   useEffect(() => {
-    const fetchVendorDetail = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const result = await getFeaturedEvent(eventId);
-        
-        if (result.success && result.featured && result.featured.vendors) {
-          const foundVendor = result.featured.vendors.find(v => v.id === params.id);
-          if (foundVendor) {
-            setVendor(foundVendor);
-          } else {
-            setError("푸드트럭을 찾을 수 없습니다.");
-          }
-        } else {
-          setError("푸드트럭 정보를 불러오는데 실패했습니다.");
-        }
-      } catch (err) {
-        console.error("푸드트럭 로드 오류:", err);
-        setError("푸드트럭을 불러오는데 실패했습니다.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
+    console.log('📝 히스토리 추가 useEffect 실행:', { paramsId: params.id, eventId });
     if (params.id) {
-      fetchVendorDetail();
+      const currentPath = `/foodtrucks/${params.id}?eventId=${eventId}`;
+      SimpleNavigation.addPage(currentPath);
     }
   }, [params.id, eventId]);
 
-  const handleBackClick = () => {
-    // 이전 페이지가 이벤트 페이지인지 확인
-    const referrer = document.referrer;
-    const currentOrigin = window.location.origin;
-    const eventPageUrl = `${currentOrigin}/event/${eventId}`;
+  // 벤더 상세 정보 가져오기 (단순화)
+  useEffect(() => {
+    console.log('🔄 통합 useEffect 실행:', { 
+      vendorId, 
+      eventId, 
+      hasCalledApi: hasCalledApi.current 
+    });
     
-    if (referrer.startsWith(eventPageUrl)) {
-      // 이벤트 페이지에서 온 경우 이벤트 페이지로 돌아가기
-      router.push(`/event/${eventId}`);
+    // 이미 API를 호출했다면 중복 호출 방지
+    if (hasCalledApi.current) {
+      console.log('⏭️ 이미 API 호출됨, 중복 호출 방지');
+      return;
+    }
+    
+    // vendorId와 eventId가 있으면 API 호출 (인증은 apiRequest에서 처리)
+    if (vendorId && eventId) {
+      hasCalledApi.current = true;
+      
+      const fetchVendorDetail = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          
+          console.log('🔄 벤더 상세 정보 요청:', { eventId, vendorId });
+          const result = await getVendorDetail(eventId, vendorId);
+          
+          if (result.success && result.data) {
+            setVendor(result.data);
+            console.log('✅ 벤더 상세 정보 로드 완료:', result.data);
+          } else {
+            setError(result.error || "푸드트럭을 불러오는데 실패했습니다.");
+            console.error('❌ 벤더 상세 정보 로드 실패:', result.error);
+          }
+        } catch (err) {
+          console.error("푸드트럭 로드 오류:", err);
+          setError("푸드트럭을 불러오는데 실패했습니다.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      fetchVendorDetail();
+    }
+  }, [vendorId, eventId]); // 단순한 의존성 배열
+
+  const handleBackClick = () => {
+    // 이전 페이지가 있으면 그 페이지로, 없으면 푸드트럭 리스트로
+    const previousPage = SimpleNavigation.getPreviousPage();
+    
+    if (previousPage && (previousPage.includes('/foodtrucks/list') || previousPage.includes('/event/'))) {
+      goBack();
     } else {
-      // 다른 페이지에서 온 경우 뒤로가기
-      router.back();
+      // 푸드트럭 리스트로 직접 이동
+      navigate(`/foodtrucks/list?eventId=${eventId}`);
     }
   };
 
+  // 로딩 상태 표시
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white">
@@ -79,7 +103,10 @@ function FoodTruckDetailContent() {
           onLeftClick={handleBackClick}
         />
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg">로딩 중...</div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-sm" style={{ opacity: 0.7 }}>푸드트럭 정보를 불러오는 중...</p>
+          </div>
         </div>
       </div>
     );
@@ -127,11 +154,33 @@ function FoodTruckDetailContent() {
       />
       
       <div className="px-4 py-6">
-        {/* 배송 아이콘 */}
-        <div className="flex justify-center mb-6">
-          <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-          </svg>
+        {/* 썸네일 이미지 - 상단 정방형 */}
+        <div className="mb-6">
+          <div className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+            {vendor.imageUrl ? (
+              <img 
+                src={vendor.imageUrl} 
+                alt={vendor.name || '푸드트럭 이미지'}
+                className="w-full h-full object-cover"
+              />
+            ) : vendor.thumbImageUrl ? (
+              <img 
+                src={vendor.thumbImageUrl} 
+                alt={vendor.name || '푸드트럭 썸네일'}
+                className="w-full h-full object-cover"
+              />
+            ) : vendor.logoUrl ? (
+              <img 
+                src={vendor.logoUrl} 
+                alt={vendor.name || '푸드트럭 로고'}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <svg className="w-24 h-24 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+            )}
+          </div>
         </div>
 
         {/* 푸드트럭 기본 정보 */}
@@ -141,15 +190,19 @@ function FoodTruckDetailContent() {
           </h1>
           <div className="flex items-center justify-between mb-3">
             <span className="text-white text-lg" style={{ opacity: 0.8 }}>
-              멕시칸
+              {vendor.category || vendor.type || '푸드트럭'}
             </span>
-            <div className="flex items-center bg-white bg-opacity-10 px-3 py-1 rounded-lg">
-              <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-              </svg>
-              <span className="text-white font-bold">4.5</span>
-              <span className="text-white text-sm ml-1" style={{ opacity: 0.7 }}>(12개)</span>
-            </div>
+            {vendor.rating && (
+              <div className="flex items-center bg-black bg-opacity-10 px-3 py-1 rounded-lg">
+                <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <span className="text-white font-bold">{vendor.rating.toFixed(1)}</span>
+                {vendor.reviewCount && (
+                  <span className="text-white text-lg ml-1" style={{ opacity: 0.7 }}>({vendor.reviewCount}개)</span>
+                )}
+              </div>
+            )}
           </div>
           {vendor.description && (
             <p className="text-white text-lg mb-4" style={{ opacity: 0.8 }}>
@@ -160,10 +213,9 @@ function FoodTruckDetailContent() {
           {/* 위치 */}
           {vendor.location && (
             <div className="flex items-center mb-2">
-              <svg className="w-5 h-5 text-purple-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+              <span className="text-white text-lg mr-3" style={{ opacity: 0.6 }}>
+                장소
+              </span>
               <span className="text-white text-lg" style={{ opacity: 0.9 }}>
                 {vendor.location}
               </span>
@@ -171,63 +223,81 @@ function FoodTruckDetailContent() {
           )}
 
           {/* 운영시간 */}
-          <div className="flex items-center">
-            <svg className="w-5 h-5 text-purple-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-white text-lg" style={{ opacity: 0.9 }}>
-              10:00-18:00
-            </span>
-          </div>
+          {vendor.operationTime && (
+            <div className="flex items-center mb-2">
+              <span className="text-white text-lg mr-3" style={{ opacity: 0.6 }}>
+                운영시간
+              </span>
+              <span className="text-white text-lg" style={{ opacity: 0.9 }}>
+                {vendor.operationTime}
+              </span>
+            </div>
+          )}
+
+          {/* 평균 가격 */}
+          {vendor.priceAverage && (
+            <div className="flex items-center mb-2">
+              <span className="text-white text-lg mr-3" style={{ opacity: 0.6 }}>
+                가격대
+              </span>
+              <span className="text-white text-lg" style={{ opacity: 0.9 }}>
+                평균 {vendor.priceAverage}
+              </span>
+            </div>
+          )}
+
+          {/* 연락처 */}
+          {vendor.contactInfo && (
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-purple-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              <span className="text-white text-lg" style={{ opacity: 0.9 }}>
+                {vendor.contactInfo}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* 메뉴 섹션 */}
-        <div>
-          <h2 className="text-xl font-bold text-white mb-4">메뉴</h2>
-          <div className="space-y-3">
-            {/* 메뉴 아이템 1 */}
-            <div className="bg-white bg-opacity-5 rounded-xl p-4 flex items-center">
-              <div className="w-16 h-16 bg-purple-900 rounded-lg mr-4 flex-shrink-0"></div>
-              <div className="flex-1">
-                <h3 className="text-white font-bold text-lg mb-1">치킨 타코</h3>
-                <p className="text-white text-sm" style={{ opacity: 0.7 }}>
-                  매콤달콤한 치킨과 신선한 야채
-                </p>
-              </div>
-              <div className="text-white font-bold text-lg">
-                ₩8,000
-              </div>
-            </div>
-
-            {/* 메뉴 아이템 2 */}
-            <div className="bg-white bg-opacity-5 rounded-xl p-4 flex items-center">
-              <div className="w-16 h-16 bg-purple-900 rounded-lg mr-4 flex-shrink-0"></div>
-              <div className="flex-1">
-                <h3 className="text-white font-bold text-lg mb-1">소고기 타코</h3>
-                <p className="text-white text-sm" style={{ opacity: 0.7 }}>
-                  부드러운 소고기와 양파
-                </p>
-              </div>
-              <div className="text-white font-bold text-lg">
-                ₩9,000
-              </div>
-            </div>
-
-            {/* 메뉴 아이템 3 */}
-            <div className="bg-white bg-opacity-5 rounded-xl p-4 flex items-center">
-              <div className="w-16 h-16 bg-purple-900 rounded-lg mr-4 flex-shrink-0"></div>
-              <div className="flex-1">
-                <h3 className="text-white font-bold text-lg mb-1">새우 타코</h3>
-                <p className="text-white text-sm" style={{ opacity: 0.7 }}>
-                  신선한 새우와 아보카도
-                </p>
-              </div>
-              <div className="text-white font-bold text-lg">
-                ₩10,000
-              </div>
+        {/* 메뉴 섹션 - 실제 메뉴 데이터가 있을 때만 표시 */}
+        {vendor.menus && vendor.menus.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-white mb-4">메뉴</h2>
+            <div className="space-y-3">
+              {vendor.menus.map((menu) => (
+                <div key={menu.id} className="rounded-xl p-4 flex items-center" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                  <div className="w-16 h-16 rounded-lg mr-4 flex-shrink-0 overflow-hidden">
+                    {menu.thumbImageUrl ? (
+                      <img 
+                        src={menu.thumbImageUrl} 
+                        alt={menu.name || '메뉴 이미지'}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-purple-900 flex items-center justify-center">
+                        <svg className="w-8 h-8 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-bold text-lg mb-1">{menu.name || '메뉴명'}</h3>
+                    {menu.description && (
+                      <p className="text-white text-md" style={{ opacity: 0.7 }}>
+                        {menu.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-white font-bold text-xl">
+                    ₩{menu.price?.toLocaleString() || '0'}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
+
       </div>
     </div>
   );

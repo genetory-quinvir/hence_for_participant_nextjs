@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { UserItem, EventItem, BoardItem, CommentItem } from "@/types/api";
-import { getUserProfile, getUserEvents, getUserPosts, getUserComments } from "@/lib/api";
+import { getUserProfile, getUserEvents, getUserPosts, getUserComments, getPostByCommentId } from "@/lib/api";
 import PostHeader from "@/components/common/PostHeader";
 import Image from "next/image";
 import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
@@ -501,7 +501,7 @@ function ProfilePageContent() {
                   className="rounded-xl overflow-hidden transition-all duration-300 hover:bg-white hover:bg-opacity-5 cursor-pointer"
                   style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
                   onClick={() => {
-                    navigate(`/board/${post.eventId}/${post.type.toLowerCase()}/${post.id}`);
+                    navigate(`/board/${post.id}?type=${post.type.toLowerCase()}&eventId=${post.eventId}`);
                   }}
                 >
                   <div className="p-4 h-full flex flex-col">
@@ -618,8 +618,25 @@ function ProfilePageContent() {
               userComments.map((comment) => (
                 <div 
                   key={comment.id} 
-                  className="p-4 rounded-lg" 
+                  className="p-4 rounded-lg cursor-pointer transition-all hover:bg-white hover:bg-opacity-10" 
                   style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+                  onClick={async () => {
+                    // 댓글의 postId를 사용하여 게시글로 이동
+                    if (comment.postId) {
+                      try {
+                        const postResult = await getPostByCommentId(comment.postId);
+                        if (postResult.success && postResult.data) {
+                          navigate(`/board/${postResult.data.id}?type=${postResult.data.type.toLowerCase()}&eventId=${postResult.data.eventId}`);
+                        } else {
+                          console.error('댓글 게시글 정보를 가져올 수 없습니다:', comment.postId);
+                          navigate(`/board/${comment.postId}`); // 임시 처리
+                        }
+                      } catch (error) {
+                        console.error('댓글 게시글 정보를 가져올 수 없습니다:', error);
+                        navigate(`/board/${comment.postId}`); // 임시 처리
+                      }
+                    }
+                  }}
                 >
                   <PostHeader 
                     nickname={comment.user?.nickname}
@@ -634,8 +651,7 @@ function ProfilePageContent() {
                   />
                   <p className="text-md text-white whitespace-pre-wrap">{comment.content || ''}</p>
                   <p className="text-xs text-white text-opacity-50 mt-2">
-                    {/* TODO: 게시글 정보가 있으면 해당 게시글로 이동하는 링크 추가 */}
-                    댓글을 클릭하여 원본 게시글 보기
+                    원본 게시글 보기 →
                   </p>
                 </div>
               ))

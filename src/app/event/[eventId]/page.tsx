@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { getFeaturedEvent } from "@/lib/api";
@@ -17,6 +17,7 @@ import EventFoodTrucks from "@/components/event/EventFoodTrucks";
 import EventCommunity from "@/components/event/EventCommunity";
 import EventShout from "@/components/event/EventShout";
 import EventHelp from "@/components/event/EventHelp";
+import EventAdvertisements from "@/components/event/EventAdvertisements";
 import { useSimpleNavigation, SimpleNavigation } from "@/utils/navigation";
 
 function EventPageContent() {
@@ -26,6 +27,17 @@ function EventPageContent() {
   const [featuredData, setFeaturedData] = useState<FeaturedItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasCalledApi = useRef(false);
+  const isMounted = useRef(false);
+
+  // 컴포넌트 마운트 상태 추적
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      hasCalledApi.current = false;
+    };
+  }, []);
 
   // 인증되지 않은 경우 메인 페이지로 리다이렉트
   useEffect(() => {
@@ -42,34 +54,69 @@ function EventPageContent() {
     }
   }, [isAuthenticated, user, params.eventId]);
 
-  // 이벤트 데이터 가져오기
+  // 이벤트 데이터 가져오기 (단순화)
   useEffect(() => {
-    const eventId = params.eventId as string;
+    // params.eventId가 배열일 수 있으므로 안전하게 추출
+    const eventId = Array.isArray(params.eventId) ? params.eventId[0] : params.eventId;
     
-    if (eventId && !authLoading) {
+    console.log('🔄 이벤트 데이터 useEffect 실행:', { 
+      eventId, 
+      paramsEventId: params.eventId,
+      hasCalledApi: hasCalledApi.current,
+      isMounted: isMounted.current
+    });
+    
+    // 컴포넌트가 마운트되지 않았거나 이미 API를 호출했다면 중복 호출 방지
+    if (!isMounted.current || hasCalledApi.current) {
+      console.log('⏭️ API 호출 방지:', { isMounted: isMounted.current, hasCalledApi: hasCalledApi.current });
+      return;
+    }
+    
+    // eventId가 있으면 API 호출 (인증은 apiRequest에서 처리)
+    if (eventId) {
+      hasCalledApi.current = true;
       setIsLoading(true);
       setError(null);
+      
+      console.log('🔄 이벤트 종합 정보 요청:', { eventId });
+      
+      // AbortController를 사용하여 이전 요청 취소
+      const abortController = new AbortController();
       
       // eventId로 직접 이벤트 정보 가져오기
       getFeaturedEvent(eventId)
         .then((featuredResult) => {
+          // 컴포넌트가 언마운트되었거나 요청이 취소되었으면 상태 업데이트하지 않음
+          if (!isMounted.current || abortController.signal.aborted) return;
+          
           if (featuredResult && featuredResult.success && featuredResult.featured) {
             setFeaturedData(featuredResult.featured);
-            console.log('이벤트 종합 정보 로드 성공:', featuredResult.featured);
+            console.log('✅ 이벤트 종합 정보 로드 성공:', featuredResult.featured);
           } else if (featuredResult) {
             setError(featuredResult.error || '이벤트 종합 정보를 가져올 수 없습니다.');
-            console.error('이벤트 종합 정보 로드 실패:', featuredResult.error);
+            console.error('❌ 이벤트 종합 정보 로드 실패:', featuredResult.error);
           }
         })
         .catch((error) => {
+          // 컴포넌트가 언마운트되었거나 요청이 취소되었으면 상태 업데이트하지 않음
+          if (!isMounted.current || abortController.signal.aborted) return;
+          
           setError('이벤트 로드 중 오류가 발생했습니다.');
-          console.error('이벤트 로드 오류:', error);
+          console.error('💥 이벤트 로드 오류:', error);
         })
         .finally(() => {
+          // 컴포넌트가 언마운트되었거나 요청이 취소되었으면 상태 업데이트하지 않음
+          if (!isMounted.current || abortController.signal.aborted) return;
+          
           setIsLoading(false);
         });
+      
+      // cleanup 함수에서 요청 취소
+      return () => {
+        abortController.abort();
+      };
     }
-  }, [params.eventId, authLoading]);
+  }, [params.eventId]); // 단순한 의존성 배열
 
   const handleBackClick = () => {
     goBack();
@@ -231,8 +278,23 @@ function EventPageContent() {
         {/* 쿠폰 섹션 */}
         {featuredData.coupons && <EventCoupon coupons={featuredData.coupons} eventId={Array.isArray(params.eventId) ? params.eventId[0] || 'default-event' : params.eventId || 'default-event'} />}
 
+        {/* 광고 섹션 1 */}
+        {featuredData.advertisements && featuredData.advertisements.length > 0 && (
+          <EventAdvertisements 
+            advertisements={[featuredData.advertisements[0]]} 
+          />
+        )}
+
         {/* 참여자 섹션 */}
-        {featuredData.participants && <EventParticipants participants={featuredData.participants} />}
+        {featuredData.participants && (
+          <EventParticipants 
+            participants={featuredData.participants}
+            showViewAllButton={true}
+            onViewAllClick={() => {
+              navigate(`/participants/list?eventId=${featuredData.event.id || 'default-event'}`);
+            }}
+          />
+        )}
 
         {/* 타임라인 섹션 */}
         {featuredData.timelines && (
@@ -242,6 +304,13 @@ function EventPageContent() {
             onViewAllClick={() => {
               navigate(`/timeline/list?eventId=${featuredData.event.id || 'default-event'}`);
             }}
+          />
+        )}
+
+        {/* 광고 섹션 2 */}
+        {featuredData.advertisements && featuredData.advertisements.length > 1 && (
+          <EventAdvertisements 
+            advertisements={[featuredData.advertisements[1]]} 
           />
         )}
 

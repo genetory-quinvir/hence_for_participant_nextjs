@@ -281,6 +281,27 @@ export interface TimelineItem {
   updatedAt?: string;
 }
 
+// MenuItem type
+export interface MenuItem {
+  id?: string;
+  name?: string;
+  description?: string;
+  price?: number;
+  thumbImageUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// ReviewItem type
+export interface ReviewItem {
+  id?: string;
+  userId?: string;
+  content?: string;
+  rating?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // VendorItem type
 export interface VendorItem {
   id?: string;
@@ -288,19 +309,21 @@ export interface VendorItem {
   name?: string;
   description?: string;
   logoUrl?: string;
-  imageUrl?: string; // Added
+  imageUrl?: string;
   website?: string;
   location?: string;
   type?: string; // Added for vendor type (e.g., 'FOOD_TRUCK')
   category?: string; // Added for vendor category
-  contact_info?: string | null;
-  operation_time?: string;
-  thumb_image_url?: string;
-  price_average?: string;
+  contactInfo?: string | null;
+  operationTime?: string;
+  thumbImageUrl?: string;
+  priceAverage?: string;
   rating?: number;
-  review_count?: number;
+  reviewCount?: number;
   status?: string;
-  is_active?: boolean;
+  isActive?: boolean;
+  menus?: MenuItem[]; // Added
+  reviews?: ReviewItem[]; // Added
   createdAt?: string;
   updatedAt?: string;
 }

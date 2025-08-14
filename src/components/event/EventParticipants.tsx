@@ -2,9 +2,12 @@
 
 import { ParticipantItem } from "@/types/api";
 import { useState } from "react";
+import EventSection from "./EventSection";
 
 interface EventParticipantsProps {
   participants: ParticipantItem[];
+  showViewAllButton?: boolean;
+  onViewAllClick?: () => void;
 }
 
 // 상대적 시간 표시 함수
@@ -39,7 +42,11 @@ const getInitials = (nickname: string): string => {
   return '?';
 };
 
-export default function EventParticipants({ participants }: EventParticipantsProps) {
+export default function EventParticipants({ 
+  participants, 
+  showViewAllButton = false, 
+  onViewAllClick 
+}: EventParticipantsProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   // 최대 5명까지만 표시하고 id가 있는 것만 필터링
@@ -52,15 +59,16 @@ export default function EventParticipants({ participants }: EventParticipantsPro
   }
 
   return (
-    <section className="py-8 px-4">
-      {/* 섹션 헤더 */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-white mb-1">참여자</h2>
-        <p className="text-sm text-white" style={{ opacity: 0.7 }}>
-          현재 이벤트에 참여하고 있는 참여자들을 확인해보세요
-        </p>
-      </div>
-
+    <EventSection
+      title="참여자"
+      subtitle="현재 이벤트의 참여자들을 확인해보세요"
+      rightButton={showViewAllButton ? {
+        text: "전체보기",
+        onClick: onViewAllClick || (() => {
+          console.log('참여자 전체보기 클릭');
+        })
+      } : undefined}
+    >
       {/* 참여자 리스트 컨테이너 */}
       <div 
         className="rounded-xl p-3"
@@ -119,6 +127,6 @@ export default function EventParticipants({ participants }: EventParticipantsPro
           </div>
         )}
       </div>
-    </section>
+    </EventSection>
   );
 } 

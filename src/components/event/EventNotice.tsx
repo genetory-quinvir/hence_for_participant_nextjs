@@ -79,7 +79,7 @@ export default function EventNotice({
                 scrollSnapAlign: 'start',
                 backgroundColor: 'rgba(255, 255, 255, 0.05)'
               }}
-              onClick={() => router.push(`/board/${notice.id}?type=notice&eventId=${notice.eventId || 'default-event'}&fromEvent=true`)}
+              onClick={() => router.push(`/board/${notice.id}?type=notice&eventId=${notice.eventId || 'default-event'}`)}
             >
               {/* 공지사항 정보 */}
               <div className="space-y-0">

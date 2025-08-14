@@ -17,7 +17,8 @@ import {
   ShoutDisplayResponse,
   UserItem,
   EventItem,
-  CommentItem
+  CommentItem,
+  ParticipantItem
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
@@ -1207,6 +1208,120 @@ export const getUserComments = async (userId: string, cursor?: string | null, li
     const url = cursor 
       ? `${API_BASE_URL}/board/comments/user/${userId}?cursor=${cursor}&limit=${limit}`
       : `${API_BASE_URL}/board/comments/user/${userId}?limit=${limit}`;
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}; 
+
+// 벤더 상세 정보 가져오기
+export const getVendorDetail = async (eventId: string, vendorId: string): Promise<{ success: boolean; data?: VendorItem; error?: string }> => {
+  const url = `${API_BASE_URL}/vendors/${eventId}/${vendorId}`;
+  console.log('🔄 getVendorDetail 시작:', { url, eventId, vendorId });
+  
+  try {
+    const result = await apiRequest<any>(url, {
+      method: 'GET',
+    });
+
+    if (result.success && result.data) {
+      console.log('✅ 벤더 상세 정보 로드 성공:', result.data);
+      
+      // API 응답 구조에 맞게 데이터 추출
+      const vendorData = result.data.data || result.data;
+      
+      return {
+        success: true,
+        data: vendorData,
+      };
+    } else {
+      console.error('❌ 벤더 상세 정보 로드 실패:', result.error);
+      return {
+        success: false,
+        error: result.error || '벤더 정보를 불러오는데 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('💥 getVendorDetail API 호출 중 예외 발생:', error);
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}; 
+
+// 참여자 목록 가져오기
+export const getParticipantsList = async (
+  eventId: string, 
+  cursor: string | null = null, 
+  limit: number = 20
+): Promise<{ success: boolean; data?: ParticipantItem[]; hasNext?: boolean; nextCursor?: string | null; error?: string }> => {
+  const url = `${API_BASE_URL}/participants/${eventId}${cursor ? `?cursor=${cursor}&limit=${limit}` : `?limit=${limit}`}`;
+  console.log('🔄 getParticipantsList 시작:', { url, eventId, cursor, limit });
+
+  try {
+    const result = await apiRequest<any>(url, {
+      method: 'GET',
+    });
+
+    if (result.success && result.data) {
+      console.log('✅ 참여자 목록 로드 성공:', result.data);
+      // API 응답 구조에 맞게 데이터 추출
+      const participantsData = result.data.data || result.data;
+      return {
+        success: true,
+        data: participantsData.items || participantsData,
+        hasNext: participantsData.pagination?.hasNext || false,
+        nextCursor: participantsData.pagination?.nextCursor || null,
+      };
+    } else {
+      console.error('❌ 참여자 목록 로드 실패:', result.error);
+      return {
+        success: false,
+        error: result.error || '참여자 목록을 불러오는데 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('💥 getParticipantsList API 호출 중 예외 발생:', error);
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}; 
+
+// 댓글의 postId로 게시글 정보 가져오기
+export const getPostByCommentId = async (
+  commentId: string
+): Promise<{ success: boolean; data?: BoardItem; error?: string }> => {
+  const url = `${API_BASE_URL}/comments/${commentId}/post`;
+  console.log('🔄 getPostByCommentId 시작:', { url, commentId });
+
+  try {
+    const result = await apiRequest<any>(url, {
+      method: 'GET',
+    });
+
+    if (result.success && result.data) {
+      console.log('✅ 게시글 정보 로드 성공:', result.data);
+      const postData = result.data.data || result.data;
+      return {
+        success: true,
+        data: postData,
+      };
+    } else {
+      console.error('❌ 게시글 정보 로드 실패:', result.error);
+      return {
+        success: false,
+        error: result.error || '게시글 정보를 불러오는데 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('💥 getPostByCommentId API 호출 중 예외 발생:', error);
     apiDebugger.logError(url, error);
     return {
       success: false,

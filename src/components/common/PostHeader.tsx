@@ -101,16 +101,14 @@ export default function PostHeader({
       {/* 더보기 버튼 */}
       {showMoreButton && (
         <button
-          onClick={onMoreClick}
-          className="flex-shrink-0 p-1 rounded-full transition-colors cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation(); // 부모 클릭 이벤트 방지
+            onMoreClick?.();
+          }}
+          className="flex-shrink-0 p-1 rounded-full hover:bg-white hover:bg-opacity-10 transition-colors"
         >
-          <svg 
-            className={`text-white ${isSmall ? 'w-4 h-4' : 'w-5 h-5'}`} 
-            fill="currentColor" 
-            viewBox="0 0 24 24"
-            style={{ opacity: 0.6 }}
-          >
-            <path d="M4 12c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2zm6 0c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2zm6 0c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2z"/>
+          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
           </svg>
         </button>
       )}

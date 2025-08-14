@@ -69,7 +69,7 @@ export default function EventCommunity({
               className="flex-shrink-0 w-80 h-48 rounded-xl overflow-hidden transition-all duration-300 hover:bg-white hover:bg-opacity-5 cursor-pointer"
               style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
               onClick={() => {
-                const url = `/board/${post.id}?type=free&eventId=${post.eventId || 'default-event'}&fromEvent=true`;
+                const url = `/board/${post.id}?type=free&eventId=${post.eventId || 'default-event'}`;
                 console.log('🔗 자유게시판 클릭:', url);
                 router.push(url);
               }}

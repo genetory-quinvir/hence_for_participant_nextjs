@@ -8,11 +8,13 @@ export class SimpleNavigation {
   // 페이지 이동 시 히스토리에 추가
   static addPage(path: string) {
     try {
+      // 쿼리 파라미터 제거하고 경로만 저장
+      const cleanPath = path.split('?')[0];
       const history = this.getHistory();
       
       // 마지막 페이지와 같으면 추가하지 않음
-      if (history.length > 0 && history[history.length - 1] === path) {
-        console.log(`⏭️ 중복 페이지 무시: ${path}`);
+      if (history.length > 0 && history[history.length - 1] === cleanPath) {
+        console.log(`⏭️ 중복 페이지 무시: ${cleanPath}`);
         return;
       }
 
@@ -22,7 +24,7 @@ export class SimpleNavigation {
         const secondLastPage = history[history.length - 2];
         
         // /profile → /profile/edit → /profile 패턴 감지
-        if (lastPage === '/profile/edit' && path === '/profile' && secondLastPage === '/profile') {
+        if (lastPage === '/profile/edit' && cleanPath === '/profile' && secondLastPage === '/profile') {
           console.log(`🔄 프로필 편집 패턴 감지 - /profile/edit 제거`);
           history.pop(); // /profile/edit 제거
           sessionStorage.setItem(this.HISTORY_KEY, JSON.stringify(history));
@@ -31,7 +33,7 @@ export class SimpleNavigation {
       }
 
       // 새 페이지 추가
-      history.push(path);
+      history.push(cleanPath);
       
       // 최대 개수 제한
       if (history.length > this.MAX_HISTORY) {
@@ -39,7 +41,7 @@ export class SimpleNavigation {
       }
 
       sessionStorage.setItem(this.HISTORY_KEY, JSON.stringify(history));
-      console.log(`📝 페이지 추가: ${path} (히스토리: ${history.join(' → ')})`);
+      console.log(`📝 페이지 추가: ${cleanPath} (히스토리: ${history.join(' → ')})`);
     } catch (error) {
       console.error('히스토리 저장 실패:', error);
     }
