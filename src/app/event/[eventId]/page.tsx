@@ -62,8 +62,17 @@ function EventPageContent() {
       eventId, 
       paramsEventId: params.eventId,
       hasCalledApi: hasCalledApi.current,
-      isMounted: isMounted.current
+      isMounted: isMounted.current,
+      authLoading,
+      isAuthenticated,
+      user
     });
+    
+    // 인증 로딩 중이거나 인증되지 않은 경우 API 호출하지 않음
+    if (authLoading || !isAuthenticated || !user) {
+      console.log('⏭️ 인증 대기 중:', { authLoading, isAuthenticated, user: !!user });
+      return;
+    }
     
     // 컴포넌트가 마운트되지 않았거나 이미 API를 호출했다면 중복 호출 방지
     if (!isMounted.current || hasCalledApi.current) {
@@ -115,7 +124,7 @@ function EventPageContent() {
         abortController.abort();
       };
     }
-  }, [params.eventId]); // 단순한 의존성 배열
+  }, [params.eventId, authLoading, isAuthenticated, user]); // 인증 상태를 의존성에 추가
 
   const handleProfileClick = () => {
     if (user) {
@@ -336,7 +345,7 @@ function EventPageContent() {
         <CommonNavigationBar
           rightButton={renderProfileButton()}
           onRightClick={handleProfileClick}
-          backgroundColor="black"
+          backgroundColor="transparent"
           backgroundOpacity={1}
           textColor="text-white"
         />

@@ -77,7 +77,6 @@ function FoodTruckDetailContent() {
     return (
       <div className="min-h-screen bg-black text-white">
         <CommonNavigationBar 
-          title="푸드트럭"
           backgroundColor="transparent"
           backgroundOpacity={0}
           textColor="text-white"
@@ -96,7 +95,6 @@ function FoodTruckDetailContent() {
     return (
       <div className="min-h-screen bg-black text-white">
         <CommonNavigationBar 
-          title="푸드트럭"
           backgroundColor="transparent"
           backgroundOpacity={0}
           textColor="text-white"
@@ -111,7 +109,6 @@ function FoodTruckDetailContent() {
   return (
     <div className="min-h-screen bg-black text-white">
       <CommonNavigationBar 
-        title="푸드트럭"
         leftButton={
           <svg
             className="w-6 h-6 text-white"
@@ -160,11 +157,11 @@ function FoodTruckDetailContent() {
 
         {/* 푸드트럭 기본 정보 */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white mb-2">
+          <h1 className="text-xl font-bold text-white mb-2">
             {vendor.name || '푸드트럭'}
           </h1>
           <div className="flex items-center justify-between mb-3">
-            <span className="text-white text-lg" style={{ opacity: 0.8 }}>
+            <span className="text-white text-md" style={{ opacity: 0.8 }}>
               {vendor.category || vendor.type || '푸드트럭'}
             </span>
             {vendor.rating && (
@@ -180,7 +177,7 @@ function FoodTruckDetailContent() {
             )}
           </div>
           {vendor.description && (
-            <p className="text-white text-lg mb-4" style={{ opacity: 0.8 }}>
+            <p className="text-white text-md mb-4" style={{ opacity: 0.8 }}>
               {vendor.description}
             </p>
           )}
@@ -188,10 +185,10 @@ function FoodTruckDetailContent() {
           {/* 위치 */}
           {vendor.location && (
             <div className="flex items-center mb-2">
-              <span className="text-white text-lg mr-3" style={{ opacity: 0.6 }}>
+              <span className="text-white text-md mr-3" style={{ opacity: 0.6 }}>
                 장소
               </span>
-              <span className="text-white text-lg" style={{ opacity: 0.9 }}>
+              <span className="text-white text-md" style={{ opacity: 0.9 }}>
                 {vendor.location}
               </span>
             </div>
@@ -200,10 +197,10 @@ function FoodTruckDetailContent() {
           {/* 운영시간 */}
           {vendor.operationTime && (
             <div className="flex items-center mb-2">
-              <span className="text-white text-lg mr-3" style={{ opacity: 0.6 }}>
+              <span className="text-white text-md mr-3" style={{ opacity: 0.6 }}>
                 운영시간
               </span>
-              <span className="text-white text-lg" style={{ opacity: 0.9 }}>
+              <span className="text-white text-md" style={{ opacity: 0.9 }}>
                 {vendor.operationTime}
               </span>
             </div>
@@ -212,10 +209,10 @@ function FoodTruckDetailContent() {
           {/* 평균 가격 */}
           {vendor.priceAverage && (
             <div className="flex items-center mb-2">
-              <span className="text-white text-lg mr-3" style={{ opacity: 0.6 }}>
+              <span className="text-white text-md mr-3" style={{ opacity: 0.6 }}>
                 가격대
               </span>
-              <span className="text-white text-lg" style={{ opacity: 0.9 }}>
+              <span className="text-white text-md" style={{ opacity: 0.9 }}>
                 평균 {vendor.priceAverage}
               </span>
             </div>
@@ -227,7 +224,7 @@ function FoodTruckDetailContent() {
               <svg className="w-5 h-5 text-purple-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
-              <span className="text-white text-lg" style={{ opacity: 0.9 }}>
+              <span className="text-white text-md" style={{ opacity: 0.9 }}>
                 {vendor.contactInfo}
               </span>
             </div>
@@ -237,7 +234,7 @@ function FoodTruckDetailContent() {
         {/* 메뉴 섹션 - 실제 메뉴 데이터가 있을 때만 표시 */}
         {vendor.menus && vendor.menus.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-xl font-bold text-white mb-4">메뉴</h2>
+            <h2 className="text-lg font-bold text-white mb-4">메뉴</h2>
             <div className="space-y-3">
               {vendor.menus.map((menu) => (
                 <div key={menu.id} className="rounded-xl p-4 flex items-center" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
@@ -257,14 +254,14 @@ function FoodTruckDetailContent() {
                     )}
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-bold text-lg mb-1">{menu.name || '메뉴명'}</h3>
+                    <h3 className="text-white font-bold text-md mb-1">{menu.name || '메뉴명'}</h3>
                     {menu.description && (
                       <p className="text-white text-md" style={{ opacity: 0.7 }}>
                         {menu.description}
                       </p>
                     )}
                   </div>
-                  <div className="text-white font-bold text-xl">
+                  <div className="text-white font-bold text-md">
                     ₩{menu.price?.toLocaleString() || '0'}
                   </div>
                 </div>

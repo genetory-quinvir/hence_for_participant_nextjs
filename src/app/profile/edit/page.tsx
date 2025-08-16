@@ -133,7 +133,7 @@ function ProfileEditContent() {
       />
 
       {/* 메인 컨텐츠 */}
-      <main className="w-full h-full flex flex-col px-4 py-4">
+      <main className="w-full h-full flex flex-col px-4 py-4 pb-24">
         {/* 프로필 아바타 섹션 */}
         <div className="flex items-center mb-8">
           <div className="w-[56px] h-[56px] bg-purple-600 rounded-full flex items-center justify-center mr-3">
@@ -166,7 +166,10 @@ function ProfileEditContent() {
               type="text"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:outline-none focus:border-purple-500 focus:bg-opacity-15 transition-all"
+              className="w-full px-4 py-3 bg-black rounded-lg text-white placeholder-white placeholder-opacity-50 focus:outline-none focus:border-purple-500 focus:bg-opacity-15 transition-all"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              }}
               placeholder="닉네임을 입력하세요"
               maxLength={20}
             />
@@ -184,27 +187,30 @@ function ProfileEditContent() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:outline-none focus:border-purple-500 focus:bg-opacity-15 transition-all"
+              className="w-full px-4 py-3 bg-black rounded-lg text-white placeholder-white placeholder-opacity-50 focus:outline-none focus:border-purple-500 focus:bg-opacity-15 transition-all"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              }}  
               placeholder="이메일을 입력하세요"
             />
           </div>
         </div>
-
-        {/* 하단 버튼 */}
-        <div className="mt-auto pt-6">
-          <button
-            onClick={handleSave}
-            disabled={isSubmitting || !nickname.trim() || !email.trim()}
-            className={`w-full py-4 rounded-lg font-semibold text-md transition-all ${
-              isSubmitting || !nickname.trim() || !email.trim()
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                : 'bg-purple-600 text-white hover:bg-purple-700 cursor-pointer'
-            }`}
-          >
-            {isSubmitting ? '저장 중...' : '저장하기'}
-          </button>
-        </div>
       </main>
+
+      {/* 하단 고정 버튼 */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-black">
+        <button
+          onClick={handleSave}
+          disabled={isSubmitting || !nickname.trim() || !email.trim()}
+          className={`w-full py-4 rounded-lg font-semibold text-md transition-all ${
+            isSubmitting || !nickname.trim() || !email.trim()
+              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              : 'bg-purple-600 text-white hover:bg-purple-700 cursor-pointer'
+          }`}
+        >
+          {isSubmitting ? '저장 중...' : '저장하기'}
+        </button>
+      </div>
     </div>
   );
 }
