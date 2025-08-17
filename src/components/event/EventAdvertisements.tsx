@@ -34,7 +34,7 @@ export default function EventAdvertisements({ advertisements }: EventAdvertiseme
     <section className="relative bg-black py-8">
       <div className="container mx-auto px-4">
         {/* 섹션 헤더 */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-0">
           {/* 광고 개수 표시 */}
           {advertisements.length > 1 && (
             <div className="flex items-center space-x-2">
