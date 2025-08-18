@@ -407,9 +407,6 @@ function RaffleContent() {
             <p className="text-center text-white text-xs mt-4" style={{ opacity: 0.6 }}>
               응모 완료 후 수정이 불가능하니 신중히 입력해주세요.
             </p>
-          </div>
-        </div>
-      </main>
           </>
         )}
 
