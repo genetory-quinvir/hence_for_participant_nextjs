@@ -77,15 +77,30 @@ export function usePWA() {
   // 포그라운드 메시지 리스너
   useEffect(() => {
     if (notificationPermission === 'granted') {
+      console.log('🔔 포그라운드 메시지 리스너 설정 중...');
       const messagePromise = onMessageListener();
       if (messagePromise && typeof messagePromise.then === 'function') {
         messagePromise
           .then((payload: any) => {
-            console.log('Received foreground message:', payload);
-            // 여기서 알림을 표시하거나 다른 처리를 할 수 있습니다
+            console.log('📨 포그라운드 메시지 수신:', payload);
+            console.log('📨 메시지 데이터:', payload.data);
+            console.log('📨 알림 정보:', payload.notification);
+            
+            // 포그라운드에서도 알림 표시
+            if (payload.notification) {
+              const { title, body } = payload.notification;
+              if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, {
+                  body,
+                  icon: '/icons/icon-192x192.png',
+                  badge: '/icons/icon-72x72.png',
+                  tag: 'hence-event-notification'
+                });
+              }
+            }
           })
           .catch((err: any) => {
-            console.log('Error receiving foreground message:', err);
+            console.error('❌ 포그라운드 메시지 수신 오류:', err);
           });
       }
     }

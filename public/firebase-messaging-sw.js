@@ -22,14 +22,20 @@ const messaging = firebase.messaging();
 // 백그라운드 메시지 처리
 messaging.onBackgroundMessage((payload) => {
   console.log('Received background message:', payload);
+  console.log('Payload data:', payload.data);
+  console.log('Payload notification:', payload.notification);
 
-  const notificationTitle = payload.notification?.title || 'Hence Event';
+  const notificationTitle = payload.notification?.title || payload.data?.title || 'Hence Event';
+  const notificationBody = payload.notification?.body || payload.data?.body || '새로운 알림이 있습니다.';
+  
   const notificationOptions = {
-    body: payload.notification?.body || '새로운 알림이 있습니다.',
+    body: notificationBody,
     icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-72x72.png',
     vibrate: [100, 50, 100],
     data: payload.data || {},
+    tag: 'hence-event-notification',
+    requireInteraction: false,
     actions: [
       {
         action: 'explore',
@@ -44,6 +50,7 @@ messaging.onBackgroundMessage((payload) => {
     ]
   };
 
+  console.log('Showing notification:', notificationTitle, notificationOptions);
   return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 

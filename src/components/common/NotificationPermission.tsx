@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePWA } from '@/hooks/usePWA';
 import { useToast } from '@/components/common/Toast';
+import { sendFCMToken } from '@/lib/api';
 
 export default function NotificationPermission() {
   const { requestPermission, notificationPermission } = usePWA();
@@ -40,7 +41,20 @@ export default function NotificationPermission() {
       const token = await requestPermission();
       if (token) {
         console.log('FCM Token received:', token);
-        showToast('알림 권한이 허용되었습니다!', 'success');
+        
+        // FCM 토큰을 서버에 전송
+        try {
+          const sendResult = await sendFCMToken(token);
+          if (sendResult.success) {
+            showToast('알림 권한이 허용되었습니다!', 'success');
+          } else {
+            console.warn('FCM 토큰 전송 실패:', sendResult.error);
+            showToast('알림 권한이 허용되었습니다! (토큰 전송 실패)', 'success');
+          }
+        } catch (error) {
+          console.error('FCM 토큰 전송 중 오류:', error);
+          showToast('알림 권한이 허용되었습니다! (토큰 전송 실패)', 'success');
+        }
       } else {
         if (isIOS) {
           showToast('iOS 설정에서 알림을 허용해주세요.', 'info');

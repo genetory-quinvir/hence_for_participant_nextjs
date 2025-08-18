@@ -1732,6 +1732,37 @@ export const registerParticipant = async (
   }
 }; 
 
+// FCM 토큰 서버 전송 API
+export const sendFCMToken = async (token: string): Promise<{ success: boolean; error?: string }> => {
+  const url = `${API_BASE_URL}/users/fcm-token`;
+  console.log('🔄 FCM 토큰 전송 시작:', { url, tokenLength: token.length });
+
+  try {
+    const result = await apiRequest<any>(url, {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+
+    if (result.success) {
+      console.log('✅ FCM 토큰 전송 성공');
+      return { success: true };
+    } else {
+      console.error('❌ FCM 토큰 전송 실패:', result.error);
+      return {
+        success: false,
+        error: result.error || 'FCM 토큰 전송에 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('💥 FCM 토큰 전송 중 예외 발생:', error);
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}; 
+
 // 댓글의 postId로 게시글 정보 가져오기
 export const getPostByCommentId = async (
   commentId: string
