@@ -27,32 +27,119 @@ export default function QRPage() {
     }
   }, [isAuthenticated, user, navigate]);
 
-  // 카메라 지원 여부 확인
-  useEffect(() => {
-    const checkCameraSupport = async () => {
-      try {
-        console.log("카메라 권한 요청 중...");
-        
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: {
-            facingMode: { ideal: 'environment' }, // 후면 카메라 우선
+  // 카메라 권한 요청 및 지원 여부 확인
+  const requestCameraPermission = async () => {
+    try {
+      console.log("카메라 권한 요청 중...");
+      
+      // 플랫폼별 최적화된 설정
+      const constraints = {
+        video: {
+          facingMode: 'environment', // 후면 카메라 우선
+          // 안드로이드에서는 해상도 제약 추가 (성능 향상)
+          ...(navigator.userAgent.includes('Android') && {
             width: { min: 640, ideal: 1280, max: 1920 },
             height: { min: 480, ideal: 720, max: 1080 }
-          } 
-        });
-        
-        stream.getTracks().forEach(track => track.stop()); // 스트림 정리
-        console.log("카메라 권한 획득 성공");
-        setHasCamera(true);
-      } catch (error) {
-        console.log('카메라를 지원하지 않거나 권한이 없습니다:', error);
-        setHasCamera(false);
+          })
+        }
+      };
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      stream.getTracks().forEach(track => track.stop()); // 스트림 정리
+      console.log("카메라 권한 획득 성공");
+      setHasCamera(true);
+      
+      // 권한 획득 후 스캐너 시작
+      setTimeout(() => {
+        startScanner();
+      }, 500);
+    } catch (error) {
+      console.log('카메라를 지원하지 않거나 권한이 없습니다:', error);
+      setHasCamera(false);
+      
+      // 플랫폼별 오류 메시지
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          const isAndroid = navigator.userAgent.includes('Android');
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+          
+          if (isAndroid) {
+            if (isPWA) {
+              showToast('카메라 권한이 거부되었습니다. 앱 설정 > 권한 > 카메라에서 허용해주세요.', 'warning');
+            } else {
+              showToast('카메라 권한이 거부되었습니다. Chrome 설정 > 사이트 설정 > 카메라에서 권한을 허용해주세요.', 'warning');
+            }
+          } else if (isIOS) {
+            if (isPWA) {
+              showToast('카메라 권한이 거부되었습니다. 설정 > Safari > 고급 > 웹사이트 데이터에서 권한을 허용해주세요.', 'warning');
+            } else {
+              showToast('카메라 권한이 거부되었습니다. 설정 > Safari > 카메라에서 권한을 허용해주세요.', 'warning');
+            }
+          } else {
+            showToast('카메라 권한이 거부되었습니다. 브라우저 설정에서 권한을 허용해주세요.', 'warning');
+          }
+        } else if (error.name === 'NotFoundError') {
+          showToast('카메라를 찾을 수 없습니다. 카메라가 연결되어 있는지 확인해주세요.', 'error');
+        } else if (error.name === 'NotSupportedError') {
+          showToast('이 브라우저는 카메라를 지원하지 않습니다. Chrome, Safari, Firefox를 사용해주세요.', 'error');
+        } else if (error.name === 'NotReadableError') {
+          showToast('카메라가 다른 앱에서 사용 중입니다. 다른 앱을 종료하고 다시 시도해주세요.', 'error');
+        } else if (error.name === 'OverconstrainedError') {
+          showToast('카메라 설정에 문제가 있습니다. 다른 카메라를 선택해주세요.', 'error');
+        } else {
+          showToast('카메라 접근 중 오류가 발생했습니다. 페이지를 새로고침하고 다시 시도해주세요.', 'error');
+        }
       }
-    };
+    }
+  };
 
+  // 카메라 지원 여부 확인 (권한 요청 없이)
+  const checkCameraSupport = async () => {
+    try {
+      // 1. 먼저 카메라 지원 여부 확인
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.log('카메라 API를 지원하지 않습니다.');
+        setHasCamera(false);
+        return;
+      }
+
+      // 2. 권한 상태 확인 (지원하는 브라우저에서만)
+      if (navigator.permissions && navigator.permissions.query) {
+        try {
+          const permission = await navigator.permissions.query({ name: 'camera' as PermissionName });
+          console.log("카메라 권한 상태:", permission.state);
+          
+          if (permission.state === 'granted') {
+            setHasCamera(true);
+            return;
+          } else if (permission.state === 'denied') {
+            setHasCamera(false);
+            return;
+          }
+          // 'prompt' 상태는 권한 요청이 필요한 상태
+        } catch (permError) {
+          console.log('권한 상태 확인 실패:', permError);
+          // 권한 API가 지원되지 않는 경우 무시하고 계속 진행
+        }
+      }
+      
+      // 3. 권한 상태를 알 수 없는 경우 카메라 지원 여부만 확인
+      // 실제 권한 요청은 사용자가 버튼을 클릭할 때만 수행
+      setHasCamera(null); // null = 확인 중
+      
+    } catch (error) {
+      console.log('카메라 지원 확인 중 오류:', error);
+      setHasCamera(false);
+    }
+  };
+
+  // 초기 카메라 지원 확인
+  useEffect(() => {
     const timer = setTimeout(() => {
       checkCameraSupport();
-    }, 500);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -88,6 +175,21 @@ export default function QRPage() {
     try {
       codeReaderRef.current = new BrowserMultiFormatReader();
       
+      // 플랫폼별 최적화된 설정
+      const hints = new Map();
+      const isAndroid = navigator.userAgent.includes('Android');
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
+      if (isIOS) {
+        // iOS에서는 TRY_HARDER 비활성화 (성능 향상)
+        hints.set(2, false);
+      } else if (isAndroid) {
+        // 안드로이드에서는 TRY_HARDER 활성화 (정확도 향상)
+        hints.set(2, true);
+        // 안드로이드에서 더 빠른 스캔을 위한 설정
+        hints.set(3, 1); // PURE_BARCODE 모드
+      }
+      
       await codeReaderRef.current.decodeFromVideoDevice(
         null, // 기본 카메라 사용
         videoRef.current,
@@ -109,7 +211,12 @@ export default function QRPage() {
   // 카메라가 지원되면 QR 스캐너 시작
   useEffect(() => {
     if (hasCamera === true && !isScanning) {
-      startScanner();
+      // iOS에서는 약간의 지연이 필요할 수 있음
+      const timer = setTimeout(() => {
+        startScanner();
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
   }, [hasCamera, isScanning]);
 
@@ -254,6 +361,7 @@ export default function QRPage() {
                   <div className="text-gray-500 text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
                     <p className="text-md font-regular text-white" style={{ opacity: 0.7 }}>카메라 확인 중...</p>
+                    <p className="text-xs mt-2 text-white" style={{ opacity: 0.5 }}>잠시만 기다려주세요</p>
                   </div>
                 </div>
               </div>
@@ -267,6 +375,16 @@ export default function QRPage() {
                     autoPlay
                     playsInline
                     muted
+                    webkit-playsinline="true"
+                    x-webkit-airplay="allow"
+                    // 안드로이드에서 더 나은 성능을 위한 속성들
+                    {...(navigator.userAgent.includes('Android') && {
+                      'data-cy': 'qr-video',
+                      style: { 
+                        transform: 'scaleX(-1)', // 안드로이드에서 미러링 효과
+                        filter: 'brightness(1.1) contrast(1.1)' // 안드로이드에서 더 선명한 화면
+                      }
+                    })}
                   />
                   {/* QR 스캔 프레임 오버레이 */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -291,8 +409,10 @@ export default function QRPage() {
               <div className="bg-black rounded-xl p-6 w-full" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
                 <div className="aspect-square bg-transparent rounded-lg flex items-center justify-center">
                   <div className="text-gray-500 text-center">
-                    <p className="text-md font-regular text-white" style={{ opacity: 0.7 }}>카메라를 지원하지 않습니다</p>
-                    <p className="text-xs mt-1 font-light text-white" style={{ opacity: 0.7 }}>입장코드를 직접 입력해주세요</p>
+                    <div className="text-4xl mb-4">📷</div>
+                    <p className="text-md font-regular text-white" style={{ opacity: 0.7 }}>카메라 접근이 필요합니다</p>
+                    <p className="text-xs mt-2 font-light text-white" style={{ opacity: 0.7 }}>아래 버튼을 눌러 카메라 권한을 허용하거나</p>
+                    <p className="text-xs font-light text-white" style={{ opacity: 0.7 }}>입장코드를 직접 입력해주세요</p>
                   </div>
                 </div>
               </div>
@@ -300,30 +420,53 @@ export default function QRPage() {
           </div>
         </section>
 
-        {/* 하단 수동 입력 버튼 - 고정 */}
+        {/* 하단 버튼들 - 고정 */}
         <section className="flex-shrink-0 pb-6" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
-          <button
-            onClick={handleManualEntry}
-            disabled={isChecking}
-            className={`w-full rounded-xl p-4 transition-colors ${
-              isChecking ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
-            }}
-          >
-            <div className="text-white font-semibold text-md flex items-center justify-center">
-              {isChecking ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  확인 중...
-                </>
-              ) : (
-                '입장코드 직접 입력'
-              )}
-            </div>
-          </button>
+          <div className="space-y-3">
+            {/* 카메라 권한 요청 버튼 (카메라가 지원되지 않거나 권한이 없는 경우) */}
+            {(hasCamera === false || hasCamera === null) && (
+              <button
+                onClick={requestCameraPermission}
+                className="w-full rounded-xl p-4 transition-colors"
+                style={{
+                  backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                  border: '1px solid rgba(124, 58, 237, 0.3)'
+                }}
+              >
+                <div className="text-purple-400 font-semibold text-md flex items-center justify-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  카메라 권한 허용하기
+                </div>
+              </button>
+            )}
+            
+            {/* 수동 입력 버튼 */}
+            <button
+              onClick={handleManualEntry}
+              disabled={isChecking}
+              className={`w-full rounded-xl p-4 transition-colors ${
+                isChecking ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}
+            >
+              <div className="text-white font-semibold text-md flex items-center justify-center">
+                {isChecking ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    확인 중...
+                  </>
+                ) : (
+                  '입장코드 직접 입력'
+                )}
+              </div>
+            </button>
+          </div>
         </section>
       </main>
 
