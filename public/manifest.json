@@ -59,5 +59,10 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["events", "lifestyle", "social"]
+  "categories": ["events", "lifestyle", "social"],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 } 
