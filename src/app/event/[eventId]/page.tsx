@@ -103,7 +103,15 @@ function EventPageContent() {
             setFeaturedData(featuredResult.featured);
             console.log('✅ 이벤트 종합 정보 로드 성공:', featuredResult.featured);
           } else if (featuredResult) {
-            setError(featuredResult.error || '이벤트 종합 정보를 가져올 수 없습니다.');
+            let errorMessage = featuredResult.error || '이벤트 종합 정보를 가져올 수 없습니다.';
+            
+            // coroutine 관련 오류인 경우 사용자 친화적인 메시지로 변경
+            if (errorMessage.includes('coroutine') || errorMessage.includes('not iterable')) {
+              errorMessage = '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+              console.error('❌ 서버 코루틴 오류:', featuredResult.error);
+            }
+            
+            setError(errorMessage);
             console.error('❌ 이벤트 종합 정보 로드 실패:', featuredResult.error);
           }
         })
@@ -111,7 +119,15 @@ function EventPageContent() {
           // 컴포넌트가 언마운트되었거나 요청이 취소되었으면 상태 업데이트하지 않음
           if (!isMounted.current || abortController.signal.aborted) return;
           
-          setError('이벤트 로드 중 오류가 발생했습니다.');
+          let errorMessage = '이벤트 로드 중 오류가 발생했습니다.';
+          
+          // coroutine 관련 오류인 경우 사용자 친화적인 메시지로 변경
+          if (error instanceof Error && (error.message.includes('coroutine') || error.message.includes('not iterable'))) {
+            errorMessage = '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+            console.error('❌ 서버 코루틴 오류:', error.message);
+          }
+          
+          setError(errorMessage);
           console.error('💥 이벤트 로드 오류:', error);
         })
         .finally(() => {

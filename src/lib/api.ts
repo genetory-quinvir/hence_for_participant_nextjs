@@ -309,8 +309,20 @@ export async function apiRequest<T>(
       let errorMessage = `API 요청에 실패했습니다. (${response.status})`;
       try {
         const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
+        const originalMessage = errorData.message || errorMessage;
         console.log('🔍 에러 응답 데이터:', errorData);
+        
+        // coroutine 관련 오류인 경우 사용자 친화적인 메시지로 변경
+        if (originalMessage.includes('coroutine') || originalMessage.includes('not iterable')) {
+          errorMessage = '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+          try {
+            console.error('❌ 서버 코루틴 오류:', originalMessage);
+          } catch (logError) {
+            console.error('❌ 서버 코루틴 오류: Unknown error');
+          }
+        } else {
+          errorMessage = originalMessage;
+        }
       } catch (e) {
         console.log('🔍 에러 응답을 JSON으로 파싱할 수 없음');
       }
@@ -416,8 +428,7 @@ export async function socialLogin(provider: SocialProvider, token: string): Prom
 
 // 이벤트 코드 확인 API
 export async function checkEventCode(eventCode: string): Promise<EventCodeResponse> {
-  // const url = `${API_BASE_URL}/events/code/${eventCode}`;
-  const url = `${API_BASE_URL}/events/code/torch2025`;
+  const url = `${API_BASE_URL}/events/code/${eventCode}`;
   
   try {
     // 네트워크 상태 체크
@@ -1056,16 +1067,43 @@ export async function getFeaturedEvent(eventId: string): Promise<FeaturedRespons
         featured: result.data.data || result.data,
       };
     } else {
+      // 서버 오류 메시지 확인
+      let errorMessage = result.error || '이벤트 정보를 가져오는데 실패했습니다.';
+      
+      // coroutine 관련 오류인 경우 사용자 친화적인 메시지로 변경
+      if (errorMessage.includes('coroutine') || errorMessage.includes('not iterable')) {
+        errorMessage = '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        try {
+          logger.error('❌ 서버 코루틴 오류:', result.error || 'Unknown coroutine error');
+        } catch (logError) {
+          logger.error('❌ 서버 코루틴 오류: Unknown error');
+        }
+      }
+      
       return {
         success: false,
-        error: result.error || '이벤트 정보를 가져오는데 실패했습니다.',
+        error: errorMessage,
       };
     }
   } catch (error) {
     apiDebugger.logError(`${API_BASE_URL}/featured/${eventId}`, error);
+    
+    // 오류 메시지 확인
+    let errorMessage = '네트워크 오류가 발생했습니다. 다시 시도해주세요.';
+    if (error instanceof Error) {
+      if (error.message.includes('coroutine') || error.message.includes('not iterable')) {
+        errorMessage = '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        try {
+          logger.error('❌ 서버 코루틴 오류:', error.message || 'Unknown coroutine error');
+        } catch (logError) {
+          logger.error('❌ 서버 코루틴 오류: Unknown error');
+        }
+      }
+    }
+    
     return {
       success: false,
-      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+      error: errorMessage,
     };
   }
 } 
@@ -1651,6 +1689,41 @@ export const getParticipantsList = async (
     }
   } catch (error) {
     console.error('💥 getParticipantsList API 호출 중 예외 발생:', error);
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}; 
+
+// 참여자 등록 API
+export const registerParticipant = async (
+  eventId: string
+): Promise<{ success: boolean; data?: any; error?: string }> => {
+  const url = `${API_BASE_URL}/participants/${eventId}`;
+  console.log('🔄 참여자 등록 시작:', { url, eventId });
+
+  try {
+    const result = await apiRequest<any>(url, {
+      method: 'POST',
+    });
+
+    if (result.success && result.data) {
+      console.log('✅ 참여자 등록 성공:', result.data);
+      return {
+        success: true,
+        data: result.data.data || result.data,
+      };
+    } else {
+      console.error('❌ 참여자 등록 실패:', result.error);
+      return {
+        success: false,
+        error: result.error || '참여자 등록에 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('💥 참여자 등록 API 호출 중 예외 발생:', error);
     apiDebugger.logError(url, error);
     return {
       success: false,

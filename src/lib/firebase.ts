@@ -12,17 +12,34 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// Firebase 앱 초기화
-const app = initializeApp(firebaseConfig);
+// Firebase 설정이 완전한지 확인
+const isFirebaseConfigured = firebaseConfig.projectId && 
+                            firebaseConfig.apiKey && 
+                            firebaseConfig.authDomain;
 
-// Firebase Cloud Messaging 초기화
-export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+// Firebase 앱 초기화 (설정이 완전한 경우에만)
+let app = null;
+let messaging = null;
+
+if (isFirebaseConfigured) {
+  try {
+    app = initializeApp(firebaseConfig);
+    // Firebase Cloud Messaging 초기화
+    messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+  } catch (error) {
+    console.warn('Firebase initialization failed:', error);
+    app = null;
+    messaging = null;
+  }
+} else {
+  console.warn('Firebase configuration is incomplete. Please check your environment variables.');
+}
 
 // FCM 토큰 요청
 export const requestNotificationPermission = async () => {
   try {
     if (!messaging) {
-      console.log('Messaging is not supported in this environment');
+      console.log('Messaging is not supported or Firebase is not configured');
       return null;
     }
 
@@ -58,4 +75,5 @@ export const onMessageListener = () => {
   });
 };
 
+export { messaging };
 export default app; 

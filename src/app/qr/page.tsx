@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { BrowserMultiFormatReader } from "@zxing/library";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
-import { checkEventCode } from "@/lib/api";
+import { checkEventCode, registerParticipant } from "@/lib/api";
 import { useSimpleNavigation } from "@/utils/navigation";
 import { useToast } from "@/components/common/Toast";
 import CodeInputModal from "@/components/common/CodeInputModal";
@@ -57,38 +57,20 @@ export default function QRPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // 카메라가 지원되면 QR 스캐너 시작
-  useEffect(() => {
-    if (hasCamera === true && !isScanning) {
-      startScanner();
+  // QR 스캐너 정리 함수 (먼저 정의)
+  const stopScanner = () => {
+    if (codeReaderRef.current) {
+      try {
+        codeReaderRef.current.reset();
+        codeReaderRef.current = null;
+      } catch (error) {
+        console.log("스캐너 정리 중 오류:", error);
+      }
     }
-  }, [hasCamera, isScanning]);
-
-  // 컴포넌트 언마운트 시 스캐너 정리
-  useEffect(() => {
-    return () => {
-      stopScanner();
-    };
-  }, []);
-
-  // 인증되지 않은 경우 로딩 표시
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-sm" style={{ opacity: 0.7 }}>메인 페이지로 이동 중...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const handleBackClick = () => {
-    stopScanner();
-    goBack();
+    setIsScanning(false);
   };
 
-  // QR 스캐너 시작
+  // QR 스캐너 시작 함수
   const startScanner = async () => {
     if (!hasCamera || !videoRef.current) {
       console.log("카메라가 지원되지 않거나 비디오 요소가 없습니다.");
@@ -124,17 +106,35 @@ export default function QRPage() {
     }
   };
 
-  // QR 스캐너 정리
-  const stopScanner = () => {
-    if (codeReaderRef.current) {
-      try {
-        codeReaderRef.current.reset();
-        codeReaderRef.current = null;
-      } catch (error) {
-        console.log("스캐너 정리 중 오류:", error);
-      }
+  // 카메라가 지원되면 QR 스캐너 시작
+  useEffect(() => {
+    if (hasCamera === true && !isScanning) {
+      startScanner();
     }
-    setIsScanning(false);
+  }, [hasCamera, isScanning]);
+
+  // 컴포넌트 언마운트 시 스캐너 정리
+  useEffect(() => {
+    return () => {
+      stopScanner();
+    };
+  }, []);
+
+  // 인증되지 않은 경우 로딩 표시
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-sm" style={{ opacity: 0.7 }}>메인 페이지로 이동 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleBackClick = () => {
+    stopScanner();
+    goBack();
   };
 
   // QR 코드 스캔 처리
@@ -150,18 +150,38 @@ export default function QRPage() {
 
       if (result.success && result.event) {
         console.log("이벤트 확인 성공:", result.event);
-        // 이벤트 화면으로 바로 이동 (히스토리에서 QR 페이지 제거)
+        
+        // 이벤트 ID 추출
         const eventId = result.event.id;
         if (eventId) {
+          console.log('참여자 등록 시작:', eventId);
+          
+          // 참여자 등록 시도
+          try {
+            const registerResult = await registerParticipant(eventId);
+            if (registerResult.success) {
+              console.log('✅ 참여자 등록 성공');
+              showToast('이벤트에 참여되었습니다!', 'success');
+            } else {
+              // 이미 참여 중인 경우 조용히 넘어가기
+              if (registerResult.error?.includes('이미 참여') || registerResult.error?.includes('already')) {
+                console.log('ℹ️ 이미 참여 중인 사용자');
+              } else {
+                console.log('⚠️ 참여자 등록 실패:', registerResult.error);
+              }
+            }
+          } catch (error) {
+            console.error('❌ 참여자 등록 중 오류:', error);
+          }
+          
+          // 이벤트 화면으로 이동
           console.log('이벤트 페이지로 이동:', `/event/${eventId}`);
-          // QR 페이지에서 온 것을 표시
           sessionStorage.setItem('previousPage', '/qr');
-          replace(`/event/${eventId}`);
+          navigate(`/event/${eventId}`);
         } else {
-          console.log('이벤트 페이지로 이동:', `/event?code=${qrCode.trim()}`);
-          // QR 페이지에서 온 것을 표시
+          console.log('이벤트 코드로 페이지 이동:', `/event?code=${qrCode.trim()}`);
           sessionStorage.setItem('previousPage', '/qr');
-          replace(`/event?code=${qrCode.trim()}`);
+          navigate(`/event?code=${qrCode.trim()}`);
         }
       } else {
         console.log("이벤트 확인 실패:", result.error);

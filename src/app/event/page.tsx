@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, Suspense } from "react";
-import { checkEventCode } from "@/lib/api";
+import { checkEventCode, registerParticipant } from "@/lib/api";
 import { useSimpleNavigation } from "@/utils/navigation";
 
 function EventPageContent() {
@@ -15,15 +15,52 @@ function EventPageContent() {
     const eventId = searchParams.get('eventId');
     
     if (eventId) {
-      // eventId가 있으면 직접 동적 라우팅으로 이동
-      navigate(`/event/${eventId}`);
+      // eventId가 있으면 참여자 등록 후 동적 라우팅으로 이동
+      registerParticipant(eventId)
+        .then((result) => {
+          if (result.success) {
+            console.log('✅ 참여자 등록 성공');
+          } else {
+            // 이미 참여 중인 경우 조용히 넘어가기
+            if (result.error?.includes('이미 참여') || result.error?.includes('already')) {
+              console.log('ℹ️ 이미 참여 중인 사용자');
+            } else {
+              console.log('⚠️ 참여자 등록 실패:', result.error);
+            }
+          }
+          navigate(`/event/${eventId}`);
+        })
+        .catch((error) => {
+          console.error('❌ 참여자 등록 중 오류:', error);
+          navigate(`/event/${eventId}`);
+        });
     } else if (eventCode) {
       // eventCode가 있으면 이벤트 코드로 이벤트 ID를 찾아서 이동
       checkEventCode(eventCode)
         .then((result) => {
           if (result.success && result.event && result.event.id) {
             console.log('이벤트 코드 확인 성공:', result.event);
-            navigate(`/event/${result.event.id}`);
+            const eventId = result.event.id;
+            
+            // 참여자 등록 후 이동
+            registerParticipant(eventId)
+              .then((registerResult) => {
+                if (registerResult.success) {
+                  console.log('✅ 참여자 등록 성공');
+                } else {
+                  // 이미 참여 중인 경우 조용히 넘어가기
+                  if (registerResult.error?.includes('이미 참여') || registerResult.error?.includes('already')) {
+                    console.log('ℹ️ 이미 참여 중인 사용자');
+                  } else {
+                    console.log('⚠️ 참여자 등록 실패:', registerResult.error);
+                  }
+                }
+                navigate(`/event/${eventId}`);
+              })
+              .catch((error) => {
+                console.error('❌ 참여자 등록 중 오류:', error);
+                navigate(`/event/${eventId}`);
+              });
           } else {
             console.error('이벤트 코드 확인 실패:', result.error);
             navigate("/");
