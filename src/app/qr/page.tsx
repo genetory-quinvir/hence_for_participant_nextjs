@@ -38,8 +38,14 @@ export default function QRPage() {
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        console.log("iOS: 비디오 재생 시작됨");
+        
+        // 비디오가 이미 재생 중이 아닌 경우에만 play() 호출
+        if (videoRef.current.paused) {
+          await videoRef.current.play();
+          console.log("iOS: 비디오 재생 시작됨");
+        } else {
+          console.log("iOS: 비디오가 이미 재생 중입니다.");
+        }
       }
       
       // QR 스캐너 시작
@@ -85,7 +91,11 @@ export default function QRPage() {
       checkCameraSupport();
     }, 1000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      // 컴포넌트 언마운트 시 스트림 정리
+      stopScanner();
+    };
   }, []);
 
   // QR 스캐너 정리 함수 (먼저 정의)
@@ -98,6 +108,19 @@ export default function QRPage() {
         console.log("스캐너 정리 중 오류:", error);
       }
     }
+    
+    // 비디오 스트림 정리
+    if (videoRef.current && videoRef.current.srcObject) {
+      try {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+        console.log("비디오 스트림 정리 완료");
+      } catch (error) {
+        console.log("비디오 스트림 정리 중 오류:", error);
+      }
+    }
+    
     setIsScanning(false);
   };
 
