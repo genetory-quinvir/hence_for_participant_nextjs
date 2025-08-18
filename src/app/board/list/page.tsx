@@ -317,7 +317,7 @@ function BoardListContent() {
         </div>
         
         {/* 게시글 세로 리스트 */}
-        <div className="space-y-4">
+        <div className="space-y-4" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           {sortedPosts.length > 0 ? (
             sortedPosts.map((post) => (
               <div
@@ -499,6 +499,10 @@ function BoardListContent() {
         <button
           onClick={handleWriteClick}
           className="fixed bottom-6 right-6 w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 z-50"
+          style={{ 
+            bottom: 'max(24px, env(safe-area-inset-bottom) + 12px)',
+            right: 'max(24px, env(safe-area-inset-right) + 12px)'
+          }}
         >
           <svg
             className="w-6 h-6"

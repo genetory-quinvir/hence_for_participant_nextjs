@@ -68,7 +68,7 @@ export default function SettingsPage() {
       />
 
       {/* 메인 컨텐츠 */}
-      <main className="w-full h-full flex flex-col px-4 py-4">
+      <main className="w-full h-full flex flex-col px-4 py-4" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="w-full h-full flex flex-col">
           {/* 설정 메뉴 */}
           <div className="space-y-4">

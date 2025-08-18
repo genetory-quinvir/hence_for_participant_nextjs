@@ -264,7 +264,7 @@ function ParticipantsListContent() {
         textColor="text-white"
       />
       
-      <div className="px-4 py-2">
+      <div className="px-4 py-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* 참여자 수 표시 */}
         <div className="mb-6">
           <p className="text-sm text-white" style={{ opacity: 0.7 }}>

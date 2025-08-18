@@ -106,7 +106,10 @@ export default function NotificationPermission() {
 
   if (notificationPermission === 'granted') {
     return (
-      <div className="fixed bottom-4 left-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg">
+      <div className="fixed bottom-4 left-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg" style={{ 
+        bottom: 'max(16px, env(safe-area-inset-bottom) + 4px)',
+        left: 'max(16px, env(safe-area-inset-left) + 4px)'
+      }}>
         <div className="flex items-center space-x-2">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -119,7 +122,10 @@ export default function NotificationPermission() {
 
   if (notificationPermission === 'denied') {
     return (
-      <div className="fixed bottom-4 left-4 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg">
+      <div className="fixed bottom-4 left-4 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg" style={{ 
+        bottom: 'max(16px, env(safe-area-inset-bottom) + 4px)',
+        left: 'max(16px, env(safe-area-inset-left) + 4px)'
+      }}>
         <div className="flex items-center space-x-2">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -133,7 +139,10 @@ export default function NotificationPermission() {
   }
 
   return (
-    <div className="fixed bottom-4 left-4 bg-purple-600 text-white px-4 py-2 rounded-lg shadow-lg">
+    <div className="fixed bottom-4 left-4 bg-purple-600 text-white px-4 py-2 rounded-lg shadow-lg" style={{ 
+      bottom: 'max(16px, env(safe-area-inset-bottom) + 4px)',
+      left: 'max(16px, env(safe-area-inset-left) + 4px)'
+    }}>
       {isIOS && !isPWA && (
         <div className="mb-2 p-2 bg-blue-600 rounded text-xs">
           📱 iOS: Safari에서 "홈화면에 추가" 후 PWA로 실행해주세요

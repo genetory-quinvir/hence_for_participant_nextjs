@@ -800,7 +800,8 @@ function ProfilePageContent() {
           <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 pb-8" style={{ 
             scrollbarWidth: 'none', 
             msOverflowStyle: 'none',
-            WebkitOverflowScrolling: 'touch'
+            WebkitOverflowScrolling: 'touch',
+            paddingBottom: 'max(32px, env(safe-area-inset-bottom) + 16px)'
           }}>
             {isLoading ? (
               <div className="text-center py-8">

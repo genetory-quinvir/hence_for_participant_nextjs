@@ -185,7 +185,7 @@ function TimelineListContent() {
         textColor="text-white"
       />
       
-      <div className="px-4 py-2">
+      <div className="px-4 py-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* 타임라인 리스트 */}
         <div className="space-y-4">
           {timelines.length > 0 ? (

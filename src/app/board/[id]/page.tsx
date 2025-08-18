@@ -303,7 +303,7 @@ function BoardDetailContent() {
         textColor="text-white"
       />
       
-      <div className={`pl-4 pr-6 ${isFreeBoardPost ? 'py-2' : 'py-2'}`}>
+      <div className={`pl-4 pr-6 ${isFreeBoardPost ? 'py-2' : 'py-2'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* 게시글 디테일 */}
         <PostDetail 
           post={post} 

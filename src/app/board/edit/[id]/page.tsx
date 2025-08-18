@@ -291,7 +291,7 @@ function BoardEditContent() {
         </div>
 
         {/* 이미지 업로드 영역 - 하단 고정 */}
-        <div className="flex-shrink-0 pb-6">
+        <div className="flex-shrink-0 pb-6" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom) + 12px)' }}>
           {/* 이미지 미리보기 */}
           {imageUrls.length > 0 && (
             <div className="mb-4">

@@ -252,6 +252,7 @@ function EventPageContent() {
         style={{
           scrollbarWidth: 'none', /* Firefox */
           msOverflowStyle: 'none', /* Internet Explorer 10+ */
+          paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
         <style jsx>{`

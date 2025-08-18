@@ -120,7 +120,7 @@ function FoodTrucksContent() {
         textColor="text-white"
       />
       
-      <div className="px-4 py-2">
+      <div className="px-4 py-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* 그리드 레이아웃 */}
         <div className="grid grid-cols-2 gap-4">
           {vendors.length > 0 ? (

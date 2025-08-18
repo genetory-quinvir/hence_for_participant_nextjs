@@ -181,7 +181,7 @@ function RaffleContent() {
   return (
     <div className="min-h-screen bg-black text-white relative">
       {/* 메인 컨텐츠 */}
-      <main className="w-full min-h-screen overflow-y-auto px-4 pt-20 pb-8">
+      <main className="w-full min-h-screen overflow-y-auto px-4 pt-20 pb-8" style={{ paddingBottom: 'max(32px, env(safe-area-inset-bottom) + 16px)' }}>
         {/* 이벤트 설명 섹션 */}
         <div className="mb-8">
           <div className="rounded-2xl p-6 relative overflow-hidden" style={{ 
@@ -407,6 +407,9 @@ function RaffleContent() {
             <p className="text-center text-white text-xs mt-4" style={{ opacity: 0.6 }}>
               응모 완료 후 수정이 불가능하니 신중히 입력해주세요.
             </p>
+          </div>
+        </div>
+      </main>
           </>
         )}
 

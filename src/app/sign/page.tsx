@@ -229,7 +229,7 @@ function SignContent() {
           </div>
 
           {/* 추가 옵션 */}
-          <div className="mt-8 text-center">
+          <div className="mt-8 text-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <p className="text-white text-sm" style={{ opacity: 0.6 }}>
               소셜 로그인으로 간편하게 시작하세요
             </p>

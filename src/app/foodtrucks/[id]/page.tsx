@@ -160,7 +160,7 @@ function FoodTruckDetailContent() {
         textColor="text-white"
       />
       
-      <div className="px-4 py-0">
+      <div className="px-4 py-0" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* 썸네일 이미지 - 상단 정방형 */}
         <div className="mb-6">
           <div className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer relative" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>

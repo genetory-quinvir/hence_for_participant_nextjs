@@ -171,7 +171,7 @@ export default function HomePage() {
           </section>
 
           {/* 하단 안내 텍스트 */}
-          <section className="px-6 pb-10">
+          <section className="px-6 pb-10" style={{ paddingBottom: 'max(40px, env(safe-area-inset-bottom) + 16px)' }}>
             <p className="text-white text-xs text-left" style={{ opacity: 0.6 }}>
               문제가 있으시면 현장 스태프에게 문의해주세요
             </p>
