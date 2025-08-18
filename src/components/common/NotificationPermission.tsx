@@ -8,21 +8,53 @@ export default function NotificationPermission() {
   const { requestPermission, notificationPermission } = usePWA();
   const { showToast } = useToast();
   const [isRequesting, setIsRequesting] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isPWA, setIsPWA] = useState(false);
+
+  // iOS 및 PWA 상태 확인
+  useEffect(() => {
+    const checkPlatform = () => {
+      // iOS 감지
+      const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      setIsIOS(isIOSDevice);
+
+      // PWA 감지
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isInApp = window.navigator.standalone === true;
+      setIsPWA(isStandalone || isInApp);
+    };
+
+    checkPlatform();
+  }, []);
 
   const handleRequestPermission = async () => {
     setIsRequesting(true);
     try {
+      // iOS에서 PWA로 설치되지 않은 경우 안내
+      if (isIOS && !isPWA) {
+        showToast('iOS에서는 홈화면에 추가 후 알림 권한을 요청해주세요.', 'info');
+        setIsRequesting(false);
+        return;
+      }
+
       const token = await requestPermission();
       if (token) {
         console.log('FCM Token received:', token);
-        // 여기서 서버에 토큰을 전송할 수 있습니다
         showToast('알림 권한이 허용되었습니다!', 'success');
       } else {
-        showToast('알림 권한이 거부되었습니다.', 'error');
+        if (isIOS) {
+          showToast('iOS 설정에서 알림을 허용해주세요.', 'info');
+        } else {
+          showToast('알림 권한이 거부되었습니다.', 'error');
+        }
       }
     } catch (error) {
       console.error('Error requesting permission:', error);
-      showToast('알림 권한 요청 중 오류가 발생했습니다.', 'error');
+      if (isIOS) {
+        showToast('iOS에서는 설정에서 알림을 허용해주세요.', 'info');
+      } else {
+        showToast('알림 권한 요청 중 오류가 발생했습니다.', 'error');
+      }
     } finally {
       setIsRequesting(false);
     }
@@ -48,7 +80,9 @@ export default function NotificationPermission() {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
           </svg>
-          <span className="text-sm">알림 권한 거부됨</span>
+          <span className="text-sm">
+            {isIOS ? 'iOS 설정에서 알림 허용 필요' : '알림 권한 거부됨'}
+          </span>
         </div>
       </div>
     );
@@ -56,6 +90,11 @@ export default function NotificationPermission() {
 
   return (
     <div className="fixed bottom-4 left-4 bg-purple-600 text-white px-4 py-2 rounded-lg shadow-lg">
+      {isIOS && !isPWA && (
+        <div className="mb-2 p-2 bg-blue-600 rounded text-xs">
+          📱 iOS: Safari에서 "홈화면에 추가" 후 PWA로 실행해주세요
+        </div>
+      )}
       <button
         onClick={handleRequestPermission}
         disabled={isRequesting}
@@ -72,7 +111,8 @@ export default function NotificationPermission() {
           </svg>
         )}
         <span className="text-sm">
-          {isRequesting ? '권한 요청 중...' : '알림 권한 요청'}
+          {isRequesting ? '권한 요청 중...' : 
+           isIOS && !isPWA ? '홈화면에 추가 후 권한 요청' : '알림 권한 요청'}
         </span>
       </button>
     </div>
