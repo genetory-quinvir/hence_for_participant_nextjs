@@ -158,13 +158,41 @@ export default function QRPage() {
     setIsScanning(false);
   };
 
-  // QR 스캐너 시작 함수 (원래 방식으로 복원)
+  // QR 스캐너 시작 함수 (iOS Safari 호환성 강화)
   const startScanner = async () => {
     console.log("startScanner 호출됨");
     
-    if (!videoRef.current) {
-      console.log("비디오 요소가 없습니다.");
-      return;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (isIOS) {
+      console.log("iOS 감지: iOS 전용 처리 시작");
+      
+      // iOS에서는 먼저 스캐닝 상태를 true로 설정하여 비디오 요소가 렌더링되도록 함
+      setIsScanning(true);
+      
+      // 비디오 요소가 렌더링될 때까지 대기
+      await new Promise((resolve) => {
+        const checkVideoElement = () => {
+          if (videoRef.current) {
+            console.log("iOS 비디오 요소 발견");
+            resolve(true);
+          } else {
+            console.log("iOS 비디오 요소 대기 중...");
+            setTimeout(checkVideoElement, 100);
+          }
+        };
+        checkVideoElement();
+      });
+      
+      console.log("iOS 비디오 요소 준비 완료");
+    } else {
+      // 안드로이드/웹에서는 기존 방식
+      if (!videoRef.current) {
+        console.log("비디오 요소가 없습니다.");
+        return;
+      }
+      
+      setIsScanning(true);
     }
 
     if (codeReaderRef.current) {
@@ -172,11 +200,25 @@ export default function QRPage() {
       return;
     }
 
-    setIsScanning(true);
     console.log("QR 스캐너 시작 중...");
     
     try {
-      // 모든 플랫폼에서 동일한 방식 사용 (이전에 작동했던 방식)
+      if (isIOS) {
+        // iOS에서는 비디오 요소가 준비될 때까지 추가 대기
+        await new Promise((resolve) => {
+          if (videoRef.current && videoRef.current.readyState >= 2) {
+            resolve(true);
+          } else if (videoRef.current) {
+            videoRef.current.onloadeddata = () => resolve(true);
+          } else {
+            resolve(true);
+          }
+        });
+        
+        console.log("iOS 비디오 스트림 준비 완료");
+      }
+      
+      // 모든 플랫폼에서 동일한 방식 사용
       codeReaderRef.current = new BrowserMultiFormatReader();
       
       await codeReaderRef.current.decodeFromVideoDevice(
@@ -194,6 +236,11 @@ export default function QRPage() {
     } catch (error) {
       console.error("QR 스캐너 시작 오류:", error);
       setIsScanning(false);
+      
+      // iOS에서 오류 발생 시 사용자에게 안내
+      if (isIOS) {
+        showToast('카메라 시작에 실패했습니다. 페이지를 새로고침하고 다시 시도해주세요.', 'error');
+      }
     }
   };
 
@@ -410,7 +457,8 @@ export default function QRPage() {
                           'x-webkit-airplay': 'allow',
                           'controls': false,
                           'disablePictureInPicture': true,
-                          'disableRemotePlayback': true
+                          'disableRemotePlayback': true,
+                          'preload': 'auto'
                         })}
                       />
                       {/* QR 스캔 프레임 오버레이 */}
