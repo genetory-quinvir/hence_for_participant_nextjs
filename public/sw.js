@@ -2,24 +2,41 @@
 const CACHE_NAME = 'hence-event-app-v1';
 const urlsToCache = [
   '/',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/manifest.json'
 ];
 
 // Install event
 self.addEventListener('install', (event) => {
+  console.log('Service Worker installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        // 개별적으로 캐시하여 실패하는 파일은 건너뛰기
+        return Promise.allSettled(
+          urlsToCache.map(url => 
+            cache.add(url).catch(err => {
+              console.warn(`Failed to cache ${url}:`, err);
+              return null;
+            })
+          )
+        );
+      })
+      .catch(err => {
+        console.error('Cache installation failed:', err);
+        // 캐시 설치가 실패해도 Service Worker는 활성화
+        return Promise.resolve();
       })
   );
 });
 
 // Fetch event
 self.addEventListener('fetch', (event) => {
+  // API 요청은 캐시하지 않음
+  if (event.request.url.includes('/api/') || event.request.url.includes('api-participant.hence.events')) {
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -28,13 +45,17 @@ self.addEventListener('fetch', (event) => {
           return response;
         }
         return fetch(event.request);
-      }
-    )
+      })
+      .catch(() => {
+        // 캐시나 fetch가 실패해도 앱이 계속 작동하도록
+        return new Response('Network error', { status: 503 });
+      })
   );
 });
 
 // Activate event
 self.addEventListener('activate', (event) => {
+  console.log('Service Worker activating...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -53,8 +74,6 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : '새로운 알림이 있습니다.',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -63,13 +82,11 @@ self.addEventListener('push', (event) => {
     actions: [
       {
         action: 'explore',
-        title: '확인하기',
-        icon: '/icons/icon-192x192.png'
+        title: '확인하기'
       },
       {
         action: 'close',
-        title: '닫기',
-        icon: '/icons/icon-192x192.png'
+        title: '닫기'
       }
     ]
   };

@@ -454,4 +454,38 @@ export interface CreateShoutResponse {
   success: boolean;
   data?: ShoutItem;
   error?: string;
+}
+
+// 채팅 관련 타입
+export interface ChatMessage {
+  id: string;
+  userId: string;
+  nickname: string;
+  profileImageUrl?: string | null;
+  content: string;
+  timestamp: number;
+  eventId: string;
+}
+
+export interface ChatRoomInfo {
+  eventId: string;
+  participantCount: number;
+  messages: ChatMessage[];
+}
+
+export interface ChatResponse {
+  success: boolean;
+  data?: ChatRoomInfo;
+  error?: string;
+}
+
+export interface SendMessageRequest {
+  eventId: string;
+  content: string;
+}
+
+export interface SendMessageResponse {
+  success: boolean;
+  data?: ChatMessage;
+  error?: string;
 } 

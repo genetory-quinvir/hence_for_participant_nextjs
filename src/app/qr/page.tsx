@@ -1,21 +1,23 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { BrowserMultiFormatReader } from "@zxing/library";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { checkEventCode } from "@/lib/api";
-import { BrowserQRCodeReader } from "@zxing/library";
-import CodeInputModal from "@/components/common/CodeInputModal";
 import { useSimpleNavigation } from "@/utils/navigation";
+import { useToast } from "@/components/common/Toast";
+import CodeInputModal from "@/components/common/CodeInputModal";
 
 export default function QRPage() {
   const { navigate, goBack, replace } = useSimpleNavigation();
   const { isAuthenticated, user } = useAuth();
+  const { showToast } = useToast();
   const [isChecking, setIsChecking] = useState(false);
   const [hasCamera, setHasCamera] = useState<boolean | null>(null); // null: 확인 중, true: 지원, false: 미지원
   const [isScanning, setIsScanning] = useState(false);
   const [showCodeModal, setShowCodeModal] = useState(false);
-  const codeReaderRef = useRef<BrowserQRCodeReader | null>(null);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // 인증되지 않은 경우 메인 페이지로 리다이렉트
@@ -102,7 +104,7 @@ export default function QRPage() {
     console.log("QR 스캐너 시작 중...");
     
     try {
-      codeReaderRef.current = new BrowserQRCodeReader();
+      codeReaderRef.current = new BrowserMultiFormatReader();
       
       await codeReaderRef.current.decodeFromVideoDevice(
         null, // 기본 카메라 사용
@@ -163,7 +165,7 @@ export default function QRPage() {
         }
       } else {
         console.log("이벤트 확인 실패:", result.error);
-        alert(result.error || "유효하지 않은 QR 코드입니다.");
+        showToast(result.error || "유효하지 않은 QR 코드입니다.");
         // 실패 시 스캐너 재시작
         setTimeout(() => {
           if (hasCamera) {
@@ -173,7 +175,7 @@ export default function QRPage() {
       }
     } catch (error) {
       console.error("QR 코드 확인 중 오류:", error);
-      alert("QR 코드 확인 중 오류가 발생했습니다. 다시 시도해주세요.");
+      showToast("QR 코드 확인 중 오류가 발생했습니다. 다시 시도해주세요.");
       // 실패 시 스캐너 재시작
       setTimeout(() => {
         if (hasCamera) {

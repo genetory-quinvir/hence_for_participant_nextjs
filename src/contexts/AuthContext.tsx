@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // 로그아웃 함수
-  const logout = () => {
+  const logout = useCallback(() => {
     logger.info('🔐 로그아웃 실행');
     
     // 토큰 제거
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshToken: null,
       isLoading: false,
     });
-  };
+  }, []);
 
   // 사용자 정보 업데이트
   const updateUser = (user: User) => {
@@ -116,26 +116,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
 
-      // 토큰이 있으면 일단 로그인 상태로 유지
-      // 실제 API 호출 시에 토큰 유효성을 검증하도록 함
-      const user = getStoredUser();
-      if (user) {
-        logger.info('✅ 저장된 사용자 정보로 로그인 상태 복원');
-        setAuthState({
-          isAuthenticated: true,
-          user,
-          accessToken,
-          refreshToken,
-          isLoading: false,
-        });
-        return true;
-      } else {
-        // 사용자 정보가 없으면 토큰 검증 시도
-        try {
+      // 토큰이 있으면 항상 users/me API를 호출해서 최신 사용자 정보를 가져옴
+      logger.info('🔄 최신 사용자 정보 가져오기 시작');
       const isValid = await validateToken(accessToken);
+      
       if (isValid) {
         const user = getStoredUser();
         if (user) {
+          logger.info('✅ 최신 사용자 정보로 로그인 상태 복원', {
+            userId: user.id,
+            nickname: user.nickname,
+            profileImageUrl: user.profileImageUrl
+          });
           setAuthState({
             isAuthenticated: true,
             user,
@@ -143,16 +135,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             refreshToken,
             isLoading: false,
           });
-              return true;
-            }
-          }
-        } catch (error) {
-          logger.warn('토큰 검증 실패, 로그아웃 처리', error);
+          return true;
         }
-        
-        logout();
-        return false;
       }
+      
+      logger.warn('❌ 사용자 정보 가져오기 실패, 로그아웃 처리');
+      logout();
+      return false;
     } catch (error) {
       logger.error('💥 인증 상태 확인 실패', error);
       logout();
@@ -181,14 +170,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { apiRequest } = await import('@/lib/api');
       const API_BASE_URL = 'https://api-participant.hence.events';
       
-      const result = await apiRequest<any>(`${API_BASE_URL}/auth/me`, {
+      logger.info('📡 users/me API 호출 시작');
+      const result = await apiRequest<any>(`${API_BASE_URL}/users/me`, {
         method: 'GET',
       });
 
+      logger.info('📥 users/me API 응답:', {
+        success: result.success,
+        hasData: !!result.data,
+        error: result.error
+      });
+
       if (result.success && result.data) {
+        // 사용자 정보 추출 및 저장
+        const userData = result.data.data || result.data.user || result.data;
+        logger.info('✅ users/me 사용자 데이터 추출:', {
+          userId: userData.id,
+          nickname: userData.nickname,
+          email: userData.email,
+          profileImageUrl: userData.profileImageUrl
+        });
+        
         // 사용자 정보 저장
-        storeUser(result.data.data || result.data.user || result.data);
-        logger.info('✅ 토큰 검증 성공');
+        storeUser(userData);
+        logger.info('✅ 토큰 검증 성공 및 사용자 정보 저장됨');
         return true;
       } else {
         logger.warn('❌ 토큰 검증 실패', result.error);

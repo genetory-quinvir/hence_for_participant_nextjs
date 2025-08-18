@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
+import CommonProfileView from "@/components/common/CommonProfileView";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSimpleNavigation } from "@/utils/navigation";
 import NotificationPermission from "@/components/common/NotificationPermission";
@@ -43,19 +44,15 @@ export default function HomePage() {
   // 로그인 상태에 따른 프로필 버튼 렌더링
   const renderProfileButton = () => {
     if (isAuthenticated && user) {
-      // 로그인된 경우: 사용자 아바타 또는 프로필 아이콘
-      const userName = user.nickname || user.email || '사용자';
-      const userInitial = userName.charAt(0).toUpperCase();
-      
+      // 로그인된 경우: CommonProfileView 사용
       return (
-        <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center" style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.4)',
-          border: '3px solid rgba(255, 255, 255, 0.1)'
-        }}>
-          <span className="text-white text-sm font-semibold">
-            {userInitial}
-          </span>
-        </div>
+        <CommonProfileView
+          profileImageUrl={user.profileImageUrl}
+          nickname={user.nickname}
+          size="md"
+          showBorder={true}
+          showHover={true}
+        />
       );
     } else {
       // 로그인되지 않은 경우: 투명 배경에 하얀색 보더

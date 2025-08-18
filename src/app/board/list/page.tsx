@@ -3,13 +3,16 @@
 import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BoardItem } from "@/types/api";
-import { getBoardList, getAccessToken } from "@/lib/api";
+import { getBoardList, getAccessToken, deleteBoard } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import PostHeader from "@/components/common/PostHeader";
 import { useSimpleNavigation } from "@/utils/navigation";
 import Image from "next/image";
 import { useImageGallery } from "@/hooks/useImageGallery";
 import ImageGallery from "@/components/common/ImageGallery";
+import CommonActionSheet from "@/components/CommonActionSheet";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/common/Toast";
 
 function BoardListContent() {
   const router = useRouter();
@@ -22,8 +25,14 @@ function BoardListContent() {
   const [hasNext, setHasNext] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [sortBy, setSortBy] = useState<'latest' | 'popular'>('latest');
+  const [showActionSheet, setShowActionSheet] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<BoardItem | null>(null);
   const isMounted = useRef(true);
   const hasCalledApi = useRef(false);
+
+  // 인증 훅
+  const { user } = useAuth();
+  const { showToast } = useToast();
 
   // 이미지 갤러리 훅
   const { isOpen, images, initialIndex, openGallery, closeGallery } = useImageGallery();
@@ -41,11 +50,11 @@ function BoardListContent() {
         setCursor(null);
         setHasNext(true);
         
-        const result = await getBoardList(eventId, type, null, 10);
+        const result = await getBoardList(eventId, type, null, 20);
         
-                  if (result.success && result.data) {
-            setPosts(result.data.items);
-            setHasNext(result.data.hasNext);
+        if (result.success && result.data) {
+          setPosts(result.data.items);
+          setHasNext(result.data.hasNext);
           setCursor(result.data.nextCursor || null);
         } else {
           setError(result.error || '게시글을 불러오는데 실패했습니다.');
@@ -68,7 +77,7 @@ function BoardListContent() {
     try {
       setLoadingMore(true);
       
-      const result = await getBoardList(eventId, type, cursor, 10);
+      const result = await getBoardList(eventId, type, cursor, 20);
       
       if (result.success && result.data) {
         setPosts(prev => {
@@ -91,7 +100,12 @@ function BoardListContent() {
 
   // 스크롤 감지
   const handleScroll = useCallback(() => {
-    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 100) {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    
+    // 스크롤이 페이지 하단 200px 이내에 도달했을 때 추가 로딩
+    if (scrollTop + windowHeight >= documentHeight - 200) {
       loadMore();
     }
   }, [loadMore]);
@@ -106,17 +120,63 @@ function BoardListContent() {
     router.push(url);
   };
 
+  const handleMoreClick = (post: BoardItem) => {
+    setSelectedPost(post);
+    setShowActionSheet(true);
+  };
+
+  const handleActionClick = async (action: 'edit' | 'delete' | 'report') => {
+    if (!selectedPost) return;
+    
+    setShowActionSheet(false);
+    
+    switch (action) {
+      case 'edit':
+        // 수정 페이지로 이동
+        router.push(`/board/edit/${selectedPost.id}?type=${type}&eventId=${selectedPost.eventId || eventId}`);
+        break;
+      case 'delete':
+        if (confirm('정말로 이 글을 삭제하시겠습니까?')) {
+          try {
+            const result = await deleteBoard(eventId, type, selectedPost.id);
+            if (result.success) {
+              showToast('게시글이 삭제되었습니다.', 'success');
+              // 목록에서 삭제된 게시글 제거
+              setPosts(prev => prev.filter(post => post.id !== selectedPost.id));
+            } else {
+              showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
+            }
+          } catch (error) {
+            console.error('게시글 삭제 오류:', error);
+            showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+          }
+        }
+        break;
+      case 'report':
+        if (confirm('이 글을 신고하시겠습니까?')) {
+          // TODO: 신고 API 호출
+          console.log('게시글 신고:', selectedPost.id);
+        }
+        break;
+    }
+  };
+
+  const handleCloseActionSheet = () => {
+    setShowActionSheet(false);
+    setSelectedPost(null);
+  };
+
   const handleWriteClick = () => {
     // 공지사항은 글쓰기 불가
     if (type === 'notice') {
-      alert('공지사항은 관리자만 작성할 수 있습니다.');
+      showToast('공지사항은 관리자만 작성할 수 있습니다.', 'warning');
       return;
     }
     
     // 로그인 상태 확인
     const accessToken = getAccessToken();
     if (!accessToken) {
-      alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+      showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
       const currentUrl = window.location.pathname + window.location.search;
       router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
       return;
@@ -270,14 +330,12 @@ function BoardListContent() {
                   {/* 게시글 헤더 */}
                   <PostHeader 
                     nickname={post.user?.nickname}
+                    profileImageUrl={post.user?.profileImageUrl || undefined}
                     createdAt={post.createdAt}
                     className="mb-4"
                     showMoreButton={true}
                     isNotice={type === 'notice'}
-                    onMoreClick={() => {
-                      // TODO: 더보기 메뉴 표시
-                      console.log('더보기 클릭');
-                    }}
+                    onMoreClick={() => handleMoreClick(post)}
                   />
                   
                   {/* 공지사항인 경우 제목과 내용 표시 */}
@@ -392,6 +450,48 @@ function BoardListContent() {
         initialIndex={initialIndex}
         isOpen={isOpen}
         onClose={closeGallery}
+      />
+
+      {/* 액션시트 */}
+      <CommonActionSheet
+        isOpen={showActionSheet}
+        onClose={handleCloseActionSheet}
+        items={
+          selectedPost && user && selectedPost.user?.id === user.id
+            ? [
+                {
+                  label: "수정하기",
+                  icon: (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  ),
+                  onClick: () => handleActionClick('edit')
+                },
+                {
+                  label: "삭제하기",
+                  icon: (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  ),
+                  onClick: () => handleActionClick('delete'),
+                  variant: 'destructive'
+                }
+              ]
+            : [
+                {
+                  label: "신고하기",
+                  icon: (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  ),
+                  onClick: () => handleActionClick('report'),
+                  variant: 'destructive'
+                }
+              ]
+        }
       />
 
       {/* 플로팅 글쓰기 버튼 (커뮤니티에서만 표시) */}

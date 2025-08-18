@@ -1,17 +1,19 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { loginUser, saveTokens } from "@/lib/api";
 import { SocialProvider } from "@/types/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSimpleNavigation } from "@/utils/navigation";
+import { useToast } from "@/components/common/Toast";
 
 function SignContent() {
   const { navigate, goBack, replace } = useSimpleNavigation();
   const searchParams = useSearchParams();
   const { login } = useAuth();
+  const { showToast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -67,8 +69,7 @@ function SignContent() {
           );
         }
 
-        // 성공 메시지 표시 후 redirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
-        alert(`환영합니다, ${response.data?.nickname || '사용자'}님!`);
+        // redirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
         const redirectUrl = searchParams.get('redirect');
         if (redirectUrl) {
           // router.replace를 사용하여 히스토리에서 로그인 페이지를 교체
@@ -98,7 +99,7 @@ function SignContent() {
     setError("");
 
     // 향후 소셜 로그인 SDK 연동
-    alert(`${provider} 로그인 기능은 준비 중입니다.`);
+    showToast(`${provider} 로그인 기능은 준비 중입니다.`);
   };
 
   return (

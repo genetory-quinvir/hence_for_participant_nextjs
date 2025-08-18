@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePWA } from '@/hooks/usePWA';
+import { useToast } from '@/components/common/Toast';
 
 export default function NotificationPermission() {
-  const { notificationPermission, requestPermission, fcmToken } = usePWA();
+  const { requestPermission, notificationPermission } = usePWA();
+  const { showToast } = useToast();
   const [isRequesting, setIsRequesting] = useState(false);
 
   const handleRequestPermission = async () => {
@@ -14,13 +16,13 @@ export default function NotificationPermission() {
       if (token) {
         console.log('FCM Token received:', token);
         // 여기서 서버에 토큰을 전송할 수 있습니다
-        alert('알림 권한이 허용되었습니다!');
+        showToast('알림 권한이 허용되었습니다!', 'success');
       } else {
-        alert('알림 권한이 거부되었습니다.');
+        showToast('알림 권한이 거부되었습니다.', 'error');
       }
     } catch (error) {
       console.error('Error requesting permission:', error);
-      alert('알림 권한 요청 중 오류가 발생했습니다.');
+      showToast('알림 권한 요청 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsRequesting(false);
     }

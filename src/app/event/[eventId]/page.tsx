@@ -3,6 +3,7 @@
 import { useParams, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense, useRef } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
+import CommonProfileView from "@/components/common/CommonProfileView";
 import { useAuth } from "@/contexts/AuthContext";
 import { getFeaturedEvent } from "@/lib/api";
 import { FeaturedItem } from "@/types/api";
@@ -18,6 +19,7 @@ import EventCommunity from "@/components/event/EventCommunity";
 import EventShout from "@/components/event/EventShout";
 import EventHelp from "@/components/event/EventHelp";
 import EventAdvertisements from "@/components/event/EventAdvertisements";
+import EventChat from "@/components/event/EventChat";
 import { useSimpleNavigation } from "@/utils/navigation";
 
 function EventPageContent() {
@@ -139,18 +141,14 @@ function EventPageContent() {
   // 로그인 상태에 따른 프로필 버튼 렌더링
   const renderProfileButton = () => {
     if (user) {
-      const userName = user.nickname || user.email || '사용자';
-      const userInitial = userName.charAt(0).toUpperCase();
-      
       return (
-        <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center" style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.4)',
-          border: '3px solid rgba(255, 255, 255, 0.1)'
-        }}>
-          <span className="text-white text-sm font-semibold">
-            {userInitial}
-          </span>
-        </div>
+        <CommonProfileView
+          profileImageUrl={user.profileImageUrl}
+          nickname={user.nickname}
+          size="md"
+          showBorder={true}
+          showHover={true}
+        />
       );
     } else {
       return (
@@ -262,6 +260,12 @@ function EventPageContent() {
             }}
           />
         )}
+
+        {/* 실시간 채팅 섹션 */}
+        <EventChat 
+          eventId={featuredData.event.id || 'default-event'}
+          showViewAllButton={false}
+        />
 
         {/* 이벤트 경품 섹션 */}
         {featuredData.raffle && (

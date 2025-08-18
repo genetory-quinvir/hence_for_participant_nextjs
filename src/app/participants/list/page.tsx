@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, Suspense, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState, useCallback, Suspense, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ParticipantItem } from "@/types/api";
 import { getParticipantsList } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
+import CommonProfileView from "@/components/common/CommonProfileView";
 import { useSimpleNavigation } from "@/utils/navigation";
 
 function ParticipantsListContent() {
@@ -166,15 +167,8 @@ function ParticipantsListContent() {
       return `${diffInHours}시간 전`;
     }
 
+    // 24시간 이상 지난 경우 날짜로 표시
     return date.toLocaleDateString('ko-KR');
-  };
-
-  // 이니셜 생성 함수
-  const getInitials = (nickname: string): string => {
-    if (nickname) {
-      return nickname.charAt(0).toUpperCase();
-    }
-    return '?';
   };
 
   // 뒤로가기 함수
@@ -287,25 +281,12 @@ function ParticipantsListContent() {
               style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
             >
               {/* 프로필 사진 */}
-              <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden flex items-center justify-center" style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.4)',
-                border: '3px solid rgba(255, 255, 255, 0.1)'
-              }}>
-                {participant.user?.profileImageUrl ? (
-                  <img 
-                    src={participant.user.profileImageUrl} 
-                    alt={participant.user.nickname || '프로필'} 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                    }}
-                  />
-                ) : null}
-                <span className="text-white text-lg font-bold hidden">
-                  {getInitials(participant.user?.nickname || '')}
-                </span>
-              </div>
+              <CommonProfileView
+                profileImageUrl={participant.user?.profileImageUrl}
+                nickname={participant.user?.nickname}
+                size="lg"
+                showBorder={true}
+              />
 
               {/* 참여자 정보 */}
               <div className="flex-1 min-w-0">

@@ -11,6 +11,7 @@ export default function CommentItem({ comment, getRelativeTime }: CommentItemPro
     <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
       <PostHeader 
         nickname={comment.user?.nickname}
+        profileImageUrl={comment.user?.profileImageUrl || undefined}
         createdAt={comment.createdAt}
         size="md"
         className="mb-3"

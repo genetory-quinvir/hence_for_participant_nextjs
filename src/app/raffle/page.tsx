@@ -5,11 +5,14 @@ import { useState, useEffect, Suspense } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { getRaffleInfo, participateRaffle } from "@/lib/api";
+import { useSimpleNavigation } from "@/utils/navigation";
+import { useToast } from "@/components/common/Toast";
 
 function RaffleContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { showToast } = useToast();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -107,23 +110,23 @@ function RaffleContent() {
 
   const handleSubmit = async () => {
     if (!name.trim() || !phone.trim() || !agreed) {
-      alert("모든 필수 항목을 입력해주세요.");
+      showToast("모든 필수 항목을 입력해주세요.", "warning");
       return;
     }
     
     const eventId = searchParams.get('eventId');
     const raffleId = searchParams.get('raffleId');
     if (!eventId) {
-      alert("이벤트 ID가 없습니다.");
+      showToast("이벤트 ID가 없습니다.", "error");
       return;
     }
     if (!raffleId) {
-      alert("래플 ID가 없습니다.");
+      showToast("래플 ID가 없습니다.", "error");
       return;
     }
 
     if (!user?.id) {
-      alert("사용자 정보를 찾을 수 없습니다.");
+      showToast("사용자 정보를 찾을 수 없습니다.", "error");
       return;
     }
     
@@ -138,7 +141,7 @@ function RaffleContent() {
       });
 
       if (result.success) {
-        alert("응모가 완료되었습니다!");
+        showToast("응모가 완료되었습니다!", "success");
         // 응모 완료 후 이벤트 페이지로 돌아가기
         const eventId = searchParams.get('eventId');
         if (eventId) {
@@ -151,11 +154,11 @@ function RaffleContent() {
         if (result.error?.includes('인증') || result.error?.includes('토큰') || result.error?.includes('만료')) {
           router.replace("/sign?redirect=/raffle" + (searchParams.toString() ? `&${searchParams.toString()}` : ''));
         } else {
-          alert(result.error || "응모에 실패했습니다.");
+          showToast(result.error || "응모에 실패했습니다.", "error");
         }
       }
     } catch (error) {
-      alert("응모 중 오류가 발생했습니다.");
+      showToast("응모 중 오류가 발생했습니다.", "error");
     } finally {
       setIsSubmitting(false);
     }

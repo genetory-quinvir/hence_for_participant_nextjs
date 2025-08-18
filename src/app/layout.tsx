@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ToastProvider } from "@/components/common/Toast";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -47,7 +48,9 @@ export default function RootLayout({
       </head>
       <body className="font-suit antialiased bg-black text-white">
         <AuthProvider>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

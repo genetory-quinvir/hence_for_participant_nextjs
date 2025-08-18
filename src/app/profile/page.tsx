@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
+import CommonProfileView from "@/components/common/CommonProfileView";
 import { UserItem, EventItem, BoardItem, CommentItem } from "@/types/api";
 import { getUserProfile, getUserEvents, getUserPosts, getUserComments, getPostByCommentId } from "@/lib/api";
 import PostHeader from "@/components/common/PostHeader";
@@ -513,6 +514,7 @@ function ProfilePageContent() {
                     {/* 게시글 헤더 */}
                     <PostHeader 
                       nickname={post.user?.nickname}
+                      profileImageUrl={post.user?.profileImageUrl || undefined}
                       createdAt={post.createdAt}
                       className="mb-4"
                       showMoreButton={true}
@@ -634,6 +636,7 @@ function ProfilePageContent() {
                 >
                   <PostHeader 
                     nickname={comment.user?.nickname}
+                    profileImageUrl={comment.user?.profileImageUrl || undefined}
                     createdAt={comment.createdAt}
                     size="md"
                     className="mb-3"
@@ -719,10 +722,13 @@ function ProfilePageContent() {
         <div className="w-full h-full flex flex-col">
           {/* 프로필 아바타 섹션 */}
           <div className="flex items-center mb-6">
-            <div className="w-[56px] h-[56px] bg-gray-600 rounded-full flex items-center justify-center mr-3">
-              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
+            <div className="mr-3">
+              <CommonProfileView
+                profileImageUrl={finalUserData?.profileImageUrl}
+                nickname={finalUserData?.nickname}
+                size="xl"
+                showBorder={true}
+              />
             </div>
             <div className="flex-1">
               <h1 className="text-xl font-bold text-white text-md">

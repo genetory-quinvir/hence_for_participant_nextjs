@@ -163,7 +163,7 @@ function FoodTruckDetailContent() {
       <div className="px-4 py-0">
         {/* 썸네일 이미지 - 상단 정방형 */}
         <div className="mb-6">
-          <div className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+          <div className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer relative" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
             {vendor.imageUrl ? (
               <img 
                 src={vendor.imageUrl} 
@@ -201,6 +201,13 @@ function FoodTruckDetailContent() {
             <svg className="w-24 h-24 text-white opacity-50 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
+            
+            {/* 영업중 배지 - 우측 상단 */}
+            <div className="absolute top-3 right-3">
+              <span className="px-4 py-2 rounded-full text-xs font-medium bg-purple-600 text-white">
+                {vendor.status === 'open' ? '영업중' : vendor.status === 'closed' ? '영업종료' : vendor.isActive ? '영업중' : '영업종료'}
+              </span>
+            </div>
           </div>
         </div>
 

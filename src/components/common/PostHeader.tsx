@@ -1,5 +1,8 @@
 "use client";
 
+import { ReactNode } from "react";
+import CommonProfileView from "./CommonProfileView";
+
 interface PostHeaderProps {
   nickname?: string;
   createdAt?: string;
@@ -8,6 +11,7 @@ interface PostHeaderProps {
   showMoreButton?: boolean;
   onMoreClick?: () => void;
   isNotice?: boolean;
+  profileImageUrl?: string;
 }
 
 // 상대적 시간 표시 함수
@@ -39,8 +43,9 @@ export default function PostHeader({
   size = 'md',
   className = '',
   showMoreButton = false,
-  onMoreClick,
-  isNotice = false
+  onMoreClick, 
+  isNotice = false,
+  profileImageUrl
 }: PostHeaderProps) {
   const displayName = nickname || '익명';
   const initial = displayName.charAt(0).toUpperCase();
@@ -68,18 +73,12 @@ export default function PostHeader({
       ) : (
         // 일반 모드: 프로필과 닉네임
         <>
-          <div className={`flex-shrink-0 bg-purple-600 rounded-full flex items-center justify-center ${
-            isSmall ? 'w-6 h-6' : 'w-8 h-8'
-          }`} style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.4)',
-            border: '3px solid rgba(255, 255, 255, 0.1)'
-          }}>
-            <span className={`text-white font-bold ${
-              isSmall ? 'text-xs' : 'text-sm'
-            }`}>
-              {initial}
-            </span>
-          </div>
+          <CommonProfileView
+            profileImageUrl={profileImageUrl}
+            nickname={displayName}
+            size={isSmall ? 'sm' : 'md'}
+            showBorder={true}
+          />
           
           <div className="flex-1 min-w-0">
             <div className="flex flex-col">
@@ -97,7 +96,7 @@ export default function PostHeader({
           </div>
         </>
       )}
-      
+
       {/* 더보기 버튼 */}
       {showMoreButton && (
         <button
@@ -105,9 +104,9 @@ export default function PostHeader({
             e.stopPropagation(); // 부모 클릭 이벤트 방지
             onMoreClick?.();
           }}
-          className="flex-shrink-0 p-1 rounded-full hover:bg-white hover:bg-opacity-10 transition-colors"
+          className="flex-shrink-0 p-1 rounded-full transition-colors"
         >
-          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24" style={{ cursor: 'pointer' }}>
             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
           </svg>
         </button>

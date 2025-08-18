@@ -92,11 +92,13 @@ export default function EventCommunity({
                 {/* 게시글 헤더 */}
                 <PostHeader 
                   nickname={post.user?.nickname}
+                  profileImageUrl={post.user?.profileImageUrl || undefined}
                   createdAt={post.createdAt}
                   className="mb-4"
                   showMoreButton={true}
                   onMoreClick={() => {
-
+                    // TODO: 더보기 메뉴 표시
+                    console.log('더보기 클릭');
                   }}
                 />
                 

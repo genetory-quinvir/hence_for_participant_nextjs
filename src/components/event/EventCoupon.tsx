@@ -6,6 +6,8 @@ import { CouponItem, VendorItem } from "@/types/api";
 import { getVendorsSimple, useCoupon, getAccessToken } from "@/lib/api";
 import CouponActionSheet from "@/components/CouponActionSheet";
 import CommonAlert from "@/components/CommonAlert";
+import { useToast } from "@/components/common/Toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface EventCouponProps {
   coupons: CouponItem[];
@@ -15,6 +17,8 @@ interface EventCouponProps {
 export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { user } = useAuth();
+  const { showToast } = useToast();
   const [showVendorSheet, setShowVendorSheet] = useState(false);
   const [vendors, setVendors] = useState<VendorItem[]>([]);
   const [selectedCoupon, setSelectedCoupon] = useState<CouponItem | null>(null);
@@ -49,7 +53,7 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
     // 로그인 상태 확인
     const accessToken = getAccessToken();
     if (!accessToken) {
-      alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+      showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
       router.push('/sign');
       return;
     }
@@ -80,15 +84,15 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
           
         } else if (result.error === 'AUTH_REQUIRED') {
           console.error('❌ 인증 오류');
-          alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+          showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
           router.push('/sign');
         } else {
           console.error('❌ 벤더 목록 로드 실패:', result.error);
-          alert(result.error || '사용 가능한 벤더를 불러오는데 실패했습니다.');
+          showToast(result.error || '사용 가능한 벤더를 불러오는데 실패했습니다.', 'error');
         }
       } catch (error) {
         console.error('❌ 벤더 목록 요청 중 예외 발생:', error);
-        alert('사용 가능한 벤더를 불러오는데 실패했습니다.');
+        showToast('사용 가능한 벤더를 불러오는데 실패했습니다.', 'error');
       } finally {
         setLoading(false);
       }
@@ -115,17 +119,17 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
     try {
       const result = await useCoupon(eventId, exchangeCoupon.id!, undefined);
       if (result.success) {
-        alert('교환권이 사용되었습니다!');
+        showToast('교환권이 사용되었습니다!', 'success');
         markCouponAsUsed(exchangeCoupon.id!);
       } else if (result.error === 'AUTH_REQUIRED') {
-        alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
         router.push('/sign');
       } else {
-        alert(result.error || '교환권 사용에 실패했습니다.');
+        showToast(result.error || '교환권 사용에 실패했습니다.', 'error');
       }
     } catch (error) {
       console.error('교환권 사용 중 오류:', error);
-      alert('교환권 사용 중 오류가 발생했습니다.');
+      showToast('교환권 사용 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);
       setExchangeCoupon(null);
@@ -148,17 +152,17 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
     try {
       const result = await useCoupon(eventId, selectedCoupon.id!, selectedVendor.id);
       if (result.success) {
-        alert('쿠폰이 사용되었습니다!');
+        showToast('쿠폰이 사용되었습니다!', 'success');
         markCouponAsUsed(selectedCoupon.id!);
       } else if (result.error === 'AUTH_REQUIRED') {
-        alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
         router.push('/sign');
       } else {
-        alert(result.error || '쿠폰 사용에 실패했습니다.');
+        showToast(result.error || '쿠폰 사용에 실패했습니다.', 'error');
       }
     } catch (error) {
       console.error('쿠폰 사용 중 오류:', error);
-      alert('쿠폰 사용 중 오류가 발생했습니다.');
+      showToast('쿠폰 사용 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);
       setSelectedCoupon(null);

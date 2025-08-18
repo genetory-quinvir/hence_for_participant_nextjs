@@ -1,8 +1,9 @@
 "use client";
 
-import { ParticipantItem } from "@/types/api";
 import { useState } from "react";
+import { ParticipantItem } from "@/types/api";
 import EventSection from "./EventSection";
+import CommonProfileView from "@/components/common/CommonProfileView";
 
 interface EventParticipantsProps {
   participants: ParticipantItem[];
@@ -32,14 +33,6 @@ const getRelativeTime = (dateString: string): string => {
 
   // 24시간 이상 지난 경우 날짜로 표시
   return date.toLocaleDateString('ko-KR');
-};
-
-// 이니셜 생성 함수
-const getInitials = (nickname: string): string => {
-  if (nickname) {
-    return nickname.charAt(0).toUpperCase();
-  }
-  return '?';
 };
 
 export default function EventParticipants({ 
@@ -86,22 +79,12 @@ export default function EventParticipants({
               onMouseLeave={() => setHoveredIndex(null)}
             >
               {/* 프로필 사진 */}
-              <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-purple-600 flex items-center justify-center" style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.4)',
-                border: '3px solid rgba(255, 255, 255, 0.1)'
-              }}>
-                {participant.user?.profileImageUrl ? (
-                  <img 
-                    src={participant.user.profileImageUrl} 
-                    alt={participant.user.nickname || '프로필'} 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-white text-sm font-bold">
-                    {getInitials(participant.user?.nickname || '')}
-                  </span>
-                )}
-              </div>
+              <CommonProfileView
+                profileImageUrl={participant.user?.profileImageUrl}
+                nickname={participant.user?.nickname}
+                size="md"
+                showBorder={true}
+              />
 
               {/* 참여자 정보 */}
               <div className="flex-1 min-w-0">

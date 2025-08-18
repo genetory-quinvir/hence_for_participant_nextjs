@@ -6,10 +6,12 @@ import CommonNavigationBar from "@/components/CommonNavigationBar";
 import CommonActionSheet from "@/components/CommonActionSheet";
 import { createPost } from "@/lib/api";
 import { useSimpleNavigation } from "@/utils/navigation";
+import { useToast } from "@/components/common/Toast";
 
 function BoardWriteContent() {
   const { navigate, goBack, replace } = useSimpleNavigation();
   const searchParams = useSearchParams();
+  const { showToast } = useToast();
   const [content, setContent] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -27,7 +29,7 @@ function BoardWriteContent() {
 
   const handleSubmit = async () => {
     if (!content.trim()) {
-      alert('내용을 입력해주세요.');
+      showToast('내용을 입력해주세요.', 'warning');
       return;
     }
 
@@ -49,18 +51,18 @@ function BoardWriteContent() {
       } else {
         // 인증 오류인 경우 로그인 페이지로 리다이렉트
         if (result.error?.includes('인증') || result.error?.includes('토큰') || result.error?.includes('로그인')) {
-          alert('로그인이 필요합니다.');
+          showToast('로그인이 필요합니다.', 'warning');
           // 로그인 후 글 리스트 페이지로 돌아가도록 redirect 설정
           const redirectUrl = `/board/list?type=free&eventId=${eventId}`;
           navigate(`/sign?redirect=${encodeURIComponent(redirectUrl)}`);
         } else {
-          alert(result.error || '글쓰기에 실패했습니다. 다시 시도해주세요.');
+          showToast(result.error || '글쓰기에 실패했습니다. 다시 시도해주세요.', 'error');
         }
       }
       
     } catch (error) {
       console.error('글쓰기 오류:', error);
-      alert('글쓰기에 실패했습니다. 다시 시도해주세요.');
+      showToast('글쓰기에 실패했습니다. 다시 시도해주세요.', 'error');
     } finally {
       setIsSubmitting(false);
     }

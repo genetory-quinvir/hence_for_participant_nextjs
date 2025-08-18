@@ -1,6 +1,7 @@
-import { BoardItem } from '@/types/api';
-import { useState, useEffect } from 'react';
-import { toggleLike, getAccessToken } from '@/lib/api';
+import { useState, useEffect } from "react";
+import { BoardItem } from "@/types/api";
+import { toggleLike } from "@/lib/api";
+import { useToast } from "@/components/common/Toast";
 
 interface PostActionsProps {
   post: BoardItem;
@@ -10,9 +11,10 @@ interface PostActionsProps {
 }
 
 export default function PostActions({ post, eventId, boardType, onLikeToggle }: PostActionsProps) {
-  const [isLiked, setIsLiked] = useState(post.isLiked ?? false);
-  const [likeCount, setLikeCount] = useState(post.likeCount ?? 0);
+  const [isLiked, setIsLiked] = useState(post.isLiked || false);
+  const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [isLikeLoading, setIsLikeLoading] = useState(false);
+  const { showToast } = useToast();
 
   // post prop이 변경될 때 상태 업데이트
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function PostActions({ post, eventId, boardType, onLikeToggle }: 
       setIsLikeLoading(true);
       
       if (!post.id) {
-        alert('게시글 ID를 찾을 수 없습니다.');
+        showToast('게시글 ID를 찾을 수 없습니다.', 'error');
         return;
       }
       
@@ -75,17 +77,17 @@ export default function PostActions({ post, eventId, boardType, onLikeToggle }: 
       } else {
         console.error('❌ 좋아요 실패:', result.error);
         if (result.error?.includes('로그인이 만료')) {
-          alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+          showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
           // 현재 페이지 URL을 쿼리 파라미터로 전달
           const currentUrl = window.location.pathname + window.location.search;
           window.location.href = `/sign?redirect=${encodeURIComponent(currentUrl)}`;
         } else {
-          alert(result.error || '좋아요 처리에 실패했습니다.');
+          showToast(result.error || '좋아요 처리에 실패했습니다.', 'error');
         }
       }
     } catch (error) {
       console.error('좋아요 토글 오류:', error);
-      alert('네트워크 오류가 발생했습니다.');
+      showToast('네트워크 오류가 발생했습니다.', 'error');
     } finally {
       setIsLikeLoading(false);
     }

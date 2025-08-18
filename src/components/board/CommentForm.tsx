@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from 'react';
+import { useState } from "react";
+import { useToast } from "@/components/common/Toast";
 
 interface CommentFormProps {
   onSubmit: (content: string) => Promise<void>;
   isSubmitting?: boolean;
 }
 
-export default function CommentForm({ onSubmit, isSubmitting = false }: CommentFormProps) {
-  const [content, setContent] = useState('');
+export default function CommentForm({ onSubmit, isSubmitting }: CommentFormProps) {
+  const [content, setContent] = useState("");
+  const { showToast } = useToast();
 
   const handleSubmit = async () => {
     if (!content.trim()) {
-      alert('댓글 내용을 입력해주세요.');
+      showToast('댓글 내용을 입력해주세요.', 'warning');
       return;
     }
 

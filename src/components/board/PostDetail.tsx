@@ -10,9 +10,10 @@ interface PostDetailProps {
   eventId: string;
   boardType: string;
   onLikeToggle?: (newLikeCount: number, isLiked: boolean) => void;
+  onMoreClick?: () => void;
 }
 
-export default function PostDetail({ post, isFreeBoardPost, formatDate, eventId, boardType, onLikeToggle }: PostDetailProps) {
+export default function PostDetail({ post, isFreeBoardPost, formatDate, eventId, boardType, onLikeToggle, onMoreClick }: PostDetailProps) {
   return (
     <>
       {/* 게시글 헤더 */}
@@ -21,13 +22,12 @@ export default function PostDetail({ post, isFreeBoardPost, formatDate, eventId,
         post.user && (
           <PostHeader 
             nickname={post.user.nickname}
+            profileImageUrl={post.user.profileImageUrl || undefined}
             createdAt={post.createdAt}
             size="md"
             className="mb-4 mt-4"
             showMoreButton={true}
-            onMoreClick={() => {
-              console.log('더보기 클릭');
-            }}
+            onMoreClick={onMoreClick}
           />
         )
       ) : (
@@ -38,9 +38,7 @@ export default function PostDetail({ post, isFreeBoardPost, formatDate, eventId,
           className="mb-4 mt-4"
           showMoreButton={true}
           isNotice={true}
-          onMoreClick={() => {
-            console.log('공지사항 더보기 클릭');
-          }}
+          onMoreClick={onMoreClick}
         />
       )}
 

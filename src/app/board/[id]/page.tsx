@@ -3,11 +3,14 @@
 import { useEffect, useState, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { BoardItem, CommentItem } from "@/types/api";
-import { getBoardDetail, getComments, createComment, getAccessToken } from "@/lib/api";
+import { getBoardDetail, getComments, createComment, getAccessToken, deleteBoard } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import PostDetail from "@/components/board/PostDetail";
 import CommentSection from "@/components/board/CommentSection";
 import { useSimpleNavigation } from "@/utils/navigation";
+import CommonActionSheet from "@/components/CommonActionSheet";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/common/Toast";
 
 function BoardDetailContent() {
   const params = useParams();
@@ -18,6 +21,11 @@ function BoardDetailContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showActionSheet, setShowActionSheet] = useState(false);
+
+  // 인증 훅
+  const { user } = useAuth();
+  const { showToast } = useToast();
 
   // URL에서 타입 확인 (free 또는 notice)
   const postType = searchParams.get('type') || 'free';
@@ -79,7 +87,7 @@ function BoardDetailContent() {
     if (params.id) {
       fetchPostDetail();
     }
-  }, [params.id, postType, searchParams]);
+  }, [params.id, postType, searchParams.get('eventId')]);
 
 
 
@@ -132,7 +140,7 @@ function BoardDetailContent() {
       // 인증 상태 확인
       const accessToken = getAccessToken();
       if (!accessToken) {
-        alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
         // 현재 페이지 URL을 쿼리 파라미터로 전달
         const currentUrl = window.location.pathname + window.location.search;
         navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
@@ -153,17 +161,17 @@ function BoardDetailContent() {
         }
       } else {
         if (result.error?.includes('로그인이 만료')) {
-          alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+          showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
           // 현재 페이지 URL을 쿼리 파라미터로 전달
           const currentUrl = window.location.pathname + window.location.search;
           navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         } else {
-          alert(result.error || '댓글 작성에 실패했습니다.');
+          showToast(result.error || '댓글 작성에 실패했습니다.', 'error');
         }
       }
     } catch (error) {
       console.error('댓글 작성 오류:', error);
-      alert('댓글 작성 중 오류가 발생했습니다.');
+      showToast('댓글 작성 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -171,6 +179,51 @@ function BoardDetailContent() {
 
   const handleBackClick = () => {
     goBack();
+  };
+
+  const handleMoreClick = () => {
+    setShowActionSheet(true);
+  };
+
+  const handleActionClick = async (action: 'edit' | 'delete' | 'report') => {
+    if (!post) return;
+    
+    setShowActionSheet(false);
+    
+    switch (action) {
+      case 'edit':
+        // 수정 페이지로 이동
+        const eventId = searchParams.get('eventId') || 'default-event';
+        navigate(`/board/edit/${post.id}?type=${postType}&eventId=${eventId}`);
+        break;
+      case 'delete':
+        if (confirm('정말로 이 글을 삭제하시겠습니까?')) {
+          try {
+            const eventId = searchParams.get('eventId') || 'default-event';
+            const result = await deleteBoard(eventId, postType, post.id);
+            if (result.success) {
+              showToast('게시글이 삭제되었습니다.', 'success');
+              goBack(); // 삭제 후 뒤로가기
+            } else {
+              showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
+            }
+          } catch (error) {
+            console.error('게시글 삭제 오류:', error);
+            showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+          }
+        }
+        break;
+      case 'report':
+        if (confirm('이 글을 신고하시겠습니까?')) {
+          // TODO: 신고 API 호출
+          console.log('게시글 신고:', post.id);
+        }
+        break;
+    }
+  };
+
+  const handleCloseActionSheet = () => {
+    setShowActionSheet(false);
   };
 
   if (loading) {
@@ -258,6 +311,7 @@ function BoardDetailContent() {
           formatDate={formatDate}
           eventId={searchParams.get('eventId') || 'default-event'}
           boardType={postType}
+          onMoreClick={handleMoreClick}
           onLikeToggle={async (newLikeCount, isLiked) => {
             // 좋아요 상태 변경 후 게시글 상세 정보 새로고침
             try {
@@ -295,6 +349,48 @@ function BoardDetailContent() {
           />
         )}
       </div>
+
+      {/* 액션시트 */}
+      <CommonActionSheet
+        isOpen={showActionSheet}
+        onClose={handleCloseActionSheet}
+        items={
+          post && user && post.user?.id === user.id
+            ? [
+                {
+                  label: "수정하기",
+                  icon: (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  ),
+                  onClick: () => handleActionClick('edit')
+                },
+                {
+                  label: "삭제하기",
+                  icon: (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  ),
+                  onClick: () => handleActionClick('delete'),
+                  variant: 'destructive'
+                }
+              ]
+            : [
+                {
+                  label: "신고하기",
+                  icon: (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  ),
+                  onClick: () => handleActionClick('report'),
+                  variant: 'destructive'
+                }
+              ]
+        }
+      />
     </div>
   );
 }
