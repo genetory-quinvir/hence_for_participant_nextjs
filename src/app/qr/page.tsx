@@ -27,14 +27,17 @@ export default function QRPage() {
     }
   }, [isAuthenticated, user, navigate]);
 
-  // 카메라 권한 요청 및 지원 여부 확인 (원래 방식으로 복원)
+  // 카메라 권한 요청 및 지원 여부 확인
   const requestCameraPermission = async () => {
     try {
       console.log("카메라 권한 요청 중...");
       
-      // 모든 플랫폼에서 동일한 설정 사용 (이전에 작동했던 방식)
+      // iOS에서는 더 간단한 설정 사용
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       const constraints = {
-        video: {
+        video: isIOS ? {
+          facingMode: 'environment'
+        } : {
           facingMode: 'environment'
         }
       };
@@ -46,10 +49,12 @@ export default function QRPage() {
       console.log("카메라 권한 획득 성공");
       setHasCamera(true);
       
-      // 권한 획득 후 스캐너 시작
-      setTimeout(() => {
-        startScanner();
-      }, 500);
+      // iOS에서는 권한 획득 후 자동 시작하지 않음 (사용자가 버튼을 눌러야 함)
+      if (!isIOS) {
+        setTimeout(() => {
+          startScanner();
+        }, 500);
+      }
     } catch (error) {
       console.log('카메라를 지원하지 않거나 권한이 없습니다:', error);
       setHasCamera(false);
@@ -192,10 +197,18 @@ export default function QRPage() {
     }
   };
 
-  // 카메라가 지원되면 QR 스캐너 시작 (원래 방식으로 복원)
+  // 카메라가 지원되면 QR 스캐너 시작 (iOS에서는 사용자 상호작용 후에만)
   useEffect(() => {
     if (hasCamera === true && !isScanning) {
-      // 모든 플랫폼에서 자동 시작 (이전에 작동했던 방식)
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
+      // iOS에서는 사용자 상호작용이 필요하므로 자동 시작하지 않음
+      if (isIOS) {
+        console.log("iOS 감지: 사용자 상호작용 후 카메라 시작 필요");
+        return;
+      }
+      
+      // 안드로이드/웹에서는 자동 시작
       const timer = setTimeout(() => {
         startScanner();
       }, 500);
@@ -350,35 +363,75 @@ export default function QRPage() {
                 </div>
               </div>
                         ) : hasCamera === true ? (
-              // 카메라 지원 - QR 스캐너 표시 (원래 방식으로 복원)
+              // 카메라 지원 - QR 스캐너 표시
               <div className="w-full">
-                <div className="relative bg-black rounded-xl overflow-hidden">
-                  <video
-                    ref={videoRef}
-                    className="w-full aspect-square object-cover"
-                    autoPlay
-                    playsInline
-                    muted
-                    webkit-playsinline="true"
-                    x-webkit-airplay="allow"
-                  />
-                  {/* QR 스캔 프레임 오버레이 */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-64 h-64 relative">
-                      {/* 모서리 표시 */}
-                      <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-purple-500"></div>
-                      <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-purple-500"></div>
-                      <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-purple-500"></div>
-                      <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-purple-500"></div>
+                {(() => {
+                  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                  
+                  // iOS에서 스캐너가 시작되지 않은 경우 시작 버튼 표시
+                  if (isIOS && !isScanning) {
+                    return (
+                      <div className="relative bg-black rounded-xl overflow-hidden">
+                        <div className="aspect-square bg-transparent rounded-lg flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="text-4xl mb-4">📷</div>
+                            <p className="text-md font-regular text-white mb-4" style={{ opacity: 0.7 }}>
+                              QR 스캔을 시작하려면
+                            </p>
+                            <button
+                              onClick={() => {
+                                console.log("iOS 카메라 시작 버튼 클릭됨");
+                                startScanner();
+                              }}
+                              className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                            >
+                              카메라 시작하기
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // 스캐너가 실행 중인 경우 비디오 표시
+                  return (
+                    <div className="relative bg-black rounded-xl overflow-hidden">
+                      <video
+                        ref={videoRef}
+                        className="w-full aspect-square object-cover"
+                        autoPlay
+                        playsInline
+                        muted
+                        webkit-playsinline="true"
+                        x-webkit-airplay="allow"
+                        // iOS Safari 호환성을 위한 추가 속성들
+                        {...(/iPad|iPhone|iPod/.test(navigator.userAgent) && {
+                          'webkit-playsinline': 'true',
+                          'x-webkit-airplay': 'allow',
+                          'controls': false,
+                          'disablePictureInPicture': true,
+                          'disableRemotePlayback': true
+                        })}
+                      />
+                      {/* QR 스캔 프레임 오버레이 */}
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-64 h-64 relative">
+                          {/* 모서리 표시 */}
+                          <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-purple-500"></div>
+                          <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-purple-500"></div>
+                          <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-purple-500"></div>
+                          <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-purple-500"></div>
+                        </div>
+                      </div>
+                      {/* 스캔 안내 텍스트 */}
+                      <div className="absolute bottom-4 left-0 right-0 text-center">
+                        <p className="text-white text-sm" style={{ opacity: 0.8 }}>
+                          QR 코드를 프레임 안에 맞춰주세요
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  {/* 스캔 안내 텍스트 */}
-                  <div className="absolute bottom-4 left-0 right-0 text-center">
-                    <p className="text-white text-sm" style={{ opacity: 0.8 }}>
-                      QR 코드를 프레임 안에 맞춰주세요
-                    </p>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
             ) : (
               // 카메라 미지원 - 안내 메시지 표시
