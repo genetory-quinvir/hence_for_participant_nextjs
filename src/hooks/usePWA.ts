@@ -51,12 +51,12 @@ export function usePWA() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register('/sw.js')
+        .register('/firebase-messaging-sw.js')
         .then((registration) => {
-          console.log('SW registered: ', registration);
+          console.log('Firebase SW registered: ', registration);
         })
         .catch((registrationError) => {
-          console.log('SW registration failed: ', registrationError);
+          console.log('Firebase SW registration failed: ', registrationError);
         });
     }
   }, []);
