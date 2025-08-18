@@ -27,113 +27,56 @@ export default function QRPage() {
     }
   }, [isAuthenticated, user, navigate]);
 
-  // 카메라 권한 요청 및 지원 여부 확인
-  const requestCameraPermission = async () => {
+  // iOS 전용 카메라 시작 함수 (권한 요청 + 스트림 시작을 한 번에)
+  const startIOSCamera = async () => {
     try {
-      console.log("카메라 권한 요청 중...");
+      console.log("iOS: 카메라 시작 시도");
       
-      // iOS에서는 더 간단한 설정 사용
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const constraints = {
-        video: isIOS ? {
-          facingMode: 'environment'
-        } : {
-          facingMode: 'environment'
-        }
-      };
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }
+      });
       
-      console.log("카메라 제약 조건:", constraints);
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      stream.getTracks().forEach(track => track.stop()); // 스트림 정리
-      console.log("카메라 권한 획득 성공");
-      setHasCamera(true);
-      
-      // iOS에서는 권한 획득 후 자동 시작하지 않음 (사용자가 버튼을 눌러야 함)
-      if (!isIOS) {
-        setTimeout(() => {
-          startScanner();
-        }, 500);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        console.log("iOS: 비디오 재생 시작됨");
       }
-    } catch (error) {
-      console.log('카메라를 지원하지 않거나 권한이 없습니다:', error);
-      setHasCamera(false);
       
-      // 플랫폼별 오류 메시지
-      if (error instanceof Error) {
-        if (error.name === 'NotAllowedError') {
-          const isAndroid = navigator.userAgent.includes('Android');
-          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-          const isPWA = window.matchMedia('(display-mode: standalone)').matches;
-          
-          if (isAndroid) {
-            if (isPWA) {
-              showToast('카메라 권한이 거부되었습니다. 앱 설정 > 권한 > 카메라에서 허용해주세요.', 'warning');
-            } else {
-              showToast('카메라 권한이 거부되었습니다. Chrome 설정 > 사이트 설정 > 카메라에서 권한을 허용해주세요.', 'warning');
-            }
-          } else if (isIOS) {
-            if (isPWA) {
-              showToast('카메라 권한이 거부되었습니다. 설정 > Safari > 고급 > 웹사이트 데이터에서 권한을 허용해주세요.', 'warning');
-            } else {
-              showToast('카메라 권한이 거부되었습니다. 설정 > Safari > 카메라에서 권한을 허용해주세요.', 'warning');
-            }
-          } else {
-            showToast('카메라 권한이 거부되었습니다. 브라우저 설정에서 권한을 허용해주세요.', 'warning');
+      // QR 스캐너 시작
+      codeReaderRef.current = new BrowserMultiFormatReader();
+      await codeReaderRef.current.decodeFromVideoDevice(
+        null,
+        videoRef.current,
+        (result) => {
+          if (result) {
+            console.log("QR 코드 스캔 성공:", result.getText());
+            handleQRCodeScanned(result.getText());
           }
-        } else if (error.name === 'NotFoundError') {
-          showToast('카메라를 찾을 수 없습니다. 카메라가 연결되어 있는지 확인해주세요.', 'error');
-        } else if (error.name === 'NotSupportedError') {
-          showToast('이 브라우저는 카메라를 지원하지 않습니다. Chrome, Safari, Firefox를 사용해주세요.', 'error');
-        } else if (error.name === 'NotReadableError') {
-          showToast('카메라가 다른 앱에서 사용 중입니다. 다른 앱을 종료하고 다시 시도해주세요.', 'error');
-        } else if (error.name === 'OverconstrainedError') {
-          showToast('카메라 설정에 문제가 있습니다. 다른 카메라를 선택해주세요.', 'error');
-        } else {
-          showToast('카메라 접근 중 오류가 발생했습니다. 페이지를 새로고침하고 다시 시도해주세요.', 'error');
         }
-      }
+      );
+      
+      console.log("iOS: QR 스캐너 시작 완료");
+      setHasCamera(true);
+      setIsScanning(true);
+      
+    } catch (err) {
+      console.error("iOS 카메라 접근 실패:", err);
+      setHasCamera(false);
+      setIsScanning(false);
+      showToast("카메라 권한을 확인해주세요.", "error");
     }
   };
 
   // 카메라 지원 여부 확인 (권한 요청 없이)
-  const checkCameraSupport = async () => {
-    try {
-      // 1. 먼저 카메라 지원 여부 확인
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        console.log('카메라 API를 지원하지 않습니다.');
-        setHasCamera(false);
-        return;
-      }
-
-      // 2. 권한 상태 확인 (지원하는 브라우저에서만)
-      if (navigator.permissions && navigator.permissions.query) {
-        try {
-          const permission = await navigator.permissions.query({ name: 'camera' as PermissionName });
-          console.log("카메라 권한 상태:", permission.state);
-          
-          if (permission.state === 'granted') {
-            setHasCamera(true);
-            return;
-          } else if (permission.state === 'denied') {
-            setHasCamera(false);
-            return;
-          }
-          // 'prompt' 상태는 권한 요청이 필요한 상태
-        } catch (permError) {
-          console.log('권한 상태 확인 실패:', permError);
-          // 권한 API가 지원되지 않는 경우 무시하고 계속 진행
-        }
-      }
-      
-      // 3. 권한 상태를 알 수 없는 경우 카메라 지원 여부만 확인
-      // 실제 권한 요청은 사용자가 버튼을 클릭할 때만 수행
-      setHasCamera(null); // null = 확인 중
-      
-    } catch (error) {
-      console.log('카메라 지원 확인 중 오류:', error);
+  const checkCameraSupport = () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.log('카메라 API를 지원하지 않습니다.');
       setHasCamera(false);
+      return;
     }
+    
+    console.log('카메라 API 지원 확인됨');
+    setHasCamera(null); // null = 확인 중 (권한 요청 필요)
   };
 
   // 초기 카메라 지원 확인
@@ -158,144 +101,42 @@ export default function QRPage() {
     setIsScanning(false);
   };
 
-  // QR 스캐너 시작 함수 (iOS Safari 호환성 강화)
+  // QR 스캐너 시작 함수 (안드로이드/웹 전용)
   const startScanner = async () => {
-    console.log("startScanner 호출됨");
+    console.log("startScanner 호출됨 (안드로이드/웹)");
     
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    
-    if (isIOS) {
-      console.log("iOS 감지: iOS 전용 처리 시작");
-      
-      // iOS에서는 먼저 스캐닝 상태를 true로 설정하여 비디오 요소가 렌더링되도록 함
-      setIsScanning(true);
-      
-      // 비디오 요소가 렌더링될 때까지 대기
-      await new Promise((resolve) => {
-        const checkVideoElement = () => {
-          if (videoRef.current) {
-            console.log("iOS 비디오 요소 발견");
-            resolve(true);
-          } else {
-            console.log("iOS 비디오 요소 대기 중...");
-            setTimeout(checkVideoElement, 100);
-          }
-        };
-        checkVideoElement();
-      });
-      
-      console.log("iOS 비디오 요소 준비 완료");
-    } else {
-      // 안드로이드/웹에서는 기존 방식
-      if (!videoRef.current) {
-        console.log("비디오 요소가 없습니다.");
-        return;
-      }
-      
-      setIsScanning(true);
+    if (!videoRef.current) {
+      console.log("비디오 요소가 없습니다.");
+      return;
     }
-
+    
     if (codeReaderRef.current) {
       console.log("이미 스캐너가 실행 중입니다.");
       return;
     }
 
+    setIsScanning(true);
     console.log("QR 스캐너 시작 중...");
     
     try {
-      if (isIOS) {
-        // iOS에서는 비디오 요소가 준비될 때까지 추가 대기
-        await new Promise((resolve) => {
-          if (videoRef.current && videoRef.current.readyState >= 2) {
-            resolve(true);
-          } else if (videoRef.current) {
-            videoRef.current.onloadeddata = () => resolve(true);
-          } else {
-            resolve(true);
-          }
-        });
-        
-        console.log("iOS 비디오 스트림 준비 완료");
-      }
+      codeReaderRef.current = new BrowserMultiFormatReader();
       
-      if (isIOS) {
-        // iOS에서는 직접 카메라 스트림을 시작하고 QR 스캐너는 별도로 처리
-        console.log("iOS: 직접 카메라 스트림 시작");
-        
-        const constraints = {
-          video: {
-            facingMode: 'environment'
+      await codeReaderRef.current.decodeFromVideoDevice(
+        null, // 기본 카메라 사용
+        videoRef.current,
+        (result) => {
+          if (result) {
+            console.log("QR 코드 스캔 성공:", result.getText());
+            handleQRCodeScanned(result.getText());
           }
-        };
-        
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          
-          // 비디오 재생 시작
-          await videoRef.current.play();
         }
-        console.log("iOS: 비디오 재생 시작됨");
-        
-        // QR 스캐너는 별도로 시작 (비동기)
-        codeReaderRef.current = new BrowserMultiFormatReader();
-        console.log("iOS: BrowserMultiFormatReader 생성 완료");
-        
-        // 약간의 지연 후 QR 스캐너 시작
-        setTimeout(async () => {
-          try {
-            console.log("iOS: QR 스캐너 시작 시도 중...");
-            console.log("iOS: videoRef.current 존재 여부:", !!videoRef.current);
-            
-            if (!videoRef.current) {
-              console.error("iOS: videoRef.current가 null입니다.");
-              return;
-            }
-            
-            await codeReaderRef.current!.decodeFromVideoDevice(
-              null,
-              videoRef.current,
-              (result) => {
-                if (result) {
-                  console.log("QR 코드 스캔 성공:", result.getText());
-                  handleQRCodeScanned(result.getText());
-                }
-              }
-            );
-            console.log("iOS QR 스캐너 시작 완료");
-          } catch (qrError) {
-            console.error("iOS QR 스캐너 시작 오류:", qrError);
-          }
-        }, 1000);
-        
-        console.log("iOS: 카메라 스트림 및 QR 스캐너 설정 완료");
-      } else {
-        // 안드로이드/웹에서는 기존 방식 사용
-        console.log("안드로이드/웹: 기존 QR 스캐너 방식 사용");
-        
-        codeReaderRef.current = new BrowserMultiFormatReader();
-        
-        await codeReaderRef.current.decodeFromVideoDevice(
-          null, // 기본 카메라 사용
-          videoRef.current,
-          (result) => {
-            if (result) {
-              console.log("QR 코드 스캔 성공:", result.getText());
-              handleQRCodeScanned(result.getText());
-            }
-          }
-        );
+      );
 
-        console.log("안드로이드/웹 QR 스캐너 시작 완료");
-      }
+      console.log("안드로이드/웹 QR 스캐너 시작 완료");
     } catch (error) {
       console.error("QR 스캐너 시작 오류:", error);
       setIsScanning(false);
-      
-      // iOS에서 오류 발생 시 사용자에게 안내
-      if (isIOS) {
-        showToast('카메라 시작에 실패했습니다. 페이지를 새로고침하고 다시 시도해주세요.', 'error');
-      }
+      showToast('카메라 시작에 실패했습니다. 페이지를 새로고침하고 다시 시도해주세요.', 'error');
     }
   };
 
@@ -504,17 +345,6 @@ export default function QRPage() {
                         autoPlay
                         playsInline
                         muted
-                        webkit-playsinline="true"
-                        x-webkit-airplay="allow"
-                        // iOS Safari 호환성을 위한 추가 속성들
-                        {...(/iPad|iPhone|iPod/.test(navigator.userAgent) && {
-                          'webkit-playsinline': 'true',
-                          'x-webkit-airplay': 'allow',
-                          'controls': false,
-                          'disablePictureInPicture': true,
-                          'disableRemotePlayback': true,
-                          'preload': 'auto'
-                        })}
                       />
                       {/* QR 스캔 프레임 오버레이 */}
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -555,10 +385,17 @@ export default function QRPage() {
         {/* 하단 버튼들 - 고정 */}
         <section className="flex-shrink-0 pb-6" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
           <div className="space-y-3">
-            {/* 카메라 권한 요청 버튼 (카메라가 지원되지 않거나 권한이 없는 경우) */}
+            {/* 카메라 시작 버튼 (카메라가 지원되지 않거나 권한이 없는 경우) */}
             {(hasCamera === false || hasCamera === null) && (
               <button
-                onClick={requestCameraPermission}
+                onClick={() => {
+                  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                  if (isIOS) {
+                    startIOSCamera();
+                  } else {
+                    startScanner();
+                  }
+                }}
                 className="w-full rounded-xl p-4 transition-colors"
                 style={{
                   backgroundColor: 'rgba(124, 58, 237, 0.1)',
@@ -570,7 +407,7 @@ export default function QRPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  카메라 권한 허용하기
+                  카메라 시작하기
                 </div>
               </button>
             )}
