@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging';
 
 // Firebase 설정
 const firebaseConfig = {
@@ -18,8 +18,8 @@ const isFirebaseConfigured = firebaseConfig.projectId &&
                             firebaseConfig.authDomain;
 
 // Firebase 앱 초기화 (설정이 완전한 경우에만)
-let app = null;
-let messaging = null;
+let app: any = null;
+let messaging: Messaging | null = null;
 
 if (isFirebaseConfigured) {
   try {
@@ -68,7 +68,7 @@ export const onMessageListener = () => {
   }
 
   return new Promise((resolve) => {
-    onMessage(messaging, (payload) => {
+    onMessage(messaging!, (payload) => {
       console.log('Message received in foreground:', payload);
       resolve(payload);
     });
