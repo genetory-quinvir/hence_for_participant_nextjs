@@ -16,10 +16,12 @@
   },
   "dependencies": {
     "@zxing/library": "^0.21.3",
+    "firebase": "^12.1.0",
     "html5-qrcode": "^2.3.8",
     "next": "15.4.5",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "workbox-webpack-plugin": "^7.3.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

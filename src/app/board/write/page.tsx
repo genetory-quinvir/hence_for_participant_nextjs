@@ -191,11 +191,22 @@ function BoardWriteContent() {
                 <div className="flex flex-wrap gap-2">
                   {imageUrls.map((url, index) => (
                     <div key={index} className="relative">
-                      <img
-                        src={url}
-                        alt={`이미지 ${index + 1}`}
-                        className="w-20 h-20 object-cover rounded-lg"
-                      />
+                      <div className="w-20 h-20 rounded-lg overflow-hidden" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                        <img
+                          src={url}
+                          alt={`이미지 ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                        <div className="w-full h-full flex items-center justify-center hidden">
+                          <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      </div>
                       <button
                         onClick={() => handleImageRemove(index)}
                         className="absolute -top-1 -right-1 w-6 h-6 text-white rounded-full flex items-center justify-center text-sm transition-colors"

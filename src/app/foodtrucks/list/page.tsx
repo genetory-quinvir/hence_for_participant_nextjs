@@ -136,26 +136,33 @@ function FoodTrucksContent() {
                 }}
               >
                 {/* 썸네일 이미지 */}
-                <div className="w-full aspect-[4/3] overflow-hidden relative bg-black">
+                <div className="w-full aspect-[4/3] overflow-hidden relative" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
                   {vendor.thumbImageUrl ? (
                     <img 
                       src={vendor.thumbImageUrl} 
                       alt={vendor.name || '푸드트럭 이미지'} 
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
                     />
                   ) : vendor.imageUrl ? (
                     <img 
                       src={vendor.imageUrl} 
                       alt={vendor.name || '푸드트럭 이미지'} 
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <svg className="w-16 h-16 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  )}
+                  ) : null}
+                  <div className="w-full h-full flex items-center justify-center hidden">
+                    <svg className="w-16 h-16 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
                   {/* 영업중 배지 */}
                   <div className="absolute top-3 right-3">
                     <span className="px-4 py-2 rounded-full text-xs font-medium bg-purple-600 text-white">
@@ -232,6 +239,15 @@ function FoodTrucksContent() {
             </div>
           )}
         </div>
+
+        {/* 모든 푸드트럭을 불러왔습니다 메시지 */}
+        {vendors.length > 0 && (
+          <div className="text-center py-6">
+            <p className="text-sm text-white" style={{ opacity: 0.6 }}>
+              모든 푸드트럭을 불러왔습니다
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

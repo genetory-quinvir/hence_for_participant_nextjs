@@ -420,14 +420,21 @@ function ProfilePageContent() {
                   <div className="flex items-start gap-3 mb-3">
                     {/* 이벤트 이미지 또는 기본 아이콘 */}
                     {event.imageUrl ? (
-                      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
                         <Image 
                           src={event.imageUrl} 
                           alt="이벤트 이미지"
                           width={48}
                           height={48}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
                         />
+                        <div className="w-full h-full flex items-center justify-center hidden">
+                          <span className="text-white text-lg">🎪</span>
+                        </div>
                       </div>
                     ) : (
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">

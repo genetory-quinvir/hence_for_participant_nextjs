@@ -1,19 +1,30 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
-import ErrorBoundary from "@/components/ErrorBoundary";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "모바일 서비스",
-  description: "모바일 최적화된 Next.js 서비스",
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: "#000000",
+  title: "Hence Event App",
+  description: "Hence 이벤트 참여자 앱",
+  manifest: "/manifest.json",
+  themeColor: "#7c3aed",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Hence Event App"
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" }
+    ],
+    apple: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" }
+    ]
+  }
 };
 
 export default function RootLayout({
@@ -29,11 +40,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="font-suit antialiased bg-black text-white">
-        <ErrorBoundary>
         <AuthProvider>
           {children}
         </AuthProvider>
-        </ErrorBoundary>
       </body>
     </html>
   );

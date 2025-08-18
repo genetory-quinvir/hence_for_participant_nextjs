@@ -56,12 +56,21 @@ export default function EventAdvertisements({ advertisements }: EventAdvertiseme
           >
             {/* 광고 이미지 - 전체 카드 크기 */}
             {currentAd.imageUrl ? (
-              <div className="w-full h-64 relative">
+              <div className="w-full h-64 relative" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
                 <img 
                   src={currentAd.imageUrl} 
                   alt={currentAd.title || '광고 이미지'}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
                 />
+                <div className="w-full h-full flex items-center justify-center hidden">
+                  <svg className="w-16 h-16 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
                 
                 {/* 광고 표시 - 우측 상단 */}
                 <div className="absolute top-3 right-3">

@@ -143,17 +143,12 @@ function EventPageContent() {
       const userInitial = userName.charAt(0).toUpperCase();
       
       return (
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center" style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.4)',
-            border: '3px solid rgba(255, 255, 255, 0.1)'
-          }}>
-            <span className="text-white text-sm font-semibold">
-              {userInitial}
-            </span>
-          </div>
-          <span className="text-white text-sm hidden sm:block" style={{ opacity: 0.8 }}>
-            {userName}
+        <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center" style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
+          border: '3px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          <span className="text-white text-sm font-semibold">
+            {userInitial}
           </span>
         </div>
       );
@@ -254,6 +249,9 @@ function EventPageContent() {
         {/* 히어로 섹션 */}
         <EventHero event={featuredData.event} />
 
+        {/* 이벤트 정보 섹션 */}
+        <EventInfo event={featuredData.event} />
+
         {/* 공지사항 섹션 */}
         {featuredData.notices && (
           <EventNotice 
@@ -264,6 +262,14 @@ function EventPageContent() {
             }}
           />
         )}
+
+        {/* 이벤트 경품 섹션 */}
+        {featuredData.raffle && (
+          <EventRaffle 
+            raffle={featuredData.raffle} 
+            eventId={featuredData.event.id || 'default-event'}
+          />
+        )}  
 
         {/* 쿠폰 섹션 */}
         {featuredData.coupons && (

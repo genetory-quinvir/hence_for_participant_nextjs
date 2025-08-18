@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSimpleNavigation } from "@/utils/navigation";
+import NotificationPermission from "@/components/common/NotificationPermission";
 
 export default function HomePage() {
   const { navigate } = useSimpleNavigation();
@@ -47,17 +48,12 @@ export default function HomePage() {
       const userInitial = userName.charAt(0).toUpperCase();
       
       return (
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center" style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.4)',
-            border: '3px solid rgba(255, 255, 255, 0.1)'
-          }}>
-            <span className="text-white text-sm font-semibold">
-              {userInitial}
-            </span>
-          </div>
-          <span className="text-white text-sm hidden sm:block" style={{ opacity: 0.8 }}>
-            {userName}
+        <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center" style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
+          border: '3px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          <span className="text-white text-sm font-semibold">
+            {userInitial}
           </span>
         </div>
       );
@@ -130,7 +126,7 @@ export default function HomePage() {
               이벤트의 시작과 끝.
             </p>
           </section>
-
+            
           {/* 정보 및 액션 섹션 */}
           <section className="px-6 pb-8">
             {/* 정보 섹션 */}
@@ -142,7 +138,7 @@ export default function HomePage() {
                 QR 스캔 또는 코드 입력으로 참여하세요
               </p>
             </div>
-
+            
             {/* 액션 버튼 */}
             <button
               onClick={handleEntryClick}
@@ -184,6 +180,9 @@ export default function HomePage() {
             </p>
           </section>
         </main>
+
+        {/* 알림 권한 요청 컴포넌트 */}
+        <NotificationPermission />
       </div>
     </div>
   );

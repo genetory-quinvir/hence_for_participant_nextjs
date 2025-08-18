@@ -287,7 +287,7 @@ function ParticipantsListContent() {
               style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
             >
               {/* 프로필 사진 */}
-              <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden bg-purple-600 flex items-center justify-center" style={{
+              <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden flex items-center justify-center" style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.4)',
                 border: '3px solid rgba(255, 255, 255, 0.1)'
               }}>
@@ -296,12 +296,15 @@ function ParticipantsListContent() {
                     src={participant.user.profileImageUrl} 
                     alt={participant.user.nickname || '프로필'} 
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
                   />
-                ) : (
-                  <span className="text-white text-lg font-bold">
-                    {getInitials(participant.user?.nickname || '')}
-                  </span>
-                )}
+                ) : null}
+                <span className="text-white text-lg font-bold hidden">
+                  {getInitials(participant.user?.nickname || '')}
+                </span>
               </div>
 
               {/* 참여자 정보 */}

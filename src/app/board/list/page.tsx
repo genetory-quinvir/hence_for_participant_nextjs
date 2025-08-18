@@ -1,24 +1,32 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef, Suspense, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import { BoardItem } from "@/types/api";
 import { getBoardList, getAccessToken } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import PostHeader from "@/components/common/PostHeader";
+import { useSimpleNavigation } from "@/utils/navigation";
+import Image from "next/image";
+import { useImageGallery } from "@/hooks/useImageGallery";
+import ImageGallery from "@/components/common/ImageGallery";
 
 function BoardListContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [boardItems, setBoardItems] = useState<BoardItem[]>([]);
+  const { navigate, goBack } = useSimpleNavigation();
+  const [posts, setPosts] = useState<BoardItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sortType, setSortType] = useState<'latest' | 'popular' | 'comments'>('latest');
   const [cursor, setCursor] = useState<string | null>(null);
-  const [hasNext, setHasNext] = useState(true);
-  const [total, setTotal] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [sortBy, setSortBy] = useState<'latest' | 'popular'>('latest');
+  const isMounted = useRef(true);
+  const hasCalledApi = useRef(false);
+
+  // 이미지 갤러리 훅
+  const { isOpen, images, initialIndex, openGallery, closeGallery } = useImageGallery();
 
   // 이벤트 ID와 타입 가져오기
   const eventId = searchParams.get('eventId') || 'default-event';
@@ -35,10 +43,9 @@ function BoardListContent() {
         
         const result = await getBoardList(eventId, type, null, 10);
         
-        if (result.success && result.data) {
-          setBoardItems(result.data.items);
-          setHasNext(result.data.hasNext);
-          setTotal(result.data.total);
+                  if (result.success && result.data) {
+            setPosts(result.data.items);
+            setHasNext(result.data.hasNext);
           setCursor(result.data.nextCursor || null);
         } else {
           setError(result.error || '게시글을 불러오는데 실패했습니다.');
@@ -64,10 +71,10 @@ function BoardListContent() {
       const result = await getBoardList(eventId, type, cursor, 10);
       
       if (result.success && result.data) {
-        setBoardItems(prev => {
+        setPosts(prev => {
           // 중복 제거를 위해 기존 ID들과 비교
-          const existingIds = new Set(prev.map(item => item.id));
-          const newItems = result.data!.items.filter(item => !existingIds.has(item.id));
+          const existingIds = new Set(prev.map((item: BoardItem) => item.id));
+          const newItems = result.data!.items.filter((item: BoardItem) => !existingIds.has(item.id));
           return [...prev, ...newItems];
         });
         setHasNext(result.data.hasNext);
@@ -124,26 +131,28 @@ function BoardListContent() {
 
   // 정렬된 게시글 목록
   const sortedPosts = useMemo(() => {
-    if (!Array.isArray(boardItems)) return [];
+    if (!Array.isArray(posts)) return [];
     
-    const sorted = [...boardItems];
+    const sorted = [...posts];
     
-    switch (sortType) {
+    switch (sortBy) {
       case 'latest':
         return sorted.sort((a, b) => 
           new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
         );
       case 'popular':
         return sorted.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-      case 'comments':
-        return sorted.sort((a, b) => (b.commentCount || 0) - (a.commentCount || 0));
       default:
         return sorted;
     }
-  }, [boardItems, sortType]);
+  }, [posts, sortBy]);
 
-
-
+  // 이미지 클릭 핸들러
+  const handleImageClick = (post: BoardItem, imageIndex: number = 0) => {
+    if (post.images && post.images.length > 0) {
+      openGallery(post.images, imageIndex);
+    }
+  };
 
 
   // 페이지 제목과 빈 상태 메시지
@@ -231,8 +240,8 @@ function BoardListContent() {
         <div className="flex justify-end mb-2">
           <div className="relative">
             <select
-              value={sortType}
-              onChange={(e) => setSortType(e.target.value as 'latest' | 'popular' | 'comments')}
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'latest' | 'popular')}
               className="px-4 py-2 text-sm font-medium text-white appearance-none cursor-pointer focus:outline-none focus:ring-0 focus:border-0 border-0 bg-black rounded-lg pr-10"
               style={{ 
                 backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
@@ -243,7 +252,6 @@ function BoardListContent() {
             >
               <option value="latest">최신순</option>
               <option value="popular">인기순</option>
-              <option value="comments">댓글순</option>
             </select>
           </div>
         </div>
@@ -296,13 +304,28 @@ function BoardListContent() {
                       {/* 이미지가 있는 경우 */}
                       {post.images && post.images.length > 0 && (
                         <div className="flex-shrink-0">
-                          <Image 
-                            src={post.images[0]} 
-                            alt="게시글 이미지"
-                            width={80}
-                            height={80}
-                            className="w-20 h-20 object-cover rounded-lg"
-                          />
+                          <div className="w-20 h-20 rounded-lg overflow-hidden cursor-pointer" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                            <Image 
+                              src={post.images[0]} 
+                              alt="게시글 이미지"
+                              width={80}
+                              height={80}
+                              className="w-full h-full object-cover"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleImageClick(post, 0);
+                              }}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                              }}
+                            />
+                            <div className="w-full h-full flex items-center justify-center hidden">
+                              <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -353,7 +376,7 @@ function BoardListContent() {
           )}
           
           {/* 더 이상 데이터가 없을 때 */}
-          {!hasNext && boardItems.length > 0 && (
+          {!hasNext && posts.length > 0 && (
             <div className="text-center py-8">
               <p className="text-white text-sm" style={{ opacity: 0.6 }}>
                 모든 게시글을 불러왔습니다
@@ -362,7 +385,15 @@ function BoardListContent() {
           )}
         </div>
       </div>
-      
+
+      {/* 이미지 갤러리 */}
+      <ImageGallery
+        images={images}
+        initialIndex={initialIndex}
+        isOpen={isOpen}
+        onClose={closeGallery}
+      />
+
       {/* 플로팅 글쓰기 버튼 (커뮤니티에서만 표시) */}
       {type === 'free' && (
         <button

@@ -1,11 +1,13 @@
 "use client";
 
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
-import { BoardItem } from "@/types/api";
-import EventSection from "./EventSection";
-import PostHeader from "@/components/common/PostHeader";
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { BoardItem } from '@/types/api';
+import PostHeader from '@/components/common/PostHeader';
+import Image from 'next/image';
+import EventSection from './EventSection';
+import { useImageGallery } from '@/hooks/useImageGallery';
+import ImageGallery from '@/components/common/ImageGallery';
 
 interface EventCommunityProps {
   freeBoard: BoardItem[];
@@ -20,9 +22,21 @@ export default function EventCommunity({
   showViewAllButton = false,
   onViewAllClick 
 }: EventCommunityProps) {
-  const router = useRouter();
-  const carouselRef = useRef<HTMLDivElement>(null);
   
+  const router = useRouter();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // 이미지 갤러리 훅
+  const { isOpen, images, initialIndex, openGallery, closeGallery } = useImageGallery();
+
+  // 이미지 클릭 핸들러
+  const handleImageClick = (post: BoardItem, imageIndex: number = 0) => {
+    if (post.images && post.images.length > 0) {
+      openGallery(post.images, imageIndex);
+    }
+  };
+
   // id가 있는 것만 필터링하고 최대 5개까지만 표시
   const displayPosts = freeBoard
     .filter(post => post.id)
@@ -50,7 +64,7 @@ export default function EventCommunity({
       {/* 커뮤니티 캐러셀 */}
       <div className="relative">
         <div 
-          ref={carouselRef}
+          ref={containerRef}
           className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4"
           style={{
             scrollbarWidth: 'none',
@@ -99,13 +113,28 @@ export default function EventCommunity({
                   {/* 이미지가 있는 경우 */}
                   {post.images && post.images.length > 0 && (
                     <div className="flex-shrink-0">
-                      <Image 
-                        src={post.images[0]} 
-                        alt="게시글 이미지"
-                        width={80}
-                        height={80}
-                        className="w-20 h-20 object-cover rounded-lg"
-                      />
+                      <div className="w-20 h-20 rounded-lg overflow-hidden cursor-pointer" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                        <Image 
+                          src={post.images[0]} 
+                          alt="게시글 이미지"
+                          width={80}
+                          height={80}
+                          className="w-full h-full object-cover"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleImageClick(post, 0);
+                          }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                        <div className="w-full h-full flex items-center justify-center hidden">
+                          <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -162,6 +191,14 @@ export default function EventCommunity({
           <span>소식 올리기</span>
         </button>
       </div>
+
+      {/* 이미지 갤러리 */}
+      <ImageGallery
+        images={images}
+        initialIndex={initialIndex}
+        isOpen={isOpen}
+        onClose={closeGallery}
+      />
     </EventSection>
   );
 } 

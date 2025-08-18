@@ -6,6 +6,8 @@ import { VendorItem } from "@/types/api";
 import { getVendorDetail } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useSimpleNavigation } from "@/utils/navigation";
+import { useImageGallery } from "@/hooks/useImageGallery";
+import ImageGallery from "@/components/common/ImageGallery";
 
 function FoodTruckDetailContent() {
   const params = useParams();
@@ -17,6 +19,9 @@ function FoodTruckDetailContent() {
   const eventId = searchParams.get('eventId') || 'default-event';
   const vendorId = params.id as string;
   const hasCalledApi = useRef(false);
+
+  // 이미지 갤러리 훅
+  const { isOpen, images, initialIndex, openGallery, closeGallery } = useImageGallery();
 
   // 푸드트럭 상세 페이지 진입 시 히스토리에 추가
   useEffect(() => {
@@ -72,11 +77,39 @@ function FoodTruckDetailContent() {
     goBack();
   };
 
+  // 푸드트럭 이미지 클릭 핸들러
+  const handleVendorImageClick = () => {
+    const vendorImages: string[] = [];
+    
+    if (vendor?.imageUrl) vendorImages.push(vendor.imageUrl);
+    if (vendor?.thumbImageUrl && !vendorImages.includes(vendor.thumbImageUrl)) {
+      vendorImages.push(vendor.thumbImageUrl);
+    }
+    if (vendor?.logoUrl && !vendorImages.includes(vendor.logoUrl)) {
+      vendorImages.push(vendor.logoUrl);
+    }
+    
+    if (vendorImages.length > 0) {
+      openGallery(vendorImages, 0);
+    }
+  };
+
+  // 메뉴 이미지 클릭 핸들러
+  const handleMenuImageClick = (menuIndex: number) => {
+    if (!vendor?.menus) return;
+    
+    const menu = vendor.menus[menuIndex];
+    if (menu.thumbImageUrl) {
+      openGallery([menu.thumbImageUrl], 0);
+    }
+  };
+
   // 로딩 상태 표시
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white">
         <CommonNavigationBar 
+          title='푸드트럭'
           backgroundColor="transparent"
           backgroundOpacity={0}
           textColor="text-white"
@@ -95,6 +128,7 @@ function FoodTruckDetailContent() {
     return (
       <div className="min-h-screen bg-black text-white">
         <CommonNavigationBar 
+          title='푸드트럭'
           backgroundColor="transparent"
           backgroundOpacity={0}
           textColor="text-white"
@@ -109,6 +143,7 @@ function FoodTruckDetailContent() {
   return (
     <div className="min-h-screen bg-black text-white">
       <CommonNavigationBar 
+        title='푸드트럭'
         leftButton={
           <svg
             className="w-6 h-6 text-white"
@@ -125,33 +160,47 @@ function FoodTruckDetailContent() {
         textColor="text-white"
       />
       
-      <div className="px-4 py-6">
+      <div className="px-4 py-0">
         {/* 썸네일 이미지 - 상단 정방형 */}
         <div className="mb-6">
-          <div className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+          <div className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
             {vendor.imageUrl ? (
               <img 
                 src={vendor.imageUrl} 
                 alt={vendor.name || '푸드트럭 이미지'}
                 className="w-full h-full object-cover"
+                onClick={handleVendorImageClick}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
               />
             ) : vendor.thumbImageUrl ? (
               <img 
                 src={vendor.thumbImageUrl} 
                 alt={vendor.name || '푸드트럭 썸네일'}
                 className="w-full h-full object-cover"
+                onClick={handleVendorImageClick}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
               />
             ) : vendor.logoUrl ? (
               <img 
                 src={vendor.logoUrl} 
                 alt={vendor.name || '푸드트럭 로고'}
                 className="w-full h-full object-cover"
+                onClick={handleVendorImageClick}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
               />
-            ) : (
-              <svg className="w-24 h-24 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
-            )}
+            ) : null}
+            <svg className="w-24 h-24 text-white opacity-50 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
           </div>
         </div>
 
@@ -164,7 +213,7 @@ function FoodTruckDetailContent() {
             <span className="text-white text-md" style={{ opacity: 0.8 }}>
               {vendor.category || vendor.type || '푸드트럭'}
             </span>
-            {vendor.rating && (
+            {/* {vendor.rating && (
               <div className="flex items-center bg-black bg-opacity-10 px-3 py-1 rounded-lg">
                 <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
@@ -174,7 +223,7 @@ function FoodTruckDetailContent() {
                   <span className="text-white text-lg ml-1" style={{ opacity: 0.7 }}>({vendor.reviewCount}개)</span>
                 )}
               </div>
-            )}
+            )} */}
           </div>
           {vendor.description && (
             <p className="text-white text-md mb-4" style={{ opacity: 0.8 }}>
@@ -236,14 +285,15 @@ function FoodTruckDetailContent() {
           <div className="mb-6">
             <h2 className="text-lg font-bold text-white mb-4">메뉴</h2>
             <div className="space-y-3">
-              {vendor.menus.map((menu) => (
+              {vendor.menus.map((menu, index) => (
                 <div key={menu.id} className="rounded-xl p-4 flex items-center" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
-                  <div className="w-16 h-16 rounded-lg mr-4 flex-shrink-0 overflow-hidden">
+                  <div className="w-16 h-16 rounded-lg mr-4 flex-shrink-0 overflow-hidden cursor-pointer">
                     {menu.thumbImageUrl ? (
                       <img 
                         src={menu.thumbImageUrl} 
                         alt={menu.name || '메뉴 이미지'}
                         className="w-full h-full object-cover"
+                        onClick={() => handleMenuImageClick(index)}
                       />
                     ) : (
                       <div className="w-full h-full bg-purple-900 flex items-center justify-center">
@@ -271,6 +321,14 @@ function FoodTruckDetailContent() {
         )}
 
       </div>
+
+      {/* 이미지 갤러리 */}
+      <ImageGallery
+        images={images}
+        initialIndex={initialIndex}
+        isOpen={isOpen}
+        onClose={closeGallery}
+      />
     </div>
   );
 }
