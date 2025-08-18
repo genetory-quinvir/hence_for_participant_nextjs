@@ -11,6 +11,7 @@ export default function NotificationPermission() {
   const [isRequesting, setIsRequesting] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
+  const [iosVersion, setIosVersion] = useState<string | null>(null);
 
   // iOS 및 PWA 상태 확인
   useEffect(() => {
@@ -18,6 +19,17 @@ export default function NotificationPermission() {
       // iOS 감지
       const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
       setIsIOS(isIOSDevice);
+
+      // iOS 버전 확인
+      if (isIOSDevice) {
+        const match = navigator.userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
+        if (match) {
+          const major = parseInt(match[1]);
+          const minor = parseInt(match[2]);
+          const patch = parseInt(match[3] || '0');
+          setIosVersion(`${major}.${minor}.${patch}`);
+        }
+      }
 
       // PWA 감지
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -38,6 +50,16 @@ export default function NotificationPermission() {
         return;
       }
 
+      // iOS 16.4 이전 버전에서는 웹 푸시 알림 미지원
+      if (isIOS && iosVersion) {
+        const [major, minor] = iosVersion.split('.').map(Number);
+        if (major < 16 || (major === 16 && minor < 4)) {
+          showToast('iOS 16.4 이상에서만 웹 푸시 알림을 지원합니다.', 'info');
+          setIsRequesting(false);
+          return;
+        }
+      }
+
       const token = await requestPermission();
       if (token) {
         console.log('FCM Token received:', token);
@@ -49,11 +71,19 @@ export default function NotificationPermission() {
             showToast('알림 권한이 허용되었습니다!', 'success');
           } else {
             console.warn('FCM 토큰 전송 실패:', sendResult.error);
-            showToast('알림 권한이 허용되었습니다! (토큰 전송 실패)', 'success');
+            if (isIOS) {
+              showToast('iOS에서는 알림이 제한적일 수 있습니다.', 'info');
+            } else {
+              showToast('알림 권한이 허용되었습니다! (토큰 전송 실패)', 'success');
+            }
           }
         } catch (error) {
           console.error('FCM 토큰 전송 중 오류:', error);
-          showToast('알림 권한이 허용되었습니다! (토큰 전송 실패)', 'success');
+          if (isIOS) {
+            showToast('iOS에서는 알림이 제한적일 수 있습니다.', 'info');
+          } else {
+            showToast('알림 권한이 허용되었습니다! (토큰 전송 실패)', 'success');
+          }
         }
       } else {
         if (isIOS) {
@@ -107,6 +137,13 @@ export default function NotificationPermission() {
       {isIOS && !isPWA && (
         <div className="mb-2 p-2 bg-blue-600 rounded text-xs">
           📱 iOS: Safari에서 "홈화면에 추가" 후 PWA로 실행해주세요
+        </div>
+      )}
+      {isIOS && iosVersion && (
+        <div className="mb-2 p-2 bg-yellow-600 rounded text-xs">
+          📱 iOS {iosVersion}: {parseInt(iosVersion.split('.')[0]) < 16 || (parseInt(iosVersion.split('.')[0]) === 16 && parseInt(iosVersion.split('.')[1]) < 4) 
+            ? '웹 푸시 알림을 지원하지 않습니다' 
+            : '웹 푸시 알림을 지원합니다'}
         </div>
       )}
       <button
