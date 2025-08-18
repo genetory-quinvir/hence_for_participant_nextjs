@@ -27,24 +27,15 @@ export default function QRPage() {
     }
   }, [isAuthenticated, user, navigate]);
 
-  // 카메라 권한 요청 및 지원 여부 확인
+  // 카메라 권한 요청 및 지원 여부 확인 (원래 방식으로 복원)
   const requestCameraPermission = async () => {
     try {
       console.log("카메라 권한 요청 중...");
       
-      // iOS에서는 가장 간단한 설정 사용
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      
+      // 모든 플랫폼에서 동일한 설정 사용 (이전에 작동했던 방식)
       const constraints = {
-        video: isIOS ? {
+        video: {
           facingMode: 'environment'
-        } : {
-          facingMode: 'environment',
-          // 안드로이드에서만 해상도 제약 추가
-          ...(navigator.userAgent.includes('Android') && {
-            width: { min: 640, ideal: 1280, max: 1920 },
-            height: { min: 480, ideal: 720, max: 1080 }
-          })
         }
       };
       
@@ -55,12 +46,10 @@ export default function QRPage() {
       console.log("카메라 권한 획득 성공");
       setHasCamera(true);
       
-      // iOS에서는 권한 획득 후 바로 스캐너 시작하지 않음 (사용자가 버튼을 눌러야 함)
-      if (!isIOS) {
-        setTimeout(() => {
-          startScanner();
-        }, 500);
-      }
+      // 권한 획득 후 스캐너 시작
+      setTimeout(() => {
+        startScanner();
+      }, 500);
     } catch (error) {
       console.log('카메라를 지원하지 않거나 권한이 없습니다:', error);
       setHasCamera(false);
@@ -164,7 +153,7 @@ export default function QRPage() {
     setIsScanning(false);
   };
 
-  // QR 스캐너 시작 함수
+  // QR 스캐너 시작 함수 (원래 방식으로 복원)
   const startScanner = async () => {
     console.log("startScanner 호출됨");
     
@@ -182,101 +171,31 @@ export default function QRPage() {
     console.log("QR 스캐너 시작 중...");
     
     try {
-      // iOS에서는 먼저 카메라 스트림을 직접 시작
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      // 모든 플랫폼에서 동일한 방식 사용 (이전에 작동했던 방식)
+      codeReaderRef.current = new BrowserMultiFormatReader();
       
-      if (isIOS) {
-        console.log("iOS 감지: 직접 카메라 스트림 시작");
-        
-        // iOS에서는 더 간단한 제약 조건 사용
-        const constraints = {
-          video: {
-            facingMode: 'environment'
+      await codeReaderRef.current.decodeFromVideoDevice(
+        null, // 기본 카메라 사용
+        videoRef.current,
+        (result) => {
+          if (result) {
+            console.log("QR 코드 스캔 성공:", result.getText());
+            handleQRCodeScanned(result.getText());
           }
-        };
-        
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        videoRef.current.srcObject = stream;
-        
-        // 비디오 로드 완료 후 QR 스캐너 시작
-        videoRef.current.onloadedmetadata = async () => {
-          console.log("iOS 비디오 로드 완료, QR 스캐너 시작");
-          
-          try {
-            codeReaderRef.current = new BrowserMultiFormatReader();
-            
-            await codeReaderRef.current.decodeFromVideoDevice(
-              null,
-              videoRef.current,
-              (result) => {
-                if (result) {
-                  console.log("QR 코드 스캔 성공:", result.getText());
-                  handleQRCodeScanned(result.getText());
-                }
-              }
-            );
-            
-            console.log("iOS QR 스캐너 시작 완료");
-          } catch (qrError) {
-            console.error("iOS QR 스캐너 시작 오류:", qrError);
-            setIsScanning(false);
-          }
-        };
-        
-        videoRef.current.play().catch((playError) => {
-          console.error("iOS 비디오 재생 오류:", playError);
-          setIsScanning(false);
-        });
-        
-      } else {
-        // 안드로이드/웹에서는 기존 방식 사용
-        console.log("안드로이드/웹: 기존 방식 사용");
-        
-        codeReaderRef.current = new BrowserMultiFormatReader();
-        
-        const hints = new Map();
-        if (navigator.userAgent.includes('Android')) {
-          hints.set(2, true); // TRY_HARDER 활성화
-          hints.set(3, 1); // PURE_BARCODE 모드
         }
-        
-        await codeReaderRef.current.decodeFromVideoDevice(
-          null,
-          videoRef.current,
-          (result) => {
-            if (result) {
-              console.log("QR 코드 스캔 성공:", result.getText());
-              handleQRCodeScanned(result.getText());
-            }
-          }
-        );
-        
-        console.log("안드로이드/웹 QR 스캐너 시작 완료");
-      }
+      );
 
+      console.log("QR 스캐너 시작 완료");
     } catch (error) {
       console.error("QR 스캐너 시작 오류:", error);
       setIsScanning(false);
-      
-      // iOS에서 오류 발생 시 사용자에게 안내
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        showToast('카메라 시작에 실패했습니다. 페이지를 새로고침하고 다시 시도해주세요.', 'error');
-      }
     }
   };
 
-  // 카메라가 지원되면 QR 스캐너 시작 (iOS에서는 사용자 상호작용 후에만)
+  // 카메라가 지원되면 QR 스캐너 시작 (원래 방식으로 복원)
   useEffect(() => {
     if (hasCamera === true && !isScanning) {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      
-      if (isIOS) {
-        // iOS에서는 사용자 상호작용이 필요하므로 자동 시작하지 않음
-        console.log("iOS 감지: 사용자 상호작용 후 카메라 시작 필요");
-        return;
-      }
-      
-      // 안드로이드/웹에서는 자동 시작
+      // 모든 플랫폼에서 자동 시작 (이전에 작동했던 방식)
       const timer = setTimeout(() => {
         startScanner();
       }, 500);
@@ -430,90 +349,36 @@ export default function QRPage() {
                   </div>
                 </div>
               </div>
-            ) : hasCamera === true ? (
-              // 카메라 지원 - QR 스캐너 표시
+                        ) : hasCamera === true ? (
+              // 카메라 지원 - QR 스캐너 표시 (원래 방식으로 복원)
               <div className="w-full">
-                {(() => {
-                  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-                  
-                  // iOS에서 스캐너가 시작되지 않은 경우 시작 버튼 표시
-                  if (isIOS && !isScanning) {
-                    return (
-                      <div className="relative bg-black rounded-xl overflow-hidden">
-                        <div className="aspect-square bg-transparent rounded-lg flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="text-4xl mb-4">📷</div>
-                            <p className="text-md font-regular text-white mb-4" style={{ opacity: 0.7 }}>
-                              QR 스캔을 시작하려면
-                            </p>
-                                                         <button
-                               onClick={() => {
-                                 console.log("iOS 카메라 시작 버튼 클릭됨");
-                                 startScanner();
-                               }}
-                               className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
-                             >
-                               카메라 시작하기
-                             </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-                  
-                  // 스캐너가 실행 중인 경우 비디오 표시
-                  return (
-                    <div className="relative bg-black rounded-xl overflow-hidden">
-                                             <video
-                         ref={videoRef}
-                         className="w-full aspect-square object-cover"
-                         autoPlay
-                         playsInline
-                         muted
-                         webkit-playsinline="true"
-                         x-webkit-airplay="allow"
-                         // iOS Safari 호환성을 위한 추가 속성들
-                         {...(/iPad|iPhone|iPod/.test(navigator.userAgent) && {
-                           'webkit-playsinline': 'true',
-                           'x-webkit-airplay': 'allow',
-                           'data-cy': 'qr-video-ios',
-                           'controls': false,
-                           'disablePictureInPicture': true,
-                           'disableRemotePlayback': true,
-                           style: { 
-                             // iOS에서는 기본 스타일 유지 (안정성 우선)
-                             objectFit: 'cover'
-                           }
-                         })}
-                         // 안드로이드에서 더 나은 성능을 위한 속성들
-                         {...(navigator.userAgent.includes('Android') && !navigator.userAgent.includes('iPhone') && !navigator.userAgent.includes('iPad') && {
-                           'data-cy': 'qr-video-android',
-                           style: { 
-                             transform: 'scaleX(-1)', // 안드로이드에서 미러링 효과
-                             filter: 'brightness(1.1) contrast(1.1)', // 안드로이드에서 더 선명한 화면
-                             objectFit: 'cover'
-                           }
-                         })}
-                       />
-                      {/* QR 스캔 프레임 오버레이 */}
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-64 h-64 relative">
-                          {/* 모서리 표시 */}
-                          <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-purple-500"></div>
-                          <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-purple-500"></div>
-                          <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-purple-500"></div>
-                          <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-purple-500"></div>
-                        </div>
-                      </div>
-                      {/* 스캔 안내 텍스트 */}
-                      <div className="absolute bottom-4 left-0 right-0 text-center">
-                        <p className="text-white text-sm" style={{ opacity: 0.8 }}>
-                          QR 코드를 프레임 안에 맞춰주세요
-                        </p>
-                      </div>
+                <div className="relative bg-black rounded-xl overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    className="w-full aspect-square object-cover"
+                    autoPlay
+                    playsInline
+                    muted
+                    webkit-playsinline="true"
+                    x-webkit-airplay="allow"
+                  />
+                  {/* QR 스캔 프레임 오버레이 */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-64 h-64 relative">
+                      {/* 모서리 표시 */}
+                      <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-purple-500"></div>
+                      <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-purple-500"></div>
+                      <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-purple-500"></div>
+                      <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-purple-500"></div>
                     </div>
-                  );
-                })()}
+                  </div>
+                  {/* 스캔 안내 텍스트 */}
+                  <div className="absolute bottom-4 left-0 right-0 text-center">
+                    <p className="text-white text-sm" style={{ opacity: 0.8 }}>
+                      QR 코드를 프레임 안에 맞춰주세요
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : (
               // 카메라 미지원 - 안내 메시지 표시
