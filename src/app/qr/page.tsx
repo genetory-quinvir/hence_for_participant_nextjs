@@ -218,21 +218,76 @@ export default function QRPage() {
         console.log("iOS 비디오 스트림 준비 완료");
       }
       
-      // 모든 플랫폼에서 동일한 방식 사용
-      codeReaderRef.current = new BrowserMultiFormatReader();
-      
-      await codeReaderRef.current.decodeFromVideoDevice(
-        null, // 기본 카메라 사용
-        videoRef.current,
-        (result) => {
-          if (result) {
-            console.log("QR 코드 스캔 성공:", result.getText());
-            handleQRCodeScanned(result.getText());
+      if (isIOS) {
+        // iOS에서는 직접 카메라 스트림을 시작하고 QR 스캐너는 별도로 처리
+        console.log("iOS: 직접 카메라 스트림 시작");
+        
+        const constraints = {
+          video: {
+            facingMode: 'environment'
           }
+        };
+        
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          
+          // 비디오 재생 시작
+          await videoRef.current.play();
         }
-      );
+        console.log("iOS: 비디오 재생 시작됨");
+        
+        // QR 스캐너는 별도로 시작 (비동기)
+        codeReaderRef.current = new BrowserMultiFormatReader();
+        console.log("iOS: BrowserMultiFormatReader 생성 완료");
+        
+        // 약간의 지연 후 QR 스캐너 시작
+        setTimeout(async () => {
+          try {
+            console.log("iOS: QR 스캐너 시작 시도 중...");
+            console.log("iOS: videoRef.current 존재 여부:", !!videoRef.current);
+            
+            if (!videoRef.current) {
+              console.error("iOS: videoRef.current가 null입니다.");
+              return;
+            }
+            
+            await codeReaderRef.current!.decodeFromVideoDevice(
+              null,
+              videoRef.current,
+              (result) => {
+                if (result) {
+                  console.log("QR 코드 스캔 성공:", result.getText());
+                  handleQRCodeScanned(result.getText());
+                }
+              }
+            );
+            console.log("iOS QR 스캐너 시작 완료");
+          } catch (qrError) {
+            console.error("iOS QR 스캐너 시작 오류:", qrError);
+          }
+        }, 1000);
+        
+        console.log("iOS: 카메라 스트림 및 QR 스캐너 설정 완료");
+      } else {
+        // 안드로이드/웹에서는 기존 방식 사용
+        console.log("안드로이드/웹: 기존 QR 스캐너 방식 사용");
+        
+        codeReaderRef.current = new BrowserMultiFormatReader();
+        
+        await codeReaderRef.current.decodeFromVideoDevice(
+          null, // 기본 카메라 사용
+          videoRef.current,
+          (result) => {
+            if (result) {
+              console.log("QR 코드 스캔 성공:", result.getText());
+              handleQRCodeScanned(result.getText());
+            }
+          }
+        );
 
-      console.log("QR 스캐너 시작 완료");
+        console.log("안드로이드/웹 QR 스캐너 시작 완료");
+      }
     } catch (error) {
       console.error("QR 스캐너 시작 오류:", error);
       setIsScanning(false);
