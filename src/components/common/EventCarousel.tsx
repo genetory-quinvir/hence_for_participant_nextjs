@@ -147,7 +147,16 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                     </h3>
                     
                     {event.description && (
-                      <p className="text-sm sm:text-md lg:text-base text-white font-light opacity-80 mb-2 sm:mb-3 lg:mb-4 line-clamp-3 whitespace-pre-wrap h-16 sm:h-16 lg:h-18 overflow-hidden">
+                      <p 
+                        className="text-sm sm:text-md lg:text-base text-white font-light opacity-80 mb-2 sm:mb-3 lg:mb-4 overflow-hidden"
+                        style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          lineHeight: '1.2em',
+                          maxHeight: '3.6em'
+                        }}
+                      >
                         {event.description}
                       </p>
                     )}
