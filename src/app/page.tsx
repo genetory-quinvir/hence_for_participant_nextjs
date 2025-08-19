@@ -7,6 +7,8 @@ import CommonProfileView from "@/components/common/CommonProfileView";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSimpleNavigation } from "@/utils/navigation";
 import NotificationPermission from "@/components/common/NotificationPermission";
+import EventCarousel from "@/components/common/EventCarousel";
+import EndedEventCarousel from "@/components/common/EndedEventCarousel";
 
 export default function HomePage() {
   const { navigate } = useSimpleNavigation();
@@ -39,6 +41,11 @@ export default function HomePage() {
     
     console.log("로그인된 사용자 - QR 페이지로 이동");
     navigate("/qr");
+  };
+
+  const handleEventClick = (eventId: string) => {
+    console.log("이벤트 클릭:", eventId);
+    navigate(`/event/${eventId}`);
   };
 
   // 로그인 상태에 따른 프로필 버튼 렌더링
@@ -85,9 +92,9 @@ export default function HomePage() {
   }
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-black text-white overflow-hidden">
+    <div className="min-h-screen w-full bg-black text-white">
       {/* 백그라운드 이미지 - 전체 화면 */}
-      <div className="absolute inset-0 w-full h-full">
+      <div className="fixed inset-0 w-full h-full blur-xl">
         <Image
           src="/images/bg_entrance.png"
           alt="Background"
@@ -99,12 +106,13 @@ export default function HomePage() {
       </div>
 
       {/* 딤 뷰 */}
-      <div className="absolute inset-0 bg-black" style={{ opacity: 0.7 }}></div>
+      <div className="fixed inset-0 bg-black" style={{ opacity: 0.6 }}></div>
 
       {/* 컨텐츠 레이어 */}
-      <div className="relative z-10 w-full h-full flex flex-col">
+      <div className="relative z-10 w-full min-h-screen">
         {/* 네비게이션바 */}
         <CommonNavigationBar
+          leftButton={<NotificationPermission compact={true} />}
           rightButton={renderProfileButton()}
           onRightClick={handleProfileClick}
           backgroundColor="black"
@@ -113,73 +121,37 @@ export default function HomePage() {
         />
 
         {/* 메인 컨텐츠 */}
-        <main className="flex-1 flex flex-col">
+        <main className="w-full">
           {/* 히어로 섹션 */}
-          <section className="flex-1 flex flex-col pt-10 px-6">
-            <h1 className="text-6xl font-bold text-white mb-4 tracking-wider text-left">
-              HENCE Beta
-            </h1>
-            <p className="text-lg text-white text-left" style={{ opacity: 0.6 }}>
-              이벤트의 시작과 끝.
-            </p>
-          </section>
-            
-          {/* 정보 및 액션 섹션 */}
-          <section className="px-6 pb-8">
-            {/* 정보 섹션 */}
-            <div className="mb-6">
-              <h2 className="text-2xl font-semibold text-white mb-1">
-                이벤트 입장하기
-              </h2>
-              <p className="text-white" style={{ opacity: 0.6 }}>
-                QR 스캔 또는 코드 입력으로 참여하세요
+          <section className="pt-10 pb-8 mb-8">
+            <div className="px-6">
+              <img 
+                src="/images/img_logo.png" 
+                alt="HENCE Beta" 
+                className="h-16 mb-4"
+                style={{ maxWidth: '300px' }}
+              />
+              <p className="text-lg text-white text-left" style={{ opacity: 0.6 }}>
+                이벤트의 시작과 끝.
               </p>
             </div>
-            
-            {/* 액션 버튼 */}
-            <button
-              onClick={handleEntryClick}
-              className="w-full bg-purple-700 hover:bg-purple-700 active:bg-purple-800 rounded-xl p-4 flex items-center justify-between transition-colors"
-            >
-              <div className="flex items-center">
-                {/* QR코드 아이콘 */}
-                <div className="bg-purple-600 p-3 rounded-lg mr-3 flex items-center justify-center w-16 h-16">
-                  <svg
-                    className="w-10 h-10 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M3 11V3h8v8H3zm2-6v4h4V5H5zM3 21v-8h8v8H3zm2-6v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM19 19h2v2h-2v-2zM13 13h2v2h-2v-2zM15 15h2v2h-2v-2zM13 17h2v2h-2v-2zM15 19h2v2h-2v-2zM17 13h2v2h-2v-2zM19 15h2v2h-2v-2zM17 17h2v2h-2v-2z"/>
-                  </svg>
-                </div>
-
-                <div className="text-left pl-2">
-                  <div className="text-white text-xl font-bold pb-1">입장하기</div>
-                  <div className="text-white" style={{ opacity: 0.6 }}>QR 스캔ㆍ코드 입력</div>
-                </div>
-              </div>
-
-              <svg
-                className="w-5 h-5 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
           </section>
-
-          {/* 하단 안내 텍스트 */}
-          <section className="px-6 pb-10" style={{ paddingBottom: 'max(40px, env(safe-area-inset-bottom) + 16px)' }}>
-            <p className="text-white text-xs text-left" style={{ opacity: 0.6 }}>
-              문제가 있으시면 현장 스태프에게 문의해주세요
-            </p>
+          
+          {/* 이벤트 캐러셀 */}
+          <section className="mb-16">
+            <EventCarousel 
+              onEventClick={handleEventClick} 
+              onEntryClick={handleEntryClick}
+            />
+          </section>
+          
+          {/* 종료된 이벤트 캐러셀 */}
+          <section className="mb-8">
+            <EndedEventCarousel 
+              onEventClick={handleEventClick}
+            />
           </section>
         </main>
-
-        {/* 알림 권한 요청 컴포넌트 */}
-        <NotificationPermission />
       </div>
     </div>
   );

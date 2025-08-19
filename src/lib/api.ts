@@ -1886,3 +1886,43 @@ export async function deleteProfileImage(userId: string): Promise<{ success: boo
     };
   }
 } 
+
+// 이벤트 목록 가져오기
+export async function getEventsList(page: number = 1, limit: number = 20, statuses?: string[]): Promise<{ success: boolean; error?: string; data?: { items: EventItem[]; hasNext: boolean; total: number } }> {
+  try {
+    let url = `${API_BASE_URL}/events?page=${page}&limit=${limit}`;
+    if (statuses && statuses.length > 0) {
+      statuses.forEach(status => {
+        url += `&status=${status}`;
+      });
+    }
+
+    const result = await apiRequest<any>(url, {
+      method: 'GET',
+    });
+
+    if (result.success && result.data) {
+      logger.info('✅ 이벤트 목록 조회 성공', result.data);
+      return {
+        success: true,
+        data: {
+          items: result.data.data?.items || result.data.items || [],
+          hasNext: result.data.data?.hasNext || result.data.hasNext || false,
+          total: result.data.data?.total || result.data.total || 0
+        }
+      };
+    } else {
+      return {
+        success: false,
+        error: result.error || '이벤트 목록을 불러오는데 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    const statusParam = statuses && statuses.length > 0 ? statuses.map(s => `&status=${s}`).join('') : '';
+    apiDebugger.logError(`${API_BASE_URL}/events?page=${page}&limit=${limit}${statusParam}`, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
