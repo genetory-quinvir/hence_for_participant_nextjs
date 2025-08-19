@@ -85,7 +85,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
   return (
     <div className="w-full">
       {/* 섹션 타이틀 */}
-      <div className="w-full px-4 mb-4">
+      <div className="w-full px-4 mb-1">
         <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white text-left">
           진행중 혹은 예정인 이벤트
         </h2>
