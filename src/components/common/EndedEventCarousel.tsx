@@ -78,7 +78,7 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
     <div className="w-full">
       {/* 섹션 타이틀 */}
       <div className="w-full px-4 mb-4">
-        <h2 className="text-xl font-bold text-white text-left">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white text-left">
           종료된 이벤트 리스트
         </h2>
       </div>
@@ -86,18 +86,18 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
       {/* 세로 리스트 컨테이너 */}
       <div className="w-full px-4">
         {/* 이벤트 카드들 */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:gap-4">
           {endedEvents.map((event, index) => (
             <div 
               key={event.id || index}
-              className={`w-full h-24`}
+              className="w-full h-20 sm:h-24 lg:h-28"
             >
                 <div 
                   className="w-full h-full rounded-xl overflow-hidden transition-all duration-300 flex shadow-lg hover:shadow-xl"
                   style={{ backgroundColor: "rgba(0, 0, 0, 0.9)" }}
                 >
                   {/* 이벤트 이미지 - 정사각형 */}
-                  <div className="relative w-24 h-24 flex-shrink-0">
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 flex-shrink-0">
                     {event.imageUrl ? (
                       <img
                         src={event.imageUrl}
@@ -115,31 +115,31 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
                     </div>
                     
                     {/* 이벤트 상태 배지 */}
-                    <div className="absolute top-3 right-3">
-                      <span className="px-3 py-2 text-xs rounded-full bg-gray-500 text-white">
+                    <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
+                      <span className="px-2 sm:px-3 py-1 sm:py-2 text-xs rounded-full bg-gray-500 text-white">
                         {event.status === 'ENDED' ? '종료' : event.status}
                       </span>
                     </div>
                   </div>
 
                   {/* 이벤트 정보 */}
-                  <div className="flex-1 py-2 flex flex-col justify-between">
+                  <div className="flex-1 py-2 sm:py-3 flex flex-col justify-between">
                     <div>
-                      <h3 className="text-md ml-3 font-bold text-white mb-1 line-clamp-1">
+                      <h3 className="text-sm sm:text-md lg:text-lg ml-3 font-bold text-white mb-1 line-clamp-1">
                         {event.title || '제목 없음'}
                       </h3>
                       
                       {event.description && (
-                        <p className="text-md ml-3 text-white font-light opacity-80 mb-3 line-clamp-1 whitespace-pre-wrap">
+                        <p className="text-xs sm:text-sm lg:text-md ml-3 text-white font-light opacity-80 mb-2 sm:mb-3 line-clamp-1 whitespace-pre-wrap">
                           {event.description}
                         </p>
                       )}
                     </div>
 
                     {/* 이벤트 일정 - 하단 고정 */}
-                    <div className="flex ml-3 items-center text-sm text-white">
-                      <span className="text-white font-regular text-sm pr-2" style={{ opacity: 0.6 }}>일시</span>
-                      <span className="text-sm text-white">
+                    <div className="flex ml-3 items-center text-xs sm:text-sm lg:text-base text-white">
+                      <span className="text-white font-regular text-xs sm:text-sm lg:text-base pr-2" style={{ opacity: 0.6 }}>일시</span>
+                      <span className="text-xs sm:text-sm lg:text-base text-white">
                         {event.startDate && formatDate(event.startDate)}
                         {event.endDate && event.startDate !== event.endDate && ` - ${formatDate(event.endDate)}`}
                       </span>

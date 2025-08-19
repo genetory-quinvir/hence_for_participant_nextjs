@@ -86,7 +86,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
     <div className="w-full">
       {/* 섹션 타이틀 */}
       <div className="w-full px-4 mb-4">
-        <h2 className="text-xl font-bold text-white text-left">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white text-left">
           진행중 혹은 예정인 이벤트
         </h2>
       </div>
@@ -94,14 +94,11 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
       {/* 스크롤 가능한 컨테이너 */}
       <div className="w-full overflow-x-auto overflow-y-hidden rounded-lg scrollbar-hide">
         {/* 이벤트 카드들 */}
-        <div className="flex gap-4 items-start py-3">
-          {/* 왼쪽 여백 */}
-          <div className="flex-shrink-0"></div>
-          
+        <div className="flex gap-4 sm:gap-6 lg:gap-8 items-start py-3 px-4 sm:px-6 lg:px-8">
           {events.map((event, index) => (
             <div 
               key={event.id || index}
-              className="w-[calc(100vw-4rem)] sm:w-[calc(100vw-6rem)] md:w-[calc(100vw-8rem)] lg:w-[calc(100vw-10rem)] xl:w-[calc(100vw-12rem)] h-140 flex-shrink-0"
+              className="w-80 sm:w-96 md:w-[28rem] lg:w-[32rem] xl:w-[36rem] min-h-80 sm:min-h-96 md:min-h-[28rem] lg:min-h-[32rem] xl:min-h-[36rem] flex-shrink-0"
             >
                 <div 
                   className="w-full h-full rounded-4xl overflow-hidden transition-all duration-300 flex flex-col shadow-lg hover:shadow-xl"
@@ -127,8 +124,8 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                     
                     {/* 이벤트 상태 배지 */}
                     {event.status && (
-                      <div className="absolute top-4 right-3">
-                        <span className={`px-3 py-2 text-sm rounded-full ${
+                      <div className="absolute top-3 sm:top-4 right-2 sm:right-3">
+                        <span className={`px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm rounded-full ${
                           event.status === 'ACTIVE' ? 'bg-purple-700 text-white' :
                           event.status === 'DRAFT' ? 'bg-gray-500 text-white' :
                           event.status === 'ENDED' ? 'bg-gray-500 text-white' :
@@ -144,22 +141,22 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                   </div>
 
                   {/* 이벤트 정보 - 상단 고정 */}
-                  <div className="px-4 py-2 flex-shrink-0">
-                    <h3 className="text-lg font-bold text-white mb-2 line-clamp-2">
+                  <div className="px-3 sm:px-4 py-2 sm:py-3 flex-1 flex flex-col">
+                    <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white mb-1 sm:mb-2 line-clamp-1">
                       {event.title || '제목 없음'}
                     </h3>
                     
                     {event.description && (
-                      <p className="text-md text-white font-light opacity-80 mb-4 line-clamp-2 whitespace-pre-wrap">
+                      <p className="text-sm sm:text-md lg:text-base text-white font-light opacity-80 mb-2 sm:mb-3 lg:mb-4 line-clamp-3 whitespace-pre-wrap h-16 sm:h-16 lg:h-18 overflow-hidden">
                         {event.description}
                       </p>
                     )}
 
                     {/* 이벤트 일정 */}
-                    <div className="flex items-center justify-between text-sm text-white">
+                    <div className="flex items-center justify-between text-xs sm:text-sm lg:text-base text-white mt-auto">
                       <div className="flex items-center">
-                        <span className="text-white font-regular text-md pr-3" style={{ opacity: 0.6 }}>일시</span>
-                        <span className="text-md text-white">
+                        <span className="text-white font-regular text-xs sm:text-md lg:text-base pr-2 sm:pr-3" style={{ opacity: 0.6 }}>일시</span>
+                        <span className="text-xs sm:text-md lg:text-base text-white">
                           {event.startDate && formatDate(event.startDate)}
                           {event.endDate && event.startDate !== event.endDate && ` - ${formatDate(event.endDate)}`}
                         </span>
@@ -168,20 +165,20 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                   </div>
 
                   {/* 이벤트 입장하기 섹션 - 하단 고정 */}
-                  <div className="p-4 mt-auto flex flex-col justify-between">                  
+                  <div className="p-3 sm:p-4 flex-shrink-0 flex flex-col justify-between">                  
                     {/* 액션 버튼 */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onEntryClick && onEntryClick();
                       }}
-                      className="w-full bg-purple-700 hover:bg-purple-700 active:bg-purple-800 rounded-xl p-3 flex items-center justify-between transition-colors"
+                      className="w-full bg-purple-700 hover:bg-purple-700 active:bg-purple-800 rounded-xl p-2 sm:p-3 flex items-center justify-between transition-colors"
                     >
                       <div className="flex items-center">
                         {/* QR코드 아이콘 */}
-                        <div className="bg-purple-600 rounded-lg mr-3 flex items-center justify-center w-16 h-16">
+                        <div className="bg-purple-600 rounded-lg mr-2 sm:mr-3 flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16">
                           <svg
-                            className="w-8 h-8 text-white"
+                            className="w-6 h-6 sm:w-8 sm:h-8 text-white"
                             fill="currentColor"
                             viewBox="0 0 24 24"
                           >
@@ -190,13 +187,13 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                         </div>
 
                         <div className="text-left">
-                          <div className="text-white text-xl font-bold">입장하기</div>
-                          <div className="text-white text-md" style={{ opacity: 0.6 }}>QR 스캔ㆍ코드 입력</div>
+                          <div className="text-white text-base sm:text-xl font-bold">입장하기</div>
+                          <div className="text-white text-xs sm:text-md" style={{ opacity: 0.6 }}>QR 스캔ㆍ코드 입력</div>
                         </div>
                       </div>
 
                       <svg
-                        className="w-4 h-4 text-white"
+                        className="w-3 h-3 sm:w-4 sm:h-4 text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -206,8 +203,8 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                     </button>
 
                     {/* 하단 안내 텍스트 */}
-                    <div className="mt-4 mb-4">
-                      <p className="text-white text-sm text-center" style={{ opacity: 0.6 }}>
+                    <div className="mt-2 sm:mt-4 mb-4">
+                      <p className="text-white text-xs sm:text-sm text-center" style={{ opacity: 0.6 }}>
                         문제가 있으시면 현장 스태프에게 문의해주세요
                       </p>
                     </div>

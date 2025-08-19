@@ -109,9 +109,9 @@ export default function HomePage() {
       <div className="fixed inset-0 bg-black" style={{ opacity: 0.6 }}></div>
 
       {/* 컨텐츠 레이어 */}
-      <div className="relative z-10 w-full min-h-screen">
-        {/* 메인 컨텐츠 */}
-        <main className="w-full pb-4">
+      <div className="relative z-10 w-full min-h-screen flex justify-center">
+        {/* 메인 컨텐츠 컨테이너 */}
+        <div className="w-full max-w-md lg:max-w-2xl xl:max-w-4xl">
           {/* 네비게이션바 */}
           <CommonNavigationBar
             leftButton={<NotificationPermission compact={true} />}
@@ -123,36 +123,39 @@ export default function HomePage() {
             sticky={false}
           />
 
-          {/* 히어로 섹션 */}
-          <section className="pt-10 pb-8 mb-2">
-            <div className="px-4">
-              <img 
-                src="/images/img_logo.png" 
-                alt="HENCE Beta" 
-                className="h-8 mb-2"
-                style={{ maxWidth: '300px' }}
+          {/* 메인 컨텐츠 */}
+          <main className="w-full pb-8">
+            {/* 히어로 섹션 */}
+            <section className="pt-8 lg:pt-12 pb-6 lg:pb-8 mb-4 lg:mb-6">
+              <div className="px-4 lg:px-6">
+                <img 
+                  src="/images/img_logo.png" 
+                  alt="HENCE Beta" 
+                  className="h-8 lg:h-12 mb-3 lg:mb-4"
+                  style={{ maxWidth: '300px' }}
+                />
+                <p className="text-lg lg:text-xl text-white text-left" style={{ opacity: 0.6 }}>
+                  이벤트의 시작과 끝.
+                </p>
+              </div>
+            </section>
+            
+            {/* 이벤트 캐러셀 */}
+            <section className="mb-8 lg:mb-12">
+              <EventCarousel 
+                onEventClick={handleEventClick} 
+                onEntryClick={handleEntryClick}
               />
-              <p className="text-lg text-white text-left" style={{ opacity: 0.6 }}>
-                이벤트의 시작과 끝.
-              </p>
-            </div>
-          </section>
-          
-          {/* 이벤트 캐러셀 */}
-          <section className="mb-8">
-            <EventCarousel 
-              onEventClick={handleEventClick} 
-              onEntryClick={handleEntryClick}
-            />
-          </section>
-          
-          {/* 종료된 이벤트 캐러셀 */}
-          <section className="mb-16">
-            <EndedEventCarousel 
-              onEventClick={handleEventClick}
-            />
-          </section>
-        </main>
+            </section>
+            
+            {/* 종료된 이벤트 캐러셀 */}
+            <section className="mb-8 lg:mb-16">
+              <EndedEventCarousel 
+                onEventClick={handleEventClick}
+              />
+            </section>
+          </main>
+        </div>
       </div>
     </div>
   );
