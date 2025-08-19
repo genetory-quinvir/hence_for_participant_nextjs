@@ -272,50 +272,46 @@ export async function apiRequest<T>(
   }
 
   const makeRequest = async (token: string) => {
-    const headers: Record<string, string> = {};
-  
-    // Authorization 헤더 추가
-    headers['Authorization'] = `Bearer ${token}`;
-    
-    // 안드로이드 크롬을 위한 추가 헤더
-    if (isAndroidChrome) {
-      headers['Accept'] = 'application/json, text/plain, */*';
-      headers['Cache-Control'] = 'no-cache';
-    }
-    
-    // options.headers가 있는 경우 추가 (Content-Type 우선)
-    if (options.headers) {
-      Object.assign(headers, options.headers);
-    } else {
-      // FormData가 아닌 경우에만 기본 Content-Type 설정
-      if (!(options.body instanceof FormData)) {
-        headers['Content-Type'] = 'application/json';
-      }
-    }
-  
-    console.log('🔍 API 요청 헤더:', headers);
-    console.log('🔍 API 요청 바디 타입:', options.body instanceof FormData ? 'FormData' : 'JSON');
-    
-    if (options.body instanceof FormData) {
-      console.log('🔍 FormData 내용:');
-      for (const [key, value] of options.body.entries()) {
-        console.log(`  ${key}:`, value instanceof File ? {
-          name: value.name,
-          size: value.size,
-          type: value.type
-        } : value);
-      }
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${token}`,
+      'accept': 'application/json',
+    };
+
+    // Content-Type이 설정되지 않은 경우에만 추가
+    if (!options.headers || !Object.keys(options.headers).some(key => 
+      key.toLowerCase() === 'content-type'
+    )) {
+      headers['Content-Type'] = 'application/json';
     }
 
+    // 기존 헤더와 병합
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        headers[key.toLowerCase()] = String(value);
+      });
+    }
+
+    // 안드로이드 크롬을 위한 타임아웃 설정
+    const timeoutDuration = isAndroidChrome ? 10000 : 5000; // 안드로이드는 10초, 다른 기기는 5초
+    
     try {
+      // 타임아웃을 위한 AbortController 사용
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, timeoutDuration);
+
       const response = await fetch(url, {
         ...options,
         headers,
+        signal: controller.signal,
         // 안드로이드 크롬을 위한 추가 옵션
         mode: 'cors',
         credentials: 'omit',
         cache: 'no-cache'
       });
+
+      clearTimeout(timeoutId);
 
       console.log('🔍 API 응답 상태:', response.status, response.statusText);
       console.log('🔍 API 응답 헤더:', Object.fromEntries(response.headers.entries()));
@@ -358,12 +354,28 @@ export async function apiRequest<T>(
       // 안드로이드 크롬 특별 에러 처리
       if (isAndroidChrome) {
         console.error('📱 안드로이드 크롬 API 요청 실패:', error);
+        
+        // AbortError (타임아웃) 처리
+        if (error instanceof Error && error.name === 'AbortError') {
+          return { 
+            status: 0, 
+            error: '요청 시간이 초과되었습니다. (안드로이드 크롬)'
+          };
+        }
+        
+        // 네트워크 에러 처리
         if (error instanceof TypeError && error.message.includes('fetch')) {
           return { 
             status: 0, 
             error: '네트워크 연결을 확인해주세요. (안드로이드 크롬)'
           };
         }
+        
+        // 기타 안드로이드 특화 에러
+        return { 
+          status: 0, 
+          error: '안드로이드에서 요청 처리 중 오류가 발생했습니다.'
+        };
       }
       throw error;
     }
@@ -372,13 +384,15 @@ export async function apiRequest<T>(
   // 첫 번째 요청 시도
   let response = await makeRequest(accessToken);
 
-  // 401 에러가 발생하면 토큰 갱신 시도
+  // 401 에러가 발생하면 토큰 갱신 시도 (안드로이드에서는 제한적으로)
   if (response.status === 401) {
     if (isUsersMe) {
       console.log('🔄 users/me - Access Token 만료, 토큰 갱신 시도...');
     } else {
       console.log('🔄 Access Token 만료, 토큰 갱신 시도...');
     }
+    
+    // 안드로이드에서는 토큰 갱신을 한 번만 시도
     const refreshResult = await refreshAccessToken();
     
     if (refreshResult.success && refreshResult.accessToken) {
@@ -1922,6 +1936,21 @@ export async function deleteProfileImage(userId: string): Promise<{ success: boo
 // 이벤트 목록 가져오기
 export async function getEventsList(page: number = 1, limit: number = 20, statuses?: string[]): Promise<{ success: boolean; error?: string; data?: { items: EventItem[]; hasNext: boolean; total: number } }> {
   try {
+    // 안드로이드 크롬 네트워크 상태 확인
+    const isAndroidChrome = /Android.*Chrome/.test(navigator.userAgent);
+    if (isAndroidChrome) {
+      console.log('📱 안드로이드 크롬 - getEventsList 시작');
+      console.log('📱 네트워크 상태:', navigator.onLine);
+      
+      if (!navigator.onLine) {
+        console.error('❌ 안드로이드 크롬 - 오프라인 상태');
+        return {
+          success: false,
+          error: '네트워크 연결을 확인해주세요. (안드로이드 크롬)',
+        };
+      }
+    }
+
     let url = `${API_BASE_URL}/events?page=${page}&limit=${limit}`;
     if (statuses && statuses.length > 0) {
       statuses.forEach(status => {
@@ -1929,11 +1958,14 @@ export async function getEventsList(page: number = 1, limit: number = 20, status
       });
     }
 
+    console.log('🔄 getEventsList API 호출:', url);
+
     const result = await apiRequest<any>(url, {
       method: 'GET',
     });
 
     if (result.success && result.data) {
+      console.log('✅ getEventsList 성공:', result.data);
       logger.info('✅ 이벤트 목록 조회 성공', result.data);
       return {
         success: true,
@@ -1944,6 +1976,7 @@ export async function getEventsList(page: number = 1, limit: number = 20, status
         }
       };
     } else {
+      console.error('❌ getEventsList 실패:', result.error);
       return {
         success: false,
         error: result.error || '이벤트 목록을 불러오는데 실패했습니다.',
@@ -1951,6 +1984,7 @@ export async function getEventsList(page: number = 1, limit: number = 20, status
     }
   } catch (error) {
     const statusParam = statuses && statuses.length > 0 ? statuses.map(s => `&status=${s}`).join('') : '';
+    console.error('💥 getEventsList 예외 발생:', error);
     apiDebugger.logError(`${API_BASE_URL}/events?page=${page}&limit=${limit}${statusParam}`, error);
     return {
       success: false,

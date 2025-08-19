@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { EventItem } from '@/types/api';
 import { getEventsList } from '@/lib/api';
 import { useToast } from './Toast';
@@ -13,7 +13,9 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
   const [endedEvents, setEndedEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { showToast } = useToast();
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 종료된 이벤트 데이터 로드
   useEffect(() => {
@@ -25,7 +27,7 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
         // 안드로이드 크롬 네트워크 상태 확인
         const isAndroidChrome = /Android.*Chrome/.test(navigator.userAgent);
         if (isAndroidChrome) {
-          console.log('📱 안드로이드 크롬 - 네트워크 상태 확인:', navigator.onLine);
+          console.log('📱 안드로이드 크롬 - EndedEventCarousel 네트워크 상태 확인:', navigator.onLine);
           if (!navigator.onLine) {
             setError('네트워크 연결을 확인해주세요.');
             showToast('네트워크 연결을 확인해주세요.', 'error');
@@ -34,25 +36,56 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
           }
         }
         
+        // 재시도 횟수 제한 (안드로이드에서 무한 루프 방지)
+        if (retryCount >= 3) {
+          console.error('❌ EndedEventCarousel - 최대 재시도 횟수 초과');
+          setError('데이터 로드에 실패했습니다. 페이지를 새로고침해주세요.');
+          setLoading(false);
+          return;
+        }
+        
+        console.log('🔄 EndedEventCarousel - 종료된 이벤트 로드 시작 (시도:', retryCount + 1, '/3)');
         const result = await getEventsList(1, 20, ['ended']);
         
         if (result.success && result.data) {
+          console.log('✅ EndedEventCarousel - 종료된 이벤트 로드 성공:', result.data.items.length, '개');
           setEndedEvents(result.data.items);
+          setRetryCount(0); // 성공 시 재시도 카운트 리셋
         } else {
+          console.error('❌ EndedEventCarousel - 종료된 이벤트 로드 실패:', result.error);
           setError(result.error || '이벤트 목록을 불러오는데 실패했습니다.');
           showToast(result.error || '이벤트 목록을 불러오는데 실패했습니다.', 'error');
+          // 실패 시 3초 후 재시도
+          retryTimeoutRef.current = setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+          }, 3000);
         }
       } catch (err) {
-        console.error("종료된 이벤트 로드 오류:", err);
+        console.error("💥 EndedEventCarousel - 종료된 이벤트 로드 예외:", err);
         setError("이벤트 목록을 불러오는데 실패했습니다.");
         showToast("이벤트 목록을 불러오는데 실패했습니다.", 'error');
+        // 예외 발생 시 3초 후 재시도
+        retryTimeoutRef.current = setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+        }, 3000);
       } finally {
         setLoading(false);
       }
     };
 
-    loadEndedEvents();
-  }, [showToast]);
+    // 컴포넌트 마운트 시에만 로드 (안드로이드에서 무한 루프 방지)
+    if (retryCount === 0) {
+      loadEndedEvents();
+    }
+
+    // 컴포넌트 언마운트 시 타이머 정리
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, [showToast, retryCount]);
 
   // 이벤트 클릭 핸들러
   const handleEventClick = (eventId: string) => {
@@ -75,7 +108,7 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
   // 로딩 상태
   if (loading) {
     return (
-      <div className="w-full h-96 bg-black bg-opacity-20 rounded-xl flex items-center justify-center">
+      <div className="w-full h-96 bg-black bg-opacity-20 rounded-sm flex items-center justify-center">
         <div className="text-white text-lg">종료된 이벤트를 불러오는 중...</div>
       </div>
     );
@@ -105,7 +138,7 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
               className="w-full h-20 sm:h-24 lg:h-28"
             >
                 <div 
-                  className="w-full h-full rounded-xl overflow-hidden transition-all duration-300 flex shadow-lg hover:shadow-xl"
+                  className="w-full h-full rounded-sm overflow-hidden transition-all duration-300 flex shadow-lg hover:shadow-xl"
                   style={{ backgroundColor: "rgba(0, 0, 0, 0.9)" }}
                 >
                   {/* 이벤트 이미지 - 정사각형 */}

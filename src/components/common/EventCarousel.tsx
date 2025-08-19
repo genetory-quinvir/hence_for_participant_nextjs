@@ -14,7 +14,9 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { showToast } = useToast();
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 이벤트 데이터 로드
   useEffect(() => {
@@ -26,7 +28,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
         // 안드로이드 크롬 네트워크 상태 확인
         const isAndroidChrome = /Android.*Chrome/.test(navigator.userAgent);
         if (isAndroidChrome) {
-          console.log('📱 안드로이드 크롬 - 네트워크 상태 확인:', navigator.onLine);
+          console.log('📱 안드로이드 크롬 - EventCarousel 네트워크 상태 확인:', navigator.onLine);
           if (!navigator.onLine) {
             setError('네트워크 연결을 확인해주세요.');
             showToast('네트워크 연결을 확인해주세요.', 'error');
@@ -35,25 +37,56 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
           }
         }
         
+        // 재시도 횟수 제한 (안드로이드에서 무한 루프 방지)
+        if (retryCount >= 3) {
+          console.error('❌ EventCarousel - 최대 재시도 횟수 초과');
+          setError('데이터 로드에 실패했습니다. 페이지를 새로고침해주세요.');
+          setLoading(false);
+          return;
+        }
+        
+        console.log('🔄 EventCarousel - 이벤트 로드 시작 (시도:', retryCount + 1, '/3)');
         const result = await getEventsList(1, 20, ['active', 'draft']);
         
         if (result.success && result.data) {
+          console.log('✅ EventCarousel - 이벤트 로드 성공:', result.data.items.length, '개');
           setEvents(result.data.items);
+          setRetryCount(0); // 성공 시 재시도 카운트 리셋
         } else {
+          console.error('❌ EventCarousel - 이벤트 로드 실패:', result.error);
           setError(result.error || '이벤트 목록을 불러오는데 실패했습니다.');
           showToast(result.error || '이벤트 목록을 불러오는데 실패했습니다.', 'error');
+          // 실패 시 3초 후 재시도
+          retryTimeoutRef.current = setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+          }, 3000);
         }
       } catch (err) {
-        console.error("이벤트 로드 오류:", err);
+        console.error("💥 EventCarousel - 이벤트 로드 예외:", err);
         setError("이벤트 목록을 불러오는데 실패했습니다.");
         showToast("이벤트 목록을 불러오는데 실패했습니다.", 'error');
+        // 예외 발생 시 3초 후 재시도
+        retryTimeoutRef.current = setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+        }, 3000);
       } finally {
         setLoading(false);
       }
     };
 
-    loadEvents();
-  }, [showToast]);
+    // 컴포넌트 마운트 시에만 로드 (안드로이드에서 무한 루프 방지)
+    if (retryCount === 0) {
+      loadEvents();
+    }
+
+    // 컴포넌트 언마운트 시 타이머 정리
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, [showToast, retryCount]);
 
   // 이벤트 클릭 핸들러
   const handleEventClick = (eventId: string) => {
@@ -104,7 +137,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
       </div>
       
       {/* 스크롤 가능한 컨테이너 */}
-      <div className="w-full overflow-x-auto overflow-y-hidden rounded-lg scrollbar-hide">
+      <div className="w-full overflow-x-auto overflow-y-hidden rounded-sm scrollbar-hide">
         {/* 이벤트 카드들 */}
         <div className="flex gap-4 sm:gap-6 lg:gap-8 items-start py-3 px-4 sm:px-6 lg:px-8">
           {events.map((event, index) => (
@@ -113,7 +146,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
               className="w-80 sm:w-96 md:w-[28rem] lg:w-[32rem] xl:w-[36rem] min-h-80 sm:min-h-96 md:min-h-[28rem] lg:min-h-[32rem] xl:min-h-[36rem] flex-shrink-0"
             >
                 <div 
-                  className="w-full h-full rounded-4xl overflow-hidden transition-all duration-300 flex flex-col shadow-lg hover:shadow-xl"
+                  className="w-full h-full rounded-lg overflow-hidden transition-all duration-300 flex flex-col shadow-lg hover:shadow-xl"
                   style={{ backgroundColor: "rgba(0, 0, 0, 0.9)" }}
                 >
                   {/* 이벤트 이미지 - 4:3 비율 고정 */}
@@ -185,7 +218,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                         e.stopPropagation();
                         onEntryClick && onEntryClick();
                       }}
-                      className="w-full bg-purple-700 hover:bg-purple-700 active:bg-purple-800 rounded-xl p-2 sm:p-3 flex items-center justify-between transition-colors"
+                      className="w-full bg-purple-700 hover:bg-purple-700 active:bg-purple-800 rounded-lg p-2 sm:p-3 flex items-center justify-between transition-colors"
                     >
                       <div className="flex items-center">
                         {/* QR코드 아이콘 */}
