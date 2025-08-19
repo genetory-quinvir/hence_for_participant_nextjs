@@ -247,6 +247,14 @@ export async function apiRequest<T>(
 ): Promise<{ success: boolean; data?: T; error?: string; status?: number }> {
   let accessToken = getAccessToken();
   
+  // 안드로이드 크롬 디버깅을 위한 추가 로깅
+  const isAndroidChrome = /Android.*Chrome/.test(navigator.userAgent);
+  if (isAndroidChrome) {
+    console.log('📱 안드로이드 크롬 감지 - API 요청 시작:', url);
+    console.log('📱 네트워크 상태:', navigator.onLine);
+    console.log('📱 User Agent:', navigator.userAgent);
+  }
+  
   // users/me 호출인 경우 특별 로깅
   const isUsersMe = url.includes('/users/me');
   if (isUsersMe) {
@@ -268,6 +276,12 @@ export async function apiRequest<T>(
   
     // Authorization 헤더 추가
     headers['Authorization'] = `Bearer ${token}`;
+    
+    // 안드로이드 크롬을 위한 추가 헤더
+    if (isAndroidChrome) {
+      headers['Accept'] = 'application/json, text/plain, */*';
+      headers['Cache-Control'] = 'no-cache';
+    }
     
     // options.headers가 있는 경우 추가 (Content-Type 우선)
     if (options.headers) {
@@ -293,48 +307,66 @@ export async function apiRequest<T>(
       }
     }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        // 안드로이드 크롬을 위한 추가 옵션
+        mode: 'cors',
+        credentials: 'omit',
+        cache: 'no-cache'
+      });
 
-    console.log('🔍 API 응답 상태:', response.status, response.statusText);
-    console.log('🔍 API 응답 헤더:', Object.fromEntries(response.headers.entries()));
+      console.log('🔍 API 응답 상태:', response.status, response.statusText);
+      console.log('🔍 API 응답 헤더:', Object.fromEntries(response.headers.entries()));
 
-    if (response.status === 401) {
-      return { status: 401 };
-    }
-
-    if (!response.ok) {
-      let errorMessage = `API 요청에 실패했습니다. (${response.status})`;
-      try {
-        const errorData = await response.json();
-        const originalMessage = errorData.message || errorMessage;
-        console.log('🔍 에러 응답 데이터:', errorData);
-        
-        // coroutine 관련 오류인 경우 사용자 친화적인 메시지로 변경
-        if (originalMessage.includes('coroutine') || originalMessage.includes('not iterable')) {
-          errorMessage = '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
-          try {
-            console.error('❌ 서버 코루틴 오류:', originalMessage);
-          } catch (logError) {
-            console.error('❌ 서버 코루틴 오류: Unknown error');
-          }
-        } else {
-          errorMessage = originalMessage;
-        }
-      } catch (e) {
-        console.log('🔍 에러 응답을 JSON으로 파싱할 수 없음');
+      if (response.status === 401) {
+        return { status: 401 };
       }
-      return { 
-        status: response.status, 
-        error: errorMessage
-      };
-    }
 
-    const data = await response.json();
-    console.log('🔍 성공 응답 데이터:', data);
-    return { status: 200, data };
+      if (!response.ok) {
+        let errorMessage = `API 요청에 실패했습니다. (${response.status})`;
+        try {
+          const errorData = await response.json();
+          const originalMessage = errorData.message || errorMessage;
+          console.log('🔍 에러 응답 데이터:', errorData);
+          
+          // coroutine 관련 오류인 경우 사용자 친화적인 메시지로 변경
+          if (originalMessage.includes('coroutine') || originalMessage.includes('not iterable')) {
+            errorMessage = '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+            try {
+              console.error('❌ 서버 코루틴 오류:', originalMessage);
+            } catch (logError) {
+              console.error('❌ 서버 코루틴 오류: Unknown error');
+            }
+          } else {
+            errorMessage = originalMessage;
+          }
+        } catch (e) {
+          console.log('🔍 에러 응답을 JSON으로 파싱할 수 없음');
+        }
+        return { 
+          status: response.status, 
+          error: errorMessage
+        };
+      }
+
+      const data = await response.json();
+      console.log('🔍 성공 응답 데이터:', data);
+      return { status: 200, data };
+    } catch (error) {
+      // 안드로이드 크롬 특별 에러 처리
+      if (isAndroidChrome) {
+        console.error('📱 안드로이드 크롬 API 요청 실패:', error);
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          return { 
+            status: 0, 
+            error: '네트워크 연결을 확인해주세요. (안드로이드 크롬)'
+          };
+        }
+      }
+      throw error;
+    }
   };
 
   // 첫 번째 요청 시도

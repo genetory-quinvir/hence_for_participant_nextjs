@@ -23,6 +23,18 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
         setLoading(true);
         setError(null);
         
+        // 안드로이드 크롬 네트워크 상태 확인
+        const isAndroidChrome = /Android.*Chrome/.test(navigator.userAgent);
+        if (isAndroidChrome) {
+          console.log('📱 안드로이드 크롬 - 네트워크 상태 확인:', navigator.onLine);
+          if (!navigator.onLine) {
+            setError('네트워크 연결을 확인해주세요.');
+            showToast('네트워크 연결을 확인해주세요.', 'error');
+            setLoading(false);
+            return;
+          }
+        }
+        
         const result = await getEventsList(1, 20, ['active', 'draft']);
         
         if (result.success && result.data) {
