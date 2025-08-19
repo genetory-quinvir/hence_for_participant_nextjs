@@ -78,7 +78,7 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
     <div className="w-full">
       {/* 섹션 타이틀 */}
       <div className="w-full px-4 mb-4">
-        <h2 className="text-2xl font-bold text-white text-left">
+        <h2 className="text-xl font-bold text-white text-left">
           종료된 이벤트 리스트
         </h2>
       </div>
@@ -86,19 +86,18 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
       {/* 세로 리스트 컨테이너 */}
       <div className="w-full px-4">
         {/* 이벤트 카드들 */}
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-4">
           {endedEvents.map((event, index) => (
             <div 
               key={event.id || index}
-              className={`w-full max-h-48 sm:max-h-56 md:max-h-64 lg:max-h-72 xl:max-h-80 ${
-                index === 0 ? 'min-h-36 sm:min-h-40 md:min-h-44 lg:min-h-48 xl:min-h-52' : ''
-              }`}
+              className={`w-full h-24`}
             >
                 <div 
-                  className="w-full h-full bg-black bg-opacity-30 rounded-xl overflow-hidden transition-all duration-300 flex shadow-2xl hover:shadow-3xl"
+                  className="w-full h-full rounded-xl overflow-hidden transition-all duration-300 flex shadow-lg hover:shadow-xl"
+                  style={{ backgroundColor: "rgba(0, 0, 0, 0.9)" }}
                 >
                   {/* 이벤트 이미지 - 정사각형 */}
-                  <div className="relative w-28 h-28 flex-shrink-0">
+                  <div className="relative w-24 h-24 flex-shrink-0">
                     {event.imageUrl ? (
                       <img
                         src={event.imageUrl}
@@ -124,23 +123,23 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
                   </div>
 
                   {/* 이벤트 정보 */}
-                  <div className="flex-1 p-4 flex flex-col justify-between">
+                  <div className="flex-1 py-2 flex flex-col justify-between">
                     <div>
-                      <h3 className="text-xl font-bold text-white mb-1 line-clamp-1">
+                      <h3 className="text-md ml-3 font-bold text-white mb-1 line-clamp-1">
                         {event.title || '제목 없음'}
                       </h3>
                       
                       {event.description && (
-                        <p className="text-lg text-white font-light opacity-80 mb-3 line-clamp-1 whitespace-pre-wrap">
+                        <p className="text-md ml-3 text-white font-light opacity-80 mb-3 line-clamp-1 whitespace-pre-wrap">
                           {event.description}
                         </p>
                       )}
                     </div>
 
                     {/* 이벤트 일정 - 하단 고정 */}
-                    <div className="flex items-center text-xs text-white">
-                      <span className="text-white font-regular text-xs pr-2" style={{ opacity: 0.6 }}>일시</span>
-                      <span className="text-xs text-white">
+                    <div className="flex ml-3 items-center text-sm text-white">
+                      <span className="text-white font-regular text-sm pr-2" style={{ opacity: 0.6 }}>일시</span>
+                      <span className="text-sm text-white">
                         {event.startDate && formatDate(event.startDate)}
                         {event.endDate && event.startDate !== event.endDate && ` - ${formatDate(event.endDate)}`}
                       </span>

@@ -64,7 +64,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
   // 로딩 상태
   if (loading) {
     return (
-      <div className="w-full h-screen bg-black bg-opacity-20 rounded-xl flex items-center justify-center">
+      <div className="w-full h-screen bg-black bg-opacity-20 rounded-lg flex items-center justify-center">
         <div className="text-white text-lg">이벤트를 불러오는 중...</div>
       </div>
     );
@@ -73,7 +73,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
   // 에러 상태
   if (error || events.length === 0) {
     return (
-      <div className="w-full h-screen bg-black bg-opacity-20 rounded-xl flex items-center justify-center">
+      <div className="w-full h-screen bg-black bg-opacity-20 rounded-lg flex items-center justify-center">
         <div className="text-white text-center">
           <div className="text-lg mb-2">이벤트가 없습니다</div>
           <div className="text-sm opacity-60">새로운 이벤트를 기다려주세요</div>
@@ -85,14 +85,14 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
   return (
     <div className="w-full">
       {/* 섹션 타이틀 */}
-      <div className="w-full px-6 mb-4">
-        <h2 className="text-2xl font-bold text-white text-left">
+      <div className="w-full px-4 mb-4">
+        <h2 className="text-xl font-bold text-white text-left">
           진행중 혹은 예정인 이벤트
         </h2>
       </div>
       
       {/* 스크롤 가능한 컨테이너 */}
-      <div className="w-full overflow-x-auto overflow-y-hidden rounded-xl scrollbar-hide">
+      <div className="w-full overflow-x-auto overflow-y-hidden rounded-lg scrollbar-hide">
         {/* 이벤트 카드들 */}
         <div className="flex gap-4 items-start py-3">
           {/* 왼쪽 여백 */}
@@ -101,12 +101,11 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
           {events.map((event, index) => (
             <div 
               key={event.id || index}
-              className={`w-[calc(100vw-4rem)] sm:w-[calc(100vw-6rem)] md:w-[calc(100vw-8rem)] lg:w-[calc(100vw-10rem)] xl:w-[calc(100vw-12rem)] h-144 flex-shrink-0 ${
-                index === 0 ? 'min-h-48 sm:min-h-56 md:min-h-64 lg:min-h-72 xl:min-h-80' : ''
-              }`}
+              className="w-[calc(100vw-4rem)] sm:w-[calc(100vw-6rem)] md:w-[calc(100vw-8rem)] lg:w-[calc(100vw-10rem)] xl:w-[calc(100vw-12rem)] h-150 flex-shrink-0"
             >
                 <div 
-                  className="w-full h-full bg-black bg-opacity-30 rounded-4xl overflow-hidden transition-all duration-300 flex flex-col shadow-lg hover:shadow-xl"
+                  className="w-full h-full rounded-4xl overflow-hidden transition-all duration-300 flex flex-col shadow-lg hover:shadow-xl"
+                  style={{ backgroundColor: "rgba(0, 0, 0, 0.9)" }}
                 >
                   {/* 이벤트 이미지 - 4:3 비율 고정 */}
                   <div className="relative w-full" style={{ aspectRatio: '4/3' }}>
@@ -145,8 +144,8 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                   </div>
 
                   {/* 이벤트 정보 - 상단 고정 */}
-                  <div className="p-4 flex-shrink-0">
-                    <h3 className="text-2xl font-bold text-white mb-2 line-clamp-2">
+                  <div className="px-4 py-2 flex-shrink-0">
+                    <h3 className="text-lg font-bold text-white mb-2 line-clamp-2">
                       {event.title || '제목 없음'}
                     </h3>
                     

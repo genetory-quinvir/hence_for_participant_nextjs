@@ -110,21 +110,22 @@ export default function HomePage() {
 
       {/* 컨텐츠 레이어 */}
       <div className="relative z-10 w-full min-h-screen">
-        {/* 네비게이션바 */}
-        <CommonNavigationBar
-          leftButton={<NotificationPermission compact={true} />}
-          rightButton={renderProfileButton()}
-          onRightClick={handleProfileClick}
-          backgroundColor="black"
-          backgroundOpacity={1}
-          textColor="text-white"
-        />
-
         {/* 메인 컨텐츠 */}
         <main className="w-full pb-4">
+          {/* 네비게이션바 */}
+          <CommonNavigationBar
+            leftButton={<NotificationPermission compact={true} />}
+            rightButton={renderProfileButton()}
+            onRightClick={handleProfileClick}
+            backgroundColor="transparent"
+            backgroundOpacity={1}
+            textColor="text-white"
+            sticky={false}
+          />
+
           {/* 히어로 섹션 */}
           <section className="pt-10 pb-8 mb-2">
-            <div className="px-6">
+            <div className="px-4">
               <img 
                 src="/images/img_logo.png" 
                 alt="HENCE Beta" 

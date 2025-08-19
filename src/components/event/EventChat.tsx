@@ -470,10 +470,10 @@ export default function EventChat({
       {/* 안내 메시지 */}
       <div className="mt-4 p-3 bg-yellow-600 bg-opacity-20 border border-yellow-500 border-opacity-30 rounded-lg">
         <p className="text-xs text-yellow-300">
-          💡 이 채팅방의 메시지는 저장되지 않으며, 페이지를 새로고침하면 사라집니다.
+          채팅방의 메시지는 저장되지 않으며, 페이지를 새로고침하면 사라져요
           {!isConnected && (
             <span className="block mt-1">
-              🔧 WebSocket 연결 중입니다. 잠시만 기다려주세요.
+              WebSocket 연결 중입니다. 잠시만 기다려주세요.
             </span>
           )}
         </p>

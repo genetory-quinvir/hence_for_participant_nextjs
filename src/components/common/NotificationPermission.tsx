@@ -153,7 +153,8 @@ export default function NotificationPermission({ compact = false }: Notification
         ) : (
           <>
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4.19 4.19A4 4 0 006.73 3H11l5 5v6.27a4 4 0 11-1.46-2.73L12 9H6.73a4 4 0 01-2.54-1.46z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 8a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
             </svg>
             <span className="ml-2 text-xs text-white" style={{ opacity: 0.7 }}>알림 요청</span>
           </>
@@ -170,10 +171,11 @@ export default function NotificationPermission({ compact = false }: Notification
         left: 'max(16px, env(safe-area-inset-left) + 4px)'
       }}>
         <div className="flex items-center space-x-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 8a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
           </svg>
-          <span className="text-sm">알림 권한 허용됨</span>
+            <span className="text-sm">알림 권한 허용됨</span>
         </div>
       </div>
     );
@@ -186,12 +188,13 @@ export default function NotificationPermission({ compact = false }: Notification
         left: 'max(16px, env(safe-area-inset-left) + 4px)'
       }}>
         <div className="flex items-center space-x-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 8a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
           </svg>
-          <span className="text-sm">
-            {isIOS ? 'iOS 설정에서 알림 허용 필요' : '알림 권한 거부됨'}
-          </span>
+            <span className="text-sm">
+              {isIOS ? 'iOS 설정에서 알림 허용 필요' : '알림 권한 거부됨'}
+            </span>
         </div>
       </div>
     );
@@ -226,7 +229,8 @@ export default function NotificationPermission({ compact = false }: Notification
           </svg>
         ) : (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4.19 4.19A4 4 0 006.73 3H11l5 5v6.27a4 4 0 11-1.46-2.73L12 9H6.73a4 4 0 01-2.54-1.46z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 8a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
           </svg>
         )}
         <span className="text-sm">
