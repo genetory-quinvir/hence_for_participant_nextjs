@@ -204,7 +204,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                     </button>
 
                     {/* 하단 안내 텍스트 */}
-                    <div className="mt-2 sm:mt-4 mb-4">
+                    <div className="mt-4 sm:mt-4 mb-4">
                       <p className="text-white text-xs sm:text-sm text-center" style={{ opacity: 0.6 }}>
                         문제가 있으시면 현장 스태프에게 문의해주세요
                       </p>
