@@ -92,7 +92,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-black text-white">
+    <div className="min-h-screen w-full bg-black text-white scrollbar-hide">
       {/* 백그라운드 이미지 - 전체 화면 */}
       <div className="fixed inset-0 w-full h-full blur-xl">
         <Image
@@ -109,7 +109,7 @@ export default function HomePage() {
       <div className="fixed inset-0 bg-black" style={{ opacity: 0.6 }}></div>
 
       {/* 컨텐츠 레이어 */}
-      <div className="relative z-10 w-full min-h-screen flex justify-center">
+      <div className="relative z-10 w-full min-h-screen flex justify-center scrollbar-hide">
         {/* 메인 컨텐츠 컨테이너 */}
         <div className="w-full max-w-md lg:max-w-2xl xl:max-w-4xl">
           {/* 네비게이션바 */}
@@ -124,7 +124,7 @@ export default function HomePage() {
           />
 
           {/* 메인 컨텐츠 */}
-          <main className="w-full pb-8">
+          <main className="w-full pb-8 scrollbar-hide">
             {/* 히어로 섹션 */}
             <section className="pt-8 lg:pt-12 pb-6 lg:pb-8 mb-4 lg:mb-6">
               <div className="px-4 lg:px-6">

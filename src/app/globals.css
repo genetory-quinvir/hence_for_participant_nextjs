@@ -50,6 +50,13 @@ html, body {
   height: 100%;
   width: 100%;
   background-color: #000000;
+  /* 스크롤바 숨기기 */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+html::-webkit-scrollbar, body::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
 }
 
 /* 스크롤바 숨기기 */
