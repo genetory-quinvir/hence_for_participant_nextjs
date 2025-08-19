@@ -1933,7 +1933,7 @@ export async function deleteProfileImage(userId: string): Promise<{ success: boo
   }
 } 
 
-// 이벤트 목록 가져오기
+// 이벤트 목록 가져오기 (공개 API - 인증 불필요)
 export async function getEventsList(page: number = 1, limit: number = 20, statuses?: string[]): Promise<{ success: boolean; error?: string; data?: { items: EventItem[]; hasNext: boolean; total: number } }> {
   try {
     // 안드로이드 크롬 네트워크 상태 확인
@@ -1958,30 +1958,52 @@ export async function getEventsList(page: number = 1, limit: number = 20, status
       });
     }
 
-    console.log('🔄 getEventsList API 호출:', url);
+    console.log('🔄 getEventsList API 호출 (공개):', url);
 
-    const result = await apiRequest<any>(url, {
+    // 공개 API이므로 직접 fetch 사용 (인증 불필요)
+    const response = await fetch(url, {
       method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      // 안드로이드 크롬을 위한 추가 옵션
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-cache'
     });
 
-    if (result.success && result.data) {
-      console.log('✅ getEventsList 성공:', result.data);
-      logger.info('✅ 이벤트 목록 조회 성공', result.data);
-      return {
-        success: true,
-        data: {
-          items: result.data.data?.items || result.data.items || [],
-          hasNext: result.data.data?.hasNext || result.data.hasNext || false,
-          total: result.data.data?.total || result.data.total || 0
-        }
-      };
-    } else {
-      console.error('❌ getEventsList 실패:', result.error);
+    console.log('🔍 getEventsList 응답 상태:', response.status, response.statusText);
+
+    if (!response.ok) {
+      let errorMessage = `API 요청에 실패했습니다. (${response.status})`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+        console.log('🔍 getEventsList 에러 응답:', errorData);
+      } catch (e) {
+        console.log('🔍 getEventsList 에러 응답을 JSON으로 파싱할 수 없음');
+      }
+      
+      console.error('❌ getEventsList 실패:', errorMessage);
       return {
         success: false,
-        error: result.error || '이벤트 목록을 불러오는데 실패했습니다.',
+        error: errorMessage,
       };
     }
+
+    const data = await response.json();
+    console.log('✅ getEventsList 성공:', data);
+    logger.info('✅ 이벤트 목록 조회 성공', data);
+    
+    return {
+      success: true,
+      data: {
+        items: data.data?.items || data.items || [],
+        hasNext: data.data?.hasNext || data.hasNext || false,
+        total: data.data?.total || data.total || 0
+      }
+    };
   } catch (error) {
     const statusParam = statuses && statuses.length > 0 ? statuses.map(s => `&status=${s}`).join('') : '';
     console.error('💥 getEventsList 예외 발생:', error);
