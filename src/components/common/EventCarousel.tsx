@@ -148,15 +148,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                     
                     {/* Description 영역 - 항상 동일한 높이 유지 */}
                     <div 
-                      className="text-sm sm:text-md lg:text-base text-white font-light opacity-80 mb-2 sm:mb-3 lg:mb-4 overflow-hidden"
-                      style={{
-                        display: '-webkit-box',
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: 'vertical',
-                        lineHeight: '1.2em',
-                        maxHeight: '3.6em',
-                        minHeight: '3.6em'
-                      }}
+                      className="text-sm sm:text-md lg:text-base text-white font-light opacity-80 mb-2 sm:mb-3 lg:mb-4 line-clamp-3 h-14 sm:h-16 lg:h-18 overflow-hidden"
                     >
                       {event.description || '\u00A0'}
                     </div>
