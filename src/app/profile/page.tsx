@@ -741,9 +741,9 @@ function ProfilePageContent() {
             <div className="flex items-center space-x-2">
               <button
                 onClick={handleEditProfile}
-                className="px-4 py-3 rounded-xl bg-purple-600 font-semibold text-white text-sm transition-all hover:bg-purple-700"
+                className="px-4 py-2 rounded-xl bg-purple-600 font-semibold text-white text-xs transition-all hover:bg-purple-700"
               >
-                프로필 편집
+                편집
               </button>
             </div>
           </div>
