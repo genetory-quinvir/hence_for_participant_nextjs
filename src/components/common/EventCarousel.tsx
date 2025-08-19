@@ -85,26 +85,28 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
   return (
     <div className="w-full">
       {/* 섹션 타이틀 */}
-      <div className="w-full px-8 mb-4">
-        <h2 className="text-3xl font-bold text-white text-left">
-          진행중이거나 예정인 이벤트 리스트
+      <div className="w-full px-6 mb-4">
+        <h2 className="text-2xl font-bold text-white text-left">
+          진행중 혹은 예정인 이벤트
         </h2>
       </div>
       
       {/* 스크롤 가능한 컨테이너 */}
       <div className="w-full overflow-x-auto overflow-y-hidden rounded-xl scrollbar-hide">
         {/* 이벤트 카드들 */}
-        <div className="flex gap-8 items-start py-4">
+        <div className="flex gap-4 items-start py-3">
           {/* 왼쪽 여백 */}
-          <div className=" h-246 flex-shrink-0"></div>
+          <div className="flex-shrink-0"></div>
           
           {events.map((event, index) => (
             <div 
               key={event.id || index}
-              className="w-160 h-246 flex-shrink-0"
+              className={`w-[calc(100vw-4rem)] sm:w-[calc(100vw-6rem)] md:w-[calc(100vw-8rem)] lg:w-[calc(100vw-10rem)] xl:w-[calc(100vw-12rem)] h-144 flex-shrink-0 ${
+                index === 0 ? 'min-h-48 sm:min-h-56 md:min-h-64 lg:min-h-72 xl:min-h-80' : ''
+              }`}
             >
                 <div 
-                  className="w-full h-full bg-black bg-opacity-30 rounded-4xl overflow-hidden transition-all duration-300 flex flex-col shadow-2xl hover:shadow-3xl"
+                  className="w-full h-full bg-black bg-opacity-30 rounded-4xl overflow-hidden transition-all duration-300 flex flex-col shadow-lg hover:shadow-xl"
                 >
                   {/* 이벤트 이미지 - 4:3 비율 고정 */}
                   <div className="relative w-full" style={{ aspectRatio: '4/3' }}>
@@ -126,8 +128,8 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                     
                     {/* 이벤트 상태 배지 */}
                     {event.status && (
-                      <div className="absolute top-8 right-4">
-                        <span className={`px-6 py-3 text-md rounded-full ${
+                      <div className="absolute top-6 right-3">
+                        <span className={`px-4 py-2 text-md rounded-full ${
                           event.status === 'ACTIVE' ? 'bg-purple-700 text-white' :
                           event.status === 'DRAFT' ? 'bg-gray-500 text-white' :
                           event.status === 'ENDED' ? 'bg-gray-500 text-white' :
@@ -143,13 +145,13 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                   </div>
 
                   {/* 이벤트 정보 - 상단 고정 */}
-                  <div className="p-8 flex-shrink-0">
-                    <h3 className="text-4xl font-bold text-white mb-4 mt-4 line-clamp-2">
+                  <div className="p-4 flex-shrink-0">
+                    <h3 className="text-2xl font-bold text-white mb-2 line-clamp-2">
                       {event.title || '제목 없음'}
                     </h3>
                     
                     {event.description && (
-                      <p className="text-xl text-white font-light opacity-80 mb-4 line-clamp-4 whitespace-pre-wrap">
+                      <p className="text-md text-white font-light opacity-80 mb-4 line-clamp-2 whitespace-pre-wrap">
                         {event.description}
                       </p>
                     )}
@@ -157,8 +159,8 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                     {/* 이벤트 일정 */}
                     <div className="flex items-center justify-between text-sm text-white">
                       <div className="flex items-center">
-                        <span className="text-white font-regular text-xl pr-3" style={{ opacity: 0.6 }}>일시</span>
-                        <span className="text-xl text-white">
+                        <span className="text-white font-regular text-md pr-3" style={{ opacity: 0.6 }}>일시</span>
+                        <span className="text-md text-white">
                           {event.startDate && formatDate(event.startDate)}
                           {event.endDate && event.startDate !== event.endDate && ` - ${formatDate(event.endDate)}`}
                         </span>
@@ -167,7 +169,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                   </div>
 
                   {/* 이벤트 입장하기 섹션 - 하단 고정 */}
-                  <div className="p-8 mt-auto flex flex-col justify-between">                  
+                  <div className="p-4 mt-auto flex flex-col justify-between">                  
                     {/* 액션 버튼 */}
                     <button
                       onClick={(e) => {
@@ -205,8 +207,8 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                     </button>
 
                     {/* 하단 안내 텍스트 */}
-                    <div className="mt-8">
-                      <p className="text-white text-md text-left" style={{ opacity: 0.6 }}>
+                    <div className="mt-4 mb-4">
+                      <p className="text-white text-sm text-center" style={{ opacity: 0.6 }}>
                         문제가 있으시면 현장 스태프에게 문의해주세요
                       </p>
                     </div>
@@ -216,7 +218,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
           ))}
           
           {/* 오른쪽 여백 - 확실히 생기도록 실제 요소 추가 */}
-          <div className="w-2 h-246 flex-shrink-0"></div>
+          <div className="w-2 flex-shrink-0"></div>
         </div>
       </div>
     </div>

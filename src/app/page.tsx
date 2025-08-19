@@ -121,14 +121,14 @@ export default function HomePage() {
         />
 
         {/* 메인 컨텐츠 */}
-        <main className="w-full">
+        <main className="w-full pb-4">
           {/* 히어로 섹션 */}
-          <section className="pt-10 pb-8 mb-8">
+          <section className="pt-10 pb-8 mb-2">
             <div className="px-6">
               <img 
                 src="/images/img_logo.png" 
                 alt="HENCE Beta" 
-                className="h-16 mb-4"
+                className="h-8 mb-2"
                 style={{ maxWidth: '300px' }}
               />
               <p className="text-lg text-white text-left" style={{ opacity: 0.6 }}>
@@ -138,7 +138,7 @@ export default function HomePage() {
           </section>
           
           {/* 이벤트 캐러셀 */}
-          <section className="mb-16">
+          <section className="mb-8">
             <EventCarousel 
               onEventClick={handleEventClick} 
               onEntryClick={handleEntryClick}
@@ -146,7 +146,7 @@ export default function HomePage() {
           </section>
           
           {/* 종료된 이벤트 캐러셀 */}
-          <section className="mb-8">
+          <section className="mb-16">
             <EndedEventCarousel 
               onEventClick={handleEventClick}
             />

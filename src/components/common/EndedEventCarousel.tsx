@@ -77,26 +77,28 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
   return (
     <div className="w-full">
       {/* 섹션 타이틀 */}
-      <div className="w-full px-8 mb-8">
-        <h2 className="text-3xl font-bold text-white text-left">
+      <div className="w-full px-4 mb-4">
+        <h2 className="text-2xl font-bold text-white text-left">
           종료된 이벤트 리스트
         </h2>
       </div>
       
       {/* 세로 리스트 컨테이너 */}
-      <div className="w-full px-8">
+      <div className="w-full px-4">
         {/* 이벤트 카드들 */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col">
           {endedEvents.map((event, index) => (
             <div 
               key={event.id || index}
-              className="w-full"
+              className={`w-full max-h-48 sm:max-h-56 md:max-h-64 lg:max-h-72 xl:max-h-80 ${
+                index === 0 ? 'min-h-36 sm:min-h-40 md:min-h-44 lg:min-h-48 xl:min-h-52' : ''
+              }`}
             >
                 <div 
-                  className="w-full bg-black bg-opacity-30 rounded-4xl overflow-hidden transition-all duration-300 flex shadow-2xl hover:shadow-3xl"
+                  className="w-full h-full bg-black bg-opacity-30 rounded-xl overflow-hidden transition-all duration-300 flex shadow-2xl hover:shadow-3xl"
                 >
                   {/* 이벤트 이미지 - 정사각형 */}
-                  <div className="relative w-36 h-36 flex-shrink-0">
+                  <div className="relative w-28 h-28 flex-shrink-0">
                     {event.imageUrl ? (
                       <img
                         src={event.imageUrl}
@@ -115,7 +117,7 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
                     
                     {/* 이벤트 상태 배지 */}
                     <div className="absolute top-3 right-3">
-                      <span className="px-3 py-1 text-xs rounded-full bg-gray-500 text-white">
+                      <span className="px-3 py-2 text-xs rounded-full bg-gray-500 text-white">
                         {event.status === 'ENDED' ? '종료' : event.status}
                       </span>
                     </div>
@@ -124,21 +126,21 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
                   {/* 이벤트 정보 */}
                   <div className="flex-1 p-4 flex flex-col justify-between">
                     <div>
-                      <h3 className="text-xl font-bold text-white mb-2 line-clamp-2">
+                      <h3 className="text-xl font-bold text-white mb-1 line-clamp-1">
                         {event.title || '제목 없음'}
                       </h3>
                       
                       {event.description && (
-                        <p className="text-lg text-white font-light opacity-80 mb-3 line-clamp-2 whitespace-pre-wrap">
+                        <p className="text-lg text-white font-light opacity-80 mb-3 line-clamp-1 whitespace-pre-wrap">
                           {event.description}
                         </p>
                       )}
                     </div>
 
                     {/* 이벤트 일정 - 하단 고정 */}
-                    <div className="flex items-center text-sm text-white">
-                      <span className="text-white font-regular text-base pr-2" style={{ opacity: 0.6 }}>일시</span>
-                      <span className="text-base text-white">
+                    <div className="flex items-center text-xs text-white">
+                      <span className="text-white font-regular text-xs pr-2" style={{ opacity: 0.6 }}>일시</span>
+                      <span className="text-xs text-white">
                         {event.startDate && formatDate(event.startDate)}
                         {event.endDate && event.startDate !== event.endDate && ` - ${formatDate(event.endDate)}`}
                       </span>
