@@ -125,7 +125,7 @@ export default function NotificationPermission({ compact = false }: Notification
       return (
         <div
           onClick={handleRequestPermission}
-          className="flex items-center h-10 px-2 rounded-lg hover:bg-white hover:bg-opacity-10 transition-colors cursor-pointer select-none"
+          className="flex items-center h-10 px-2 rounded-lg transition-colors cursor-pointer select-none"
           title="알림 권한 거부됨 - 다시 요청"
         >
           <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,7 +139,7 @@ export default function NotificationPermission({ compact = false }: Notification
     return (
       <div
         onClick={handleRequestPermission}
-        className="flex items-center h-10 px-2 rounded-lg hover:bg-white hover:bg-opacity-10 transition-colors cursor-pointer select-none"
+        className="flex items-center h-10 px-2 rounded-lg transition-colors cursor-pointer select-none"
         title="알림 권한 요청"
       >
         {isRequesting ? (

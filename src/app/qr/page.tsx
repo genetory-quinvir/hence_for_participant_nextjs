@@ -21,6 +21,7 @@ export default function QRPage() {
   
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const currentStreamRef = useRef<MediaStream | null>(null);
 
   // 인증되지 않은 경우 메인 페이지로 리다이렉트
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function QRPage() {
   const stopScanner = () => {
     console.log("QR 스캐너 정리 시작");
     
+    // QR 스캐너 정리
     if (codeReaderRef.current) {
       try {
         codeReaderRef.current.reset();
@@ -40,6 +42,20 @@ export default function QRPage() {
         console.log("QR 스캐너 정리 완료");
       } catch (error) {
         console.log("QR 스캐너 정리 중 오류:", error);
+      }
+    }
+    
+    // 저장된 스트림 정리
+    if (currentStreamRef.current) {
+      try {
+        currentStreamRef.current.getTracks().forEach(track => {
+          track.stop();
+          console.log("저장된 스트림 트랙 정리:", track.kind);
+        });
+        currentStreamRef.current = null;
+        console.log("저장된 스트림 정리 완료");
+      } catch (error) {
+        console.log("저장된 스트림 정리 중 오류:", error);
       }
     }
     
@@ -58,7 +74,38 @@ export default function QRPage() {
       }
     }
     
+    // 비디오 요소 정리
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+        videoRef.current.src = '';
+        videoRef.current.load();
+        console.log("비디오 요소 정리 완료");
+      } catch (error) {
+        console.log("비디오 요소 정리 중 오류:", error);
+      }
+    }
+    
+    // 강제로 모든 미디어 스트림 중지
+    try {
+      // 현재 활성화된 모든 미디어 스트림을 찾아서 중지
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        // 빈 getUserMedia 호출로 기존 스트림을 무효화
+        navigator.mediaDevices.getUserMedia({ video: false, audio: false })
+          .then(stream => {
+            stream.getTracks().forEach(track => track.stop());
+            console.log("강제 미디어 스트림 정리 완료");
+          })
+          .catch(() => {
+            console.log("강제 미디어 스트림 정리 실패 (정상)");
+          });
+      }
+    } catch (error) {
+      console.log("강제 미디어 스트림 정리 중 오류:", error);
+    }
+    
     setIsScanning(false);
+    setCameraError(null);
   };
 
   // QR 스캐너 시작 함수
@@ -97,6 +144,9 @@ export default function QRPage() {
           height: { ideal: 720 }
         }
       });
+      
+      // 스트림 참조 저장
+      currentStreamRef.current = stream;
       
       console.log("카메라 스트림 획득 성공:", stream.getTracks().map(t => t.kind));
       
@@ -150,8 +200,26 @@ export default function QRPage() {
 
   // 컴포넌트 언마운트 시 스캐너 정리
   useEffect(() => {
-    return () => {
+    // 페이지 언로드 시 카메라 정리
+    const handleBeforeUnload = () => {
+      console.log("페이지 언로드 - 카메라 정리");
       stopScanner();
+    };
+
+    // 브라우저 뒤로가기/앞으로가기 시 카메라 정리
+    const handlePopState = () => {
+      console.log("브라우저 네비게이션 - 카메라 정리");
+      stopScanner();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      console.log("컴포넌트 언마운트 - 카메라 정리");
+      stopScanner();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
 
@@ -168,8 +236,13 @@ export default function QRPage() {
   }
 
   const handleBackClick = () => {
+    console.log("뒤로가기 버튼 클릭 - 카메라 정리 후 이동");
     stopScanner();
-    goBack();
+    
+    // 약간의 지연 후 네비게이션 (카메라 정리 완료 보장)
+    setTimeout(() => {
+      goBack();
+    }, 100);
   };
 
   // QR 코드 스캔 처리

@@ -53,8 +53,8 @@ export default function EventChat({
   useEffect(() => {
     console.log('🔌 WebSocket 연결 시작...');
 
-    // 최대 연결 시도 횟수 제한 (5회)
-    if (connectionAttempts >= 5) {
+    // 최대 연결 시도 횟수 제한 (3회)
+    if (connectionAttempts >= 3) {
       console.log('❌ 최대 연결 시도 횟수 초과 - 더 이상 시도하지 않음');
       setIsServerReady(false);
       return;
@@ -243,7 +243,7 @@ export default function EventChat({
                     
                   case 'error':
                     console.error('❌ WebSocket 에러:', data.message);
-                    showToast(data.message || '채팅 오류가 발생했습니다.', 'error');
+                    // showToast(data.message || '채팅 오류가 발생했습니다.', 'error');
                     break;
                     
                   default:
@@ -308,7 +308,7 @@ export default function EventChat({
             setConnectionAttempts(prev => prev + 1);
           }, 5000);
           
-          showToast('채팅 연결에 실패했습니다. 재연결을 시도합니다.', 'error');
+          // showToast('채팅 연결에 실패했습니다. 재연결을 시도합니다.', 'error');
         }
 
       } catch (error) {
@@ -322,7 +322,7 @@ export default function EventChat({
           setConnectionAttempts(prev => prev + 1);
         }, 5000);
         
-        showToast('채팅 연결에 실패했습니다. 재연결을 시도합니다.', 'error');
+        // showToast('채팅 연결에 실패했습니다. 재연결을 시도합니다.', 'error');
       }
     };
 
@@ -398,13 +398,13 @@ export default function EventChat({
           <div className="flex items-center space-x-2">
             <div className={`w-2 h-2 rounded-full ${
               isConnected ? 'bg-green-500' : 
-              connectionAttempts > 0 && connectionAttempts < 5 ? 'bg-yellow-500' : 
-              connectionAttempts >= 5 ? 'bg-red-500' : 'bg-yellow-500'
+              connectionAttempts > 0 && connectionAttempts < 3 ? 'bg-yellow-500' : 
+              connectionAttempts >= 3 ? 'bg-red-500' : 'bg-yellow-500'
             }`}></div>
             <span className="text-sm text-white" style={{ opacity: 0.7 }}>
               {isConnected ? '연결됨' : 
-               connectionAttempts > 0 && connectionAttempts < 5 ? `재연결 시도 중... (${connectionAttempts}/5)` : 
-               connectionAttempts >= 5 ? '연결 실패' : '연결 시도 중...'}
+               connectionAttempts > 0 && connectionAttempts < 3 ? `재연결 시도 중... (${connectionAttempts}/3)` : 
+               connectionAttempts >= 3 ? '연결 실패' : '연결 시도 중...'}
             </span>
           </div>
           <span className="text-sm text-white" style={{ opacity: 0.7 }}>
@@ -468,8 +468,8 @@ export default function EventChat({
       </div>
 
       {/* 안내 메시지 */}
-      <div className="mt-4 p-3 bg-yellow-600 bg-opacity-20 border border-yellow-500 border-opacity-30 rounded-lg">
-        <p className="text-xs text-yellow-300">
+      <div className="mt-4 p-3 bg-purple-100 bg-opacity-20 border border-purple-500 border-opacity-30 rounded-lg">
+        <p className="text-xs text-purple-600">
           채팅방의 메시지는 저장되지 않으며, 페이지를 새로고침하면 사라져요
           {!isConnected && (
             <span className="block mt-1">

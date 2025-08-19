@@ -118,7 +118,7 @@ export default function EventFoodTrucks({
                 </div>
 
                 {/* 가격 및 평점 */}
-                <div className="flex items-center justify-between pt-2">
+                {/* <div className="flex items-center justify-between pt-2">
                   <div className="text-white font-bold text-l">
                     {vendor.priceAverage || '8,000원대'}
                   </div>
@@ -130,7 +130,7 @@ export default function EventFoodTrucks({
                       {vendor.rating ? `${vendor.rating} (${vendor.reviewCount || 0}개)` : '4.5 (12개)'}
                     </span>
                   </div>
-                </div>
+                </div> */}
 
                 {/* 웹사이트 링크 */}
                 {vendor.website && (

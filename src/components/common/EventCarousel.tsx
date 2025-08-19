@@ -101,7 +101,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
           {events.map((event, index) => (
             <div 
               key={event.id || index}
-              className="w-[calc(100vw-4rem)] sm:w-[calc(100vw-6rem)] md:w-[calc(100vw-8rem)] lg:w-[calc(100vw-10rem)] xl:w-[calc(100vw-12rem)] h-150 flex-shrink-0"
+              className="w-[calc(100vw-4rem)] sm:w-[calc(100vw-6rem)] md:w-[calc(100vw-8rem)] lg:w-[calc(100vw-10rem)] xl:w-[calc(100vw-12rem)] h-140 flex-shrink-0"
             >
                 <div 
                   className="w-full h-full rounded-4xl overflow-hidden transition-all duration-300 flex flex-col shadow-lg hover:shadow-xl"
@@ -127,8 +127,8 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
                     
                     {/* 이벤트 상태 배지 */}
                     {event.status && (
-                      <div className="absolute top-6 right-3">
-                        <span className={`px-4 py-2 text-md rounded-full ${
+                      <div className="absolute top-4 right-3">
+                        <span className={`px-3 py-2 text-sm rounded-full ${
                           event.status === 'ACTIVE' ? 'bg-purple-700 text-white' :
                           event.status === 'DRAFT' ? 'bg-gray-500 text-white' :
                           event.status === 'ENDED' ? 'bg-gray-500 text-white' :
