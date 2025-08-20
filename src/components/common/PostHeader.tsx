@@ -61,9 +61,9 @@ export default function PostHeader({
             <span className={`text-purple-600 font-semibold ${
               isSmall ? 'text-xs' : 'text-sm'
             }`}>
-              공지사항
+              운영위원회
             </span>
-            <span className={`text-white ${
+            <span className={`text-black ${
               isSmall ? 'text-xs' : 'text-xs'
             }`} style={{ opacity: 0.6 }}>
               {createdAt ? getRelativeTime(createdAt) : ''}
@@ -82,12 +82,12 @@ export default function PostHeader({
           
           <div className="flex-1 min-w-0">
             <div className="flex flex-col">
-              <span className={`text-white font-semibold ${
+              <span className={`text-black font-semibold ${
                 isSmall ? 'text-xs' : 'text-sm'
               }`}>
                 {displayName}
               </span>
-              <span className={`text-white ${
+              <span className={`text-black ${
                 isSmall ? 'text-xs' : 'text-xs'
               }`} style={{ opacity: 0.6 }}>
                 {createdAt ? getRelativeTime(createdAt) : ''}

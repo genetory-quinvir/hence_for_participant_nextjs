@@ -11,6 +11,7 @@ interface EventSectionProps {
   };
   children: React.ReactNode;
   className?: string;
+  backgroundColor?: string;
 }
 
 export default function EventSection({ 
@@ -18,25 +19,25 @@ export default function EventSection({
   subtitle, 
   rightButton, 
   children, 
-  className = "" 
+  className = "",
+  backgroundColor = "white"
 }: EventSectionProps) {
   return (
-    <section className={`py-8 px-4 ${className}`}>
+    <section className={`${className}`}>
       {/* 섹션 헤더 */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-white mb-1">{title}</h2>
+      <div className={`mb-4 px-4 ${backgroundColor}`}>
+        <h2 className="text-xl font-bold text-black mb-1">{title}</h2>
         {(subtitle || rightButton) && (
           <div className="flex items-center justify-between">
             {subtitle && (
-              <p className="text-sm font-regular text-white" style={{ opacity: 0.7 }}>
+              <p className="text-sm font-regular text-black" style={{ opacity: 0.7 }}>
                 {subtitle}
               </p>
             )}
             {rightButton && (
               <button
                 onClick={rightButton.onClick}
-                className="text-sm text-white hover:text-purple-600 transition-colors"
-                style={{ opacity: 0.8 }}
+                className="text-sm text-purple-700 hover:text-purple-700 transition-colors"
               >
                 {rightButton.text}
               </button>

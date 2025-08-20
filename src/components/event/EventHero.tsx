@@ -8,7 +8,7 @@ interface EventHeroProps {
 
 export default function EventHero({ event }: EventHeroProps) {
   return (
-    <div className="w-full aspect-square flex items-center justify-center px-0" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+    <div className="w-full aspect-square flex items-center justify-center" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
       {event.imageUrl ? (
         <img 
           src={event.imageUrl} 
@@ -20,7 +20,6 @@ export default function EventHero({ event }: EventHeroProps) {
           }}
         />
       ) : null}
-      <span className="text-white text-sm hidden" style={{ opacity: 0.5 }}>이벤트 이미지</span>
     </div>
   );
 } 

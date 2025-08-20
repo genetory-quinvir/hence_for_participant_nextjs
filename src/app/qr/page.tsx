@@ -347,7 +347,8 @@ export default function QRPage() {
       />
 
       {/* 메인 컨텐츠 */}
-      <main className="flex-1 flex flex-col px-6 overflow-hidden">
+      <main className="flex-1 flex flex-col px-4 overflow-hidden"
+            style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom) + 12px)' }}>
         {/* QR 카메라 영역 */}
         <section className="flex-1 flex flex-col items-center justify-center min-h-0 overflow-hidden">
           <div className="w-full max-w-sm">
@@ -405,13 +406,16 @@ export default function QRPage() {
                   // 카메라 시작 전 상태
                   <div className="aspect-square bg-transparent rounded-lg flex items-center justify-center">
                     <div className="text-center">
-                      <div className="text-4xl mb-4">📷</div>
                       <p className="text-md font-regular text-white mb-4" style={{ opacity: 0.7 }}>
                         QR 코드를 스캔하려면
                       </p>
                       <button
                         onClick={startScanner}
-                        className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                        className="px-6 py-3 text-sm bg-purple-600 text-white rounded-full font-semibold hover:bg-purple-700 transition-colors"
+                        style={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}          
                       >
                         카메라 시작하기
                       </button>
@@ -424,13 +428,13 @@ export default function QRPage() {
         </section>
 
         {/* 하단 버튼들 */}
-        <section className="flex-shrink-0 pb-6" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
-          <div className="space-y-3">
+        <section className="flex-shrink-0" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom) + 16px)' }}>
+          <div className="space-y-3"> 
             {/* 수동 입력 버튼 */}
             <button
               onClick={handleManualEntry}
               disabled={isChecking}
-              className={`w-full rounded-xl p-4 transition-colors ${
+              className={`w-full rounded-lg py-3 transition-colors ${
                 isChecking ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               style={{

@@ -254,6 +254,7 @@ export interface CouponItem {
   totalCount?: number;
   createdAt?: string;
   isUsed?: boolean;
+  iconImageUrl?: string;
 }
 
 // 참가자 아이템 타입

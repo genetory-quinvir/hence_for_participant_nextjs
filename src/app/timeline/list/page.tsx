@@ -101,12 +101,12 @@ function TimelineListContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white">
+      <div className="min-h-screen bg-white text-black">
         <CommonNavigationBar 
           title="타임라인"
           leftButton={
             <svg
-              className="w-6 h-6 text-white"
+              className="w-6 h-6 text-black"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -115,9 +115,9 @@ function TimelineListContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
-          backgroundColor="black"
+          backgroundColor="white"
           backgroundOpacity={1}
-          textColor="text-white"
+          textColor="text-black"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
@@ -131,12 +131,12 @@ function TimelineListContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black text-white">
+      <div className="min-h-screen bg-white text-black">
         <CommonNavigationBar 
           title="타임라인"
           leftButton={
             <svg
-              className="w-6 h-6 text-white"
+              className="w-6 h-6 text-black"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -145,17 +145,17 @@ function TimelineListContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
-          backgroundColor="black"
+          backgroundColor="white"
           backgroundOpacity={1}
-          textColor="text-white"
+          textColor="text-black"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-center px-4">
             <div className="text-red-400 text-lg mb-4">⚠️</div>
-            <p className="text-white text-lg mb-4">{error}</p>
+            <p className="text-black text-lg mb-4">{error}</p>
             <button
               onClick={() => router.push("/")}
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              className="px-6 py-2 bg-purple-600 text-black rounded-lg hover:bg-purple-700 transition-colors"
             >
               메인으로 돌아가기
             </button>
@@ -166,12 +166,12 @@ function TimelineListContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white text-black">
       <CommonNavigationBar 
         title="타임라인"
         leftButton={
           <svg
-            className="w-6 h-6 text-white"
+            className="w-6 h-6 text-black"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -180,12 +180,12 @@ function TimelineListContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
-        backgroundColor="black"
+        backgroundColor="white"
         backgroundOpacity={1}
-        textColor="text-white"
+        textColor="text-black"
       />
       
-      <div className="px-4 py-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="px-4 py-2" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom) + 24px)' }}>
         {/* 타임라인 리스트 */}
         <div className="space-y-4">
           {timelines.length > 0 ? (
@@ -199,50 +199,35 @@ function TimelineListContent() {
                 <div className="flex flex-col items-center mr-4">
                   {/* 시간 */}
                   <div 
-                    className="text-sm font-medium mb-2 mt-1 flex-shrink-0"
+                    className="text-md font-normal mb-2 mt-1 flex-shrink-0"
                     style={{ 
                       color: timeline.status === 'COMPLETED' 
-                        ? 'rgba(255, 255, 255, 0.4)' 
+                        ? 'rgba(0, 0, 0, 0.4)' 
                         : timeline.status === 'ACTIVE'
-                        ? 'white'
-                        : 'rgba(255, 255, 255, 0.8)'
+                        ? '#7c3aed'
+                        : 'rgba(0, 0, 0, 1)'
                     }}
                   >
                     {timeline.time || ''}
                   </div>
                   
-                  {/* 닷 */}
-                  <div 
-                    className={`w-4 h-4 rounded-full z-10 relative flex items-center justify-center flex-shrink-0 ${
-                      timeline.status === 'ACTIVE' ? 'animate-pulse' : ''
-                    }`}
-                    style={{ 
-                      backgroundColor: timeline.status === 'COMPLETED' 
-                        ? 'rgba(255, 255, 255, 0.3)' 
-                        : timeline.status === 'ACTIVE'
-                        ? '#7c3aed'
-                        : 'rgba(255, 255, 255, 0.3)',
-                      border: timeline.status === 'PENDING' ? '2px solid rgba(255, 255, 255, 0.3)' : 'none',
-                      animation: timeline.status === 'ACTIVE' ? 'timelineDotPulse 1s ease-in-out infinite' : 'none'
-                    }}
-                  >
-                    {timeline.status === 'COMPLETED' && (
-                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                      </svg>
-                    )}
-                  </div>
+                  {/* 닷 (ACTIVE 상태일 때만 표시) */}
+                  {timeline.status === 'ACTIVE' && (
+                    <div 
+                      className="w-4 h-4 rounded-full z-10 relative flex items-center justify-center flex-shrink-0 animate-pulse"
+                      style={{ 
+                        backgroundColor: '#7c3aed',
+                        animation: 'timelineDotPulse 1s ease-in-out infinite'
+                      }}
+                    ></div>
+                  )}
                   
                   {/* 연결선 (마지막 항목이 아닌 경우에만) */}
                   {index < timelines.length - 1 && (
                     <div 
                       className="w-0.5 flex-1"
                       style={{ 
-                        backgroundColor: timeline.status === 'COMPLETED' 
-                          ? 'rgba(255, 255, 255, 0.3)' 
-                          : timeline.status === 'ACTIVE'
-                          ? '#7c3aed'
-                          : 'rgba(255, 255, 255, 0.3)'
+                        backgroundColor: timeline.status === 'ACTIVE' ? '#7c3aed' : 'rgba(0, 0, 0, 0.1)'
                       }}
                     ></div>
                   )}
@@ -254,22 +239,22 @@ function TimelineListContent() {
                     className="rounded-xl p-5 transition-all duration-300 hover:bg-white hover:bg-opacity-5"
                     style={{ 
                       backgroundColor: timeline.status === 'COMPLETED' 
-                        ? 'rgba(255, 255, 255, 0.05)' 
+                        ? 'rgba(0, 0, 0, 0.05)' 
                         : timeline.status === 'ACTIVE'
                         ? 'rgba(124, 58, 237, 0.1)'
-                        : 'rgba(255, 255, 255, 0.05)',
+                        : 'rgba(0, 0, 0, 0.05)',
                       border: timeline.status === 'ACTIVE' ? '1px solid rgba(124, 58, 237, 0.5)' : 'none',
                     }}
                   >
                     {/* 제목 */}
                     <h3 
-                      className="font-bold text-base mb-1"
+                      className="font-semibold text-md mb-1"
                       style={{ 
                         color: timeline.status === 'COMPLETED' 
-                          ? 'rgba(255, 255, 255, 0.6)' 
+                          ? 'rgba(0, 0, 0, 0.2)' 
                           : timeline.status === 'ACTIVE'
-                          ? 'white'
-                          : 'rgba(255, 255, 255, 0.6)'
+                          ? '#7c3aed'
+                          : 'rgba(0, 0, 0, 1)'
                       }}
                     >
                       {timeline.title || '제목 없음'}
@@ -280,7 +265,7 @@ function TimelineListContent() {
                       <p 
                         className="text-sm mb-3"
                         style={{ 
-                          color: timeline.status === 'COMPLETED' ? 'rgba(255, 255, 255, 0.4)' : timeline.status === 'ACTIVE' ? 'white' : 'rgba(255, 255, 255, 0.8)'
+                          color: timeline.status === 'COMPLETED' ? 'rgba(0, 0, 0, 0.2)' : timeline.status === 'ACTIVE' ? '#7c3aed' : 'rgba(0, 0, 0, 0.8)'
                         }}
                       >
                         {timeline.description}
@@ -292,20 +277,18 @@ function TimelineListContent() {
                       <div className="flex items-center space-x-4">
                         {timeline.location && (
                           <div className="flex items-center">
-                            <svg 
-                              className="w-4 h-4 mr-1" 
-                              style={{ 
-                                color: timeline.status === 'COMPLETED' ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.6)'
-                              }} 
-                              fill="currentColor" 
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                            </svg>
+                            <img
+                              src="/images/icon_pin.png"
+                              alt="위치 아이콘"
+                              className="w-6 h-6 mr-1 object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
                             <span 
-                              className="text-xs"
+                              className="text-sm"
                               style={{ 
-                                color: timeline.status === 'COMPLETED' ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.7)'
+                                color: timeline.status === 'COMPLETED' ? 'rgba(0, 0, 0, 0.2)' : timeline.status === 'ACTIVE' ? '#7c3aed' : 'rgba(0, 0, 0, 0.7)'
                               }}
                             >
                               {timeline.location}
@@ -317,16 +300,16 @@ function TimelineListContent() {
                       {/* 상태 표시 */}
                       {timeline.status === 'COMPLETED' && (
                         <div className="flex-shrink-0">
-                          <span className="px-4 py-2 rounded-full text-xs font-regular text-gray-300" 
-                          style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>
-                            완료
+                          <span className="px-4 py-2 rounded-full text-xs font-bold text-gray-400" 
+                          style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}>
+                            종료
                           </span>
                         </div>
                       )}
                       
                       {timeline.status === 'ACTIVE' && (
                         <div className="flex-shrink-0">
-                          <span className="px-4 py-2 rounded-full text-xs font-regular bg-purple-700 text-white">
+                          <span className="px-4 py-2 rounded-full text-xs font-bold bg-purple-600 text-white">
                             진행중
                           </span>
                         </div>
@@ -338,8 +321,8 @@ function TimelineListContent() {
             ))
           ) : (
             <div className="text-center py-12">
-              <p className="text-white text-lg mb-2">아직 타임라인이 없습니다</p>
-              <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+              <p className="text-black text-lg mb-2">아직 타임라인이 없습니다</p>
+              <p className="text-black text-sm" style={{ opacity: 0.6 }}>
                 새로운 타임라인을 기다려주세요!
               </p>
             </div>
@@ -349,7 +332,7 @@ function TimelineListContent() {
           {loadingMore && (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
-              <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+              <p className="text-black text-sm" style={{ opacity: 0.6 }}>
                 더 많은 타임라인을 불러오는 중...
               </p>
             </div>
@@ -358,7 +341,7 @@ function TimelineListContent() {
           {/* 더 이상 데이터가 없을 때 */}
           {!hasNext && timelines.length > 0 && (
             <div className="text-center py-8">
-              <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+              <p className="text-black text-sm" style={{ opacity: 0.6 }}>
                 모든 타임라인을 불러왔습니다
               </p>
             </div>
@@ -372,7 +355,7 @@ function TimelineListContent() {
 // 로딩 컴포넌트
 function TimelineListLoading() {
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+    <div className="min-h-screen bg-white text-black flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
         <p className="text-sm" style={{ opacity: 0.7 }}>타임라인 목록을 불러오는 중...</p>

@@ -167,7 +167,7 @@ function RaffleContent() {
   // 인증 상태 확인 중이거나 인증되지 않은 경우 로딩 표시
   if (authLoading || !isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-sm" style={{ opacity: 0.7 }}>
@@ -179,62 +179,87 @@ function RaffleContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white relative">
+    <div className="min-h-screen bg-white text-black flex flex-col">
+        <CommonNavigationBar
+          leftButton={
+            <svg
+              className="w-6 h-6 text-black"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          }
+          onLeftClick={handleBackClick}
+          backgroundColor="white"
+          backgroundOpacity={0}
+          textColor="text-black"
+          sticky={true}
+        />
+
       {/* 메인 컨텐츠 */}
-      <main className="w-full min-h-screen overflow-y-auto px-4 pt-20 pb-8" style={{ paddingBottom: 'max(32px, env(safe-area-inset-bottom) + 16px)' }}>
-        {/* 이벤트 설명 섹션 */}
-        <div className="mb-8">
-          <div className="rounded-2xl p-6 relative overflow-hidden" style={{ 
-            background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.3) 0%, rgba(168, 85, 247, 0.2) 50%, rgba(196, 181, 253, 0.1) 100%)',
-            border: '1px solid rgba(147, 51, 234, 0.3)'
-          }}>
-            {/* 배경 장식 요소들 */}
-            <div className="absolute top-2 right-2 text-4xl opacity-20">🎁</div>
-            <div className="absolute bottom-2 left-2 text-3xl opacity-20">🎯</div>
-            <div className="absolute top-1/2 right-4 text-2xl opacity-15">⭐</div>
-            
-            <div className="flex items-center relative z-10">
-              <div className="flex-1">
-                <div className="flex items-center mb-2">
-                  <h1 className="text-2xl font-bold text-white mr-3">{raffleData?.title || '횃불제만의 경품 이벤트'}</h1>
-                </div>
-                <p className="text-white text-base mb-3" style={{ opacity: 0.9 }}>
-                  {raffleData?.description || '서울과학기술대학교 학생들만을 위한 특별한 경품 이벤트!'}
-                </p>
-                                  <div className="flex items-center space-x-4 text-sm">
-                    <div className="flex items-center text-white" style={{ opacity: 0.6 }}>
-                      <span>현재까지 <span className="text-white text-md font-light">{raffleData?.participantCount || 0}</span>명이 응모중이에요</span>
-                    </div>
-                  </div>
-              </div>
-            </div>
+      <main className="flex-1 w-full px-4 overflow-y-auto" style={{ paddingBottom: 'max(32px, env(safe-area-inset-bottom) + 16px)' }}>
+        <div className="items-center justify-center flex flex-col px-4 py-4">
+          <h2 className="text-2xl font-bold text-black text-center leading-relaxed mb-6">간단하게 응모하고<br/>
+            <span className="text-purple-700">횃불제</span>만의 경품을 받아보세요</h2>
+          
+          <div 
+            style={{
+              animation: 'gentleBounce 1s ease-in-out infinite'
+            }}
+          >
+            <img 
+              src="/images/img_giftbox.png" 
+              alt="선물상자" 
+              className="w-32 h-32 object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
           </div>
+          
+          <style jsx>{`
+            @keyframes gentleBounce {
+              0%, 100% {
+                transform: translateY(0px);
+              }
+              50% {
+                transform: translateY(-8px);
+              }
+            }
+          `}</style>
         </div>
 
         {/* 경품 안내 섹션 */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">경품 안내</h2>
-          <div className="space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 mt-4">상품 안내</h2>
+            <div className="space-y-4">
             {raffleData?.prizes && raffleData.prizes.length > 0 ? (
               raffleData.prizes.map((prize: any, index: number) => (
-                <div key={prize.id} className="rounded-xl p-4" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center flex-1">
-                      <div className="w-12 h-12 rounded-lg mr-4 flex items-center justify-center" style={{ backgroundColor: 'rgba(147, 51, 234, 0.2)' }}>
-                        <span className="text-2xl">
-                          {prize.prizeRank === '1' ? '🥇' : 
-                           prize.prizeRank === '2' ? '🥈' : 
-                           prize.prizeRank === '3' ? '🥉' : '🎁'}
-                        </span>
+                <div 
+                  key={prize.id} 
+                  className="bg-white rounded-2xl"
+                >
+                  <div className="flex items-center">
+                    <div className="w-20 h-20 rounded-xl mr-2 flex items-center justify-center">
+                      <img
+                        src={prize.prizeRank === '1' ? '/images/icon_gold_medal.png' : 
+                             prize.prizeRank === '2' ? '/images/icon_silver_medal.png' : 
+                             prize.prizeRank === '3' ? '/images/icon_bronze_medal.png' : '/images/icon_purple_medal.png'}
+                        alt="메달 아이콘"
+                        className="w-16 h-16 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center mb-1">
+                        <span className="text-gray-900 font-semibold text-md">{prize.prizeRank}등 <span className="text-gray-400 font-normal text-md ml-1">({prize.winnerCount}명)</span></span>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center mb-1">
-                          <span className="text-purple-600 font-bold text-md mr-2">{prize.prizeRank}등</span>
-                          <span className="text-white text-sm" style={{ opacity: 0.7 }}>({prize.winnerCount}명)</span>
-                        </div>
-                        <h3 className="text-white font-semibold text-lg mb-1">{prize.prizeName}</h3>
-                        <p className="text-white text-sm" style={{ opacity: 0.7 }}>{prize.prizeDescription}</p>
-                      </div>
+                      <h3 className="text-gray-900 font-medium text-base">{prize.prizeName}</h3>
+                      <p className="text-gray-600 text-sm">{prize.prizeDescription}</p>
                     </div>
                   </div>
                 </div>
@@ -242,40 +267,68 @@ function RaffleContent() {
             ) : (
               // 기본 경품 정보 (데이터가 없을 때)
               <>
-                <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <div className="flex items-center mb-2">
-                    <span className="text-2xl mr-3">🥇</span>
-                    <span className="text-purple-600 font-bold">1등 (1명)</span>
+                <div className="bg-white rounded-2xl p-4 border border-gray-100">
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 rounded-xl mr-4 flex items-center justify-center">
+                      <span className="text-xl">🥇</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-gray-900 font-semibold text-base">1등</span>
+                        <span className="text-gray-500 text-sm">1명</span>
+                      </div>
+                      <h3 className="text-gray-900 font-medium text-base mb-1">최신형 스마트폰</h3>
+                      <p className="text-gray-600 text-sm">2024년 최신 플래그십 스마트폰</p>
+                    </div>
                   </div>
-                  <p className="text-white font-semibold">최신형 스마트폰</p>
-                  <p className="text-white text-sm" style={{ opacity: 0.7 }}>2024년 최신 플래그십 스마트폰</p>
                 </div>
 
-                <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <div className="flex items-center mb-2">
-                    <span className="text-2xl mr-3">🥈</span>
-                    <span className="text-purple-600 font-bold">2등 (3명)</span>
+                <div className="bg-white rounded-2xl p-4 border border-gray-100">
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 rounded-xl mr-4 flex items-center justify-center">
+                      <span className="text-xl">🥈</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-gray-900 font-semibold text-base">2등</span>
+                        <span className="text-gray-500 text-sm">3명</span>
+                      </div>
+                      <h3 className="text-gray-900 font-medium text-base mb-1">무선이어폰</h3>
+                      <p className="text-gray-600 text-sm">프리미엄 무선이어폰 (화이트)</p>
+                    </div>
                   </div>
-                  <p className="text-white font-semibold">무선이어폰</p>
-                  <p className="text-white text-sm" style={{ opacity: 0.7 }}>프리미엄 무선이어폰 (화이트)</p>
                 </div>
 
-                <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <div className="flex items-center mb-2">
-                    <span className="text-2xl mr-3">🥉</span>
-                    <span className="text-purple-600 font-bold">3등 (5명)</span>
+                <div className="bg-white rounded-2xl p-4 border border-gray-100">
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 rounded-xl mr-4 flex items-center justify-center">
+                      <span className="text-xl">🥉</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-gray-900 font-semibold text-base">3등</span>
+                        <span className="text-gray-500 text-sm">5명</span>
+                      </div>
+                      <h3 className="text-gray-900 font-medium text-base mb-1">기프티콘</h3>
+                      <p className="text-gray-600 text-sm">스타벅스 아메리카노 Tall 기프티콘</p>
+                    </div>
                   </div>
-                  <p className="text-white font-semibold">기프티콘</p>
-                  <p className="text-white text-sm" style={{ opacity: 0.7 }}>스타벅스 아메리카노 Tall 기프티콘</p>
                 </div>
 
-                <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <div className="flex items-center mb-2">
-                    <span className="text-2xl mr-3">🎁</span>
-                    <span className="text-purple-600 font-bold">행운상 (100명)</span>
+                <div className="bg-white rounded-2xl p-4 border border-gray-100">
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 rounded-xl mr-4 flex items-center justify-center">
+                      <span className="text-xl">🎁</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-gray-900 font-semibold text-base">행운상</span>
+                        <span className="text-gray-500 text-sm">100명</span>
+                      </div>
+                      <h3 className="text-gray-900 font-medium text-base mb-1">모바일 상품권</h3>
+                      <p className="text-gray-600 text-sm">편의점 모바일 상품권 1000원</p>
+                    </div>
                   </div>
-                  <p className="text-white font-semibold">모바일 상품권</p>
-                  <p className="text-white text-sm" style={{ opacity: 0.7 }}>편의점 모바일 상품권 1000원</p>
                 </div>
               </>
             )}
@@ -288,15 +341,25 @@ function RaffleContent() {
           <div className="mb-8">
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-              <p className="text-white text-sm" style={{ opacity: 0.7 }}>응모 상태를 확인하는 중...</p>
+              <p className="text-black text-sm" style={{ opacity: 0.7 }}>응모 상태를 확인하는 중...</p>
             </div>
           </div>
         ) : isParticipated ? (
           // 이미 응모한 경우
-          <div className="mb-8">
+          <div className="mb-8 mt-8">
             <div className="rounded-xl p-6 text-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <h3 className="text-white font-bold text-xl mb-2">응모가 완료되었습니다</h3>
-              <p className="text-white text-sm" style={{ opacity: 0.7 }}>
+              <div className="flex items-center justify-center mb-2">
+              <img 
+                  src="/images/icon_check.png" 
+                  alt="완료 체크" 
+                  className="w-8 h-8"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <h3 className="text-black font-bold text-xl ml-2">이미 응모가 완료되었습니다!</h3>
+              </div>
+              <p className="text-black text-sm" style={{ opacity: 0.7 }}>
                 이미 이 이벤트에 응모하셨습니다.<br />
                 당첨 발표를 기다려주세요!
               </p>
@@ -306,22 +369,22 @@ function RaffleContent() {
           // 응모하지 않은 경우 - 응모 폼 표시
           <>
             {/* 응모 정보 섹션 */}
-            <div className="mb-8">
-              <h2 className="text-xl font-bold text-white mb-4">응모 정보</h2>
+            <div className="mb-8 mt-12">
+              <h2 className="text-xl font-bold text-black mb-4">응모 정보</h2>
               
               {/* 이름 입력 */}
               <div className="mb-4">
-                <label className="block text-white text-sm mb-2">이름</label>
+                <label className="block text-black text-sm mb-2">이름</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="실명을 입력해주세요"
-                  className="w-full px-4 py-3 rounded-xl focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl focus:outline-none transition-colors placeholder-gray-400"
                   style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    color: 'white',
-                    border: '1px solid rgba(255, 255, 255, 0.2)'
+                    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                    color: 'black',
+                    border: '1px solid rgba(0, 0, 0, 0.1)'
                   }}
                   disabled={isSubmitting}
                 />
@@ -329,18 +392,18 @@ function RaffleContent() {
 
               {/* 전화번호 입력 */}
               <div className="mb-4">
-                <label className="block text-white text-sm mb-2">전화번호</label>
+                <label className="block text-black text-sm mb-2">전화번호</label>
                 <input
                   type="tel"
                   value={phone}
                   onChange={handlePhoneChange}
                   placeholder="010-0000-0000"
                   maxLength={13}
-                  className="w-full px-4 py-3 rounded-xl focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl focus:outline-none transition-colors placeholder-gray-400"
                   style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    color: 'white',
-                    border: '1px solid rgba(255, 255, 255, 0.2)'
+                    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                    color: 'black',
+                    border: '1px solid rgba(0, 0, 0, 0.1)'
                   }}
                   disabled={isSubmitting}
                 />
@@ -357,28 +420,20 @@ function RaffleContent() {
                     style={{ accentColor: '#9333ea' }}
                     disabled={isSubmitting}
                   />
-                  <span className="text-white text-sm">개인정보 수집 및 이용에 동의합니다 (필수)</span>
+                  <span className="text-black text-sm">개인정보 수집 및 이용에 동의합니다 (필수)</span>
                 </label>
               </div>
             </div>
 
             {/* 참여 안내 섹션 */}
             <div className="mb-8">
-              <h2 className="text-xl font-bold text-white mb-4">참여 안내</h2>
-              <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-                <ul className="space-y-2 text-white text-sm">
+              <h2 className="text-xl font-bold text-black mb-4">참여 안내</h2>
+              <div className="rounded-xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+                <ul className="space-y-2 text-black text-sm">
                   <li>• 응모 기간: {raffleData?.startDate ? new Date(raffleData.startDate).toLocaleDateString('ko-KR') : '축제 기간 중'} ~ {raffleData?.endDate ? new Date(raffleData.endDate).toLocaleDateString('ko-KR') : '축제 종료'}</li>
-                  <li>• 발표일: 축제 종료 후 1주일 이내</li>
                   <li>• 당첨자 발표: 개별 연락 및 공지사항</li>
-                  <li>• 중복 당첨 가능</li>
+                  <li>• 중복 당첨 불가</li>
                   <li>• 허위 정보 입력 시 당첨 무효</li>
-                  <li>• 경품 수령 불가 시 다음 순번으로 이월</li>
-                  {raffleData?.maxWinners && (
-                    <li>• 총 당첨자 수: {raffleData.maxWinners}명</li>
-                  )}
-                  {raffleData?.participantCount !== undefined && (
-                    <li>• 현재 참여자 수: {raffleData.participantCount}명</li>
-                  )}
                 </ul>
               </div>
             </div>
@@ -387,9 +442,9 @@ function RaffleContent() {
             <button
               onClick={handleSubmit}
               disabled={!name.trim() || !phone.trim() || !agreed || isSubmitting}
-              className={`w-full py-4 rounded-xl font-medium transition-colors ${
+              className={`w-full py-3 rounded-lg font-medium transition-colors ${
                 name.trim() && phone.trim() && agreed && !isSubmitting
-                  ? "bg-purple-600 hover:bg-purple-700 text-white"
+                  ? "bg-purple-600 hover:bg-purple-700 text-white text-md"
                   : "bg-gray-600 text-gray-400 cursor-not-allowed"
               }`}
             >
@@ -404,9 +459,12 @@ function RaffleContent() {
             </button>
 
             {/* 안내 문구 */}
-            <p className="text-center text-white text-xs mt-4" style={{ opacity: 0.6 }}>
+            <p className="text-center text-black text-xs mt-4" style={{ opacity: 0.6 }}>
               응모 완료 후 수정이 불가능하니 신중히 입력해주세요.
             </p>
+            
+            {/* Safe Area Bottom */}
+            <div style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom) + 24px)' }}></div>
           </>
         )}
 
@@ -417,27 +475,6 @@ function RaffleContent() {
           </div>
         )}
       </main>
-
-      {/* 네비게이션바 */}
-      <div className="absolute top-0 left-0 right-0 z-50">
-        <CommonNavigationBar
-          title="이벤트 응모"
-          leftButton={
-            <svg
-              className="w-6 h-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          }
-          onLeftClick={handleBackClick}
-          backgroundColor="transparent"
-          backgroundOpacity={0}
-          textColor="text-white"
-        />
-      </div>
     </div>
   );
 }
@@ -445,7 +482,7 @@ function RaffleContent() {
 // 로딩 컴포넌트
 function RaffleLoading() {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white text-black">
       <div className="flex items-center justify-center h-64">
         <div className="text-lg">로딩 중...</div>
       </div>

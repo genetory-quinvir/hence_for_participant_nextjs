@@ -26,6 +26,12 @@ export default function CouponActionSheet({
   selectedItem,
   onUseSelected
 }: CouponActionSheetProps) {
+  // PWA 환경 감지
+  const isPWA = typeof window !== 'undefined' && (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone === true ||
+    document.referrer.includes('android-app://')
+  );
   // 액션시트가 열렸을 때 body에 스타일 적용
   useEffect(() => {
     if (isOpen) {
@@ -120,36 +126,46 @@ export default function CouponActionSheet({
         }}
       >
         <div 
-          className="w-full bg-black rounded-t-xl p-4"
+          className="w-full bg-white rounded-t-xl p-4"
           style={{ 
             pointerEvents: 'auto',
             userSelect: 'auto',
-            WebkitUserSelect: 'auto'
+            WebkitUserSelect: 'auto',
+            paddingBottom: isPWA 
+              ? 'max(40px, env(safe-area-inset-bottom) + 32px)'
+              : 'max(24px, env(safe-area-inset-bottom) + 16px)'
           }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* 드래그 핸들 */}
-          <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mb-4"></div>
+          <div className="w-12 h-1 bg-purple-700 rounded-full mx-auto mb-4"></div>
           
           {/* 제목 (선택사항) */}
           {title && (
             <div className="text-center mb-4">
-              <h3 className="text-white text-lg font-medium">{title}</h3>
+              <h3 className="text-black text-lg font-medium">{title}</h3>
             </div>
           )}
           
           {/* 선택된 쿠폰 안내 메시지 */}
           {selectedItem && (
-            <div className="mb-4 p-4 rounded-lg" style={{backgroundColor: 'rgba(255,255,255,0.05)'}}>
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
-                <span className="text-purple-600 text-sm font-medium">선택된 쿠폰</span>
+            <div className="mb-4 p-4 rounded-lg" style={{backgroundColor: 'rgba(124, 58, 237, 0.1)'}}>
+              <div className="flex items-center mb-2 space-x-1">
+                <img 
+                  src="/images/icon_coupon.png" 
+                  alt="쿠폰 아이콘" 
+                  className="w-10 h-10 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <span className="text-purple-700 text-sm font-medium">선택된 쿠폰</span>
               </div>
-              <div className="text-white font-semibold text-md">
-                {selectedItem.label}
+              <div className="text-black font-normal text-lg">
+                <span className="text-black font-bold">{selectedItem.label}</span>을 교환해드려요.
               </div>
-              <div className="text-gray-400 text-sm mt-1">
-                아래에서 사용할 벤더를 선택하세요
+              <div className="mt-2">
+              <span className="text-purple-700 text-sm">반드시 관련자에게 보여주셔야 사용이 가능합니다.</span>
               </div>
             </div>
           )}
@@ -158,6 +174,7 @@ export default function CouponActionSheet({
           <div className="space-y-2">
             {items && items.length > 0 ? (
               items.map((item, index) => {
+                const isSelected = selectedItem && selectedItem.label === item.label;
                 return (
                   <button
                     key={index}
@@ -165,7 +182,7 @@ export default function CouponActionSheet({
                     className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors ${
                       item.variant === 'destructive'
                         ? 'text-red-400 hover:bg-red-900 hover:bg-opacity-20'
-                        : 'text-white hover:bg-gray-800'
+                        : 'text-black'
                     }`}
                   >
                     {item.icon && (
@@ -174,31 +191,39 @@ export default function CouponActionSheet({
                       </div>
                     )}
                     <span className="flex-1 text-left">{item.label}</span>
+                    {isSelected && (
+                      <div className="flex-shrink-0">
+                        <svg 
+                          className="w-5 h-5 text-purple-600" 
+                          fill="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                      </div>
+                    )}
                   </button>
                 );
               })
             ) : (
-              <div className="text-center text-gray-400 py-4">
-                <p>표시할 항목이 없습니다.</p>
-                <p className="text-sm">items: {JSON.stringify(items)}</p>
-              </div>
+              <div></div>
             )}
           </div>
           
           {/* 취소 버튼 */}
-          <div className="mt-4 pt-4 border-t border-gray-800">
+          <div className="mt-4 pt-4">
             {selectedItem ? (
               // 선택된 아이템이 있을 때: 취소 + 사용하기 버튼
               <div className="flex space-x-3">
                 <button
                   onClick={onClose}
-                  className="flex-[2] p-3 text-gray-400 hover:bg-gray-800 rounded-lg transition-colors"
+                  className="flex-[2] p-3 text-gray-400 rounded-lg transition-colors"
                 >
                   취소
                 </button>
                 <button
                   onClick={onUseSelected}
-                  className="flex-[5] p-3 bg-purple-600 text-white hover:bg-purple-700 rounded-lg transition-colors font-medium"
+                  className="flex-[5] p-3 bg-purple-600 text-white rounded-lg transition-colors font-medium"
                 >
                   사용하기
                 </button>
@@ -207,7 +232,7 @@ export default function CouponActionSheet({
               // 선택된 아이템이 없을 때: 취소 버튼만
               <button
                 onClick={onClose}
-                className="w-full p-3 text-gray-400 hover:bg-gray-800 rounded-lg transition-colors"
+                className="w-full p-3 text-gray-400  rounded-lg transition-colors"
               >
                 취소
               </button>

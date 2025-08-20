@@ -31,11 +31,9 @@ export default function EventAdvertisements({ advertisements }: EventAdvertiseme
   const currentAd = advertisements[currentIndex];
 
   return (
-    <section className="relative bg-black py-8">
+    <section className="relative bg-gray-100 mb-12">
       <div className="container mx-auto px-4">
-        {/* 섹션 헤더 */}
         <div className="flex items-center justify-between mb-0">
-          {/* 광고 개수 표시 */}
           {advertisements.length > 1 && (
             <div className="flex items-center space-x-2">
               <span className="text-white text-sm" style={{ opacity: 0.7 }}>
@@ -48,7 +46,7 @@ export default function EventAdvertisements({ advertisements }: EventAdvertiseme
         {/* 광고 카드 */}
         <div className="relative">
           <div 
-            className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl overflow-hidden cursor-pointer transition-transform hover:scale-[1.02]"
+            className="relative bg-white rounded-2xl overflow-hidden cursor-pointer"
             onClick={() => handleAdClick(currentAd)}
             style={{
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
@@ -56,7 +54,7 @@ export default function EventAdvertisements({ advertisements }: EventAdvertiseme
           >
             {/* 광고 이미지 - 이미지 비율에 맞춤 */}
             {currentAd.imageUrl ? (
-              <div className="w-full relative" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+              <div className="w-full relative">
                 <img 
                   src={currentAd.imageUrl} 
                   alt={currentAd.title || '광고 이미지'}
@@ -74,10 +72,7 @@ export default function EventAdvertisements({ advertisements }: EventAdvertiseme
                 
                 {/* 광고 표시 - 우측 상단 */}
                 <div className="absolute top-3 right-3">
-                  <span className="text-xs text-white px-4 py-2 rounded-full" style={{ 
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    opacity: 0.8 
-                  }}>
+                  <span className="text-xs text-white px-4 py-2 rounded-full bg-black bg-opacity-70">
                     광고
                   </span>
                 </div>
@@ -123,7 +118,7 @@ export default function EventAdvertisements({ advertisements }: EventAdvertiseme
               {/* 이전 버튼 */}
               <button
                 onClick={prevAd}
-                className="absolute left-2 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full flex items-center justify-center transition-all"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
               >
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -133,7 +128,7 @@ export default function EventAdvertisements({ advertisements }: EventAdvertiseme
               {/* 다음 버튼 */}
               <button
                 onClick={nextAd}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full flex items-center justify-center transition-all"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
               >
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -149,7 +144,7 @@ export default function EventAdvertisements({ advertisements }: EventAdvertiseme
                 <button
                   key={index}
                   onClick={() => setCurrentIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-all ${
+                  className={`w-2 h-2 rounded-full ${
                     index === currentIndex 
                       ? 'bg-yellow-400' 
                       : 'bg-white bg-opacity-30'

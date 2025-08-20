@@ -1,19 +1,19 @@
-/* SUIT Variable 폰트 import */
-@import url('https://cdn.jsdelivr.net/gh/sunn-us/SUIT@latest/fonts/variable/woff2/SUIT-Variable.css');
+/* Pretendard 폰트 import */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
 
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --font-suit: 'SUIT Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  --font-pretendard: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-suit);
-  --font-mono: var(--font-suit);
+  --font-sans: var(--font-pretendard);
+  --font-mono: var(--font-pretendard);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,15 +24,19 @@
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-suit);
+  font-family: var(--font-pretendard);
   margin: 0;
   padding: 0;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 /* Safe Area 지원 */
@@ -41,15 +45,34 @@ body {
     padding-left: max(0px, env(safe-area-inset-left));
     padding-right: max(0px, env(safe-area-inset-right));
     padding-top: max(0px, env(safe-area-inset-top));
-    padding-bottom: max(0px, env(safe-area-inset-bottom));
+    padding-bottom: 0px;
+    background-color: #ffffff;
+  }
+  
+  /* Safe Area 영역 배경색 설정 */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ffffff;
+    z-index: -1;
   }
 }
 
 /* 모바일 최적화 */
-html, body {
+html {
   height: 100%;
   width: 100%;
-  background-color: #000000;
+  background-color: #ffffff;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  background-color: #ffffff;
   /* 스크롤바 숨기기 */
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */

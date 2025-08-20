@@ -14,6 +14,30 @@ import CommonActionSheet from "@/components/CommonActionSheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/common/Toast";
 
+// 상대적 시간 표시 함수
+const getRelativeTime = (dateString: string): string => {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) {
+    return `${diffInSeconds}초 전`;
+  }
+
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes}분 전`;
+  }
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `${diffInHours}시간 전`;
+  }
+
+  // 24시간 이상 지난 경우 날짜로 표시
+  return date.toLocaleDateString('ko-KR');
+};
+
 function BoardListContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -99,20 +123,25 @@ function BoardListContent() {
   }, [eventId, type, hasNext, loadingMore, cursor]);
 
   // 스크롤 감지
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
   const handleScroll = useCallback(() => {
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const windowHeight = window.innerHeight;
-    const documentHeight = document.documentElement.scrollHeight;
+    if (!scrollContainerRef.current) return;
     
-    // 스크롤이 페이지 하단 200px 이내에 도달했을 때 추가 로딩
-    if (scrollTop + windowHeight >= documentHeight - 200) {
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    
+    // 스크롤이 컨테이너 하단 200px 이내에 도달했을 때 추가 로딩
+    if (scrollTop + clientHeight >= scrollHeight - 200) {
       loadMore();
     }
   }, [loadMore]);
 
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
+      return () => scrollContainer.removeEventListener('scroll', handleScroll);
+    }
   }, [handleScroll]);
 
   const handlePostClick = (post: BoardItem) => {
@@ -214,7 +243,6 @@ function BoardListContent() {
     }
   };
 
-
   // 페이지 제목과 빈 상태 메시지
   const pageTitle = type === 'notice' ? '공지사항' : '커뮤니티';
   const emptyMessage = type === 'notice' 
@@ -223,7 +251,7 @@ function BoardListContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white">
+      <div className="min-h-screen bg-white">
         <CommonNavigationBar 
           title={pageTitle}
           leftButton={
@@ -237,9 +265,9 @@ function BoardListContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
-          backgroundColor="black"
+          backgroundColor="white"
           backgroundOpacity={1}
-          textColor="text-white"
+          textColor="text-black"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-lg">로딩 중...</div>
@@ -250,12 +278,12 @@ function BoardListContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black text-white">
+      <div className="min-h-screen bg-white text-black">
         <CommonNavigationBar 
           title={pageTitle}
           leftButton={
             <svg
-              className="w-6 h-6 text-white"
+              className="w-6 h-6 text-black"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -264,9 +292,9 @@ function BoardListContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
-          backgroundColor="black"
+          backgroundColor="white"
           backgroundOpacity={1}
-          textColor="text-white"
+          textColor="text-black"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-lg text-red-400">{error}</div>
@@ -276,12 +304,12 @@ function BoardListContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white text-black flex flex-col">
       <CommonNavigationBar 
         title={pageTitle}
         leftButton={
           <svg
-            className="w-6 h-6 text-white"
+            className="w-6 h-6 text-black"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -290,44 +318,66 @@ function BoardListContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
-        backgroundColor="black"
+        backgroundColor="white"
         backgroundOpacity={1}
-        textColor="text-white"
+        textColor="text-black"
+        sticky={true}
       />
       
-      {/* 정렬 드롭다운 */}
-      <div className="px-4">
-        <div className="flex justify-end mb-2">
-          <div className="relative">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'latest' | 'popular')}
-              className="px-4 py-2 text-sm font-medium text-white appearance-none cursor-pointer focus:outline-none focus:ring-0 focus:border-0 border-0 bg-black rounded-lg pr-10"
-              style={{ 
-                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
-                backgroundPosition: 'right 0.5rem center',
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: '1.5em 1.5em',
-              }}
-            >
-              <option value="latest">최신순</option>
-              <option value="popular">인기순</option>
-            </select>
+      {/* 정렬 드롭다운 (커뮤니티에서만 표시) */}
+      {type === 'free' && (
+        <div className="px-4">
+          <div className="flex justify-end mb-2">
+            <div className="relative mt-2">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'latest' | 'popular')}
+                className="py-2 text-sm font-regular text-gray-400 appearance-none cursor-pointer focus:outline-none rounded-lg pr-8"
+                style={{ 
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23000000' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 0.5rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.5em 1.5em',
+                  color: 'gray-400'
+                }}
+              >
+                <option value="latest">최신순</option>
+                <option value="popular">인기순</option>
+              </select>
+            </div>
           </div>
         </div>
+      )}
         
-        {/* 게시글 세로 리스트 */}
-        <div className="space-y-4" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          {sortedPosts.length > 0 ? (
-            sortedPosts.map((post) => (
-              <div
-                key={post.id}
-                className="rounded-xl overflow-hidden transition-all duration-300 hover:bg-white hover:bg-opacity-5 cursor-pointer"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
-                onClick={() => handlePostClick(post)}
-              >
-                <div className="p-4 h-full flex flex-col">
-                  {/* 게시글 헤더 */}
+      {/* 게시글 세로 리스트 */}
+      <div 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto scrollbar-hide" 
+        style={{ 
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}
+      >
+        <div className="space-y-2" style={{ paddingBottom: 'min(24px, env(safe-area-inset-bottom) + 24px)' }}>
+        {sortedPosts.length > 0 ? (
+          sortedPosts.map((post) => (
+            <div
+              key={post.id}
+              className={`rounded-xl overflow-hidden transition-all duration-300 cursor-pointer ${
+                type === 'notice' 
+                  ? 'bg-white hover:bg-gray-50' 
+                  : 'hover:bg-white hover:bg-opacity-5'
+              }`}
+              style={{ 
+                backgroundColor: type === 'notice' 
+                  ? 'white' 
+                  : 'rgba(255, 255, 255, 0.05)' 
+              }}
+              onClick={() => handlePostClick(post)}
+            >
+              <div className="px-6 py-2 h-full flex flex-col">
+                {/* 게시글 헤더 (커뮤니티에서만 표시) */}
+                {type !== 'notice' && (
                   <PostHeader 
                     nickname={post.user?.nickname}
                     profileImageUrl={post.user?.profileImageUrl || undefined}
@@ -337,110 +387,131 @@ function BoardListContent() {
                     isNotice={type === 'notice'}
                     onMoreClick={() => handleMoreClick(post)}
                   />
-                  
-                  {/* 공지사항인 경우 제목과 내용 표시 */}
-                  {type === 'notice' ? (
-                    <div className="flex-1">
-                      <h3 className="text-white font-bold text-lg mb-1 line-clamp-2">
-                        {post.title || '제목 없음'}
-                      </h3>
-                      <p className="text-sm text-white whitespace-pre-wrap" style={{ opacity: 0.8 }}>
-                        {post.content || '내용 없음'}
-                      </p>
+                )}
+                
+                {/* 공지사항인 경우 EventNotice 스타일 적용 */}
+                {type === 'notice' ? (
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-3">
+                      <img 
+                        src="/images/icon_notice.png" 
+                        alt="공지사항 아이콘" 
+                        className="w-8 h-8 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                      <span className="text-xs text-gray-500 font-regular">
+                        {post.createdAt ? getRelativeTime(post.createdAt) : ''}
+                      </span>
                     </div>
-                  ) : (
-                    /* 커뮤니티인 경우 내용과 이미지 표시 */
-                    <div className="flex-1 flex space-x-3">
-                      <div className="flex-1 min-w-0">
-                        {post.content && (
-                          <div className="text-md text-white font-regular line-clamp-3 whitespace-pre-wrap">
-                            {post.content}
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* 이미지가 있는 경우 */}
-                      {post.images && post.images.length > 0 && (
-                        <div className="flex-shrink-0">
-                          <div className="w-20 h-20 rounded-lg overflow-hidden cursor-pointer" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
-                            <Image 
-                              src={post.images[0]} 
-                              alt="게시글 이미지"
-                              width={80}
-                              height={80}
-                              className="w-full h-full object-cover"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleImageClick(post, 0);
-                              }}
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                              }}
-                            />
-                            <div className="w-full h-full flex items-center justify-center hidden">
-                              <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            </div>
-                          </div>
+                    
+                    <h3 className="text-black font-bold text-lg mb-1 line-clamp-2">
+                      {post.title || '제목 없음'}
+                    </h3>
+                    
+                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {post.content || '내용 없음'}
+                    </p>
+                  </div>
+                ) : (
+                  /* 커뮤니티인 경우 내용과 이미지 표시 */
+                  <div className="flex-1 flex space-x-3">
+                    <div className="flex-1 min-w-0">
+                      {post.content && (
+                        <div className="text-md text-black font-regular line-clamp-3 whitespace-pre-wrap">
+                          {post.content}
                         </div>
                       )}
                     </div>
-                  )}
-                  
-                  {/* 액션 버튼 - 고정 높이 */}
-                  <div className="mt-auto pt-3">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center">
-                        <svg className="w-4 h-4 text-white mr-1" style={{ opacity: 0.6 }} fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                        </svg>
-                        <span className="text-xs font-regular text-white" style={{ opacity: 0.8 }}>
-                          {post.likeCount || 0}
-                        </span>
+                    
+                    {/* 이미지가 있는 경우 */}
+                    {post.images && post.images.length > 0 && (
+                      <div className="flex-shrink-0">
+                        <div className="w-20 h-20 rounded-lg overflow-hidden cursor-pointer" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                          <Image 
+                            src={post.images[0]} 
+                            alt="게시글 이미지"
+                            width={80}
+                            height={80}
+                            className="w-full h-full object-cover"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleImageClick(post, 0);
+                            }}
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                          <div className="w-full h-full flex items-center justify-center hidden">
+                            <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                        </div>
                       </div>
-                      
-                      <div className="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white mr-1" style={{ opacity: 0.6 }}>
-                          <path fillRule="evenodd" d="M5.337 21.718a6.707 6.707 0 0 1-.533-.074.75.75 0 0 1-.44-1.223 3.73 3.73 0 0 0 .814-1.686c.023-.115-.022-.317-.254-.543C3.274 16.587 2.25 14.41 2.25 12c0-5.03 4.428-9 9.75-9s9.75 3.97 9.75 9c0 5.03-4.428 9-9.75 9-.833 0-1.643-.097-2.417-.279a6.721 6.721 0 0 1-4.246.997Z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-xs font-regular text-white" style={{ opacity: 0.8 }}>
-                          {post.commentCount || 0}
-                        </span>
-                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* 액션 버튼 - 고정 높이 */}
+                <div className="mt-auto pt-3">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center">
+                      <svg 
+                        className={`w-4 h-4 mr-1 ${post.isLiked ? 'text-purple-600' : 'text-black'}`} 
+                        style={{ opacity: post.isLiked ? 1 : 0.6 }} 
+                        fill="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <span className={`text-xs font-regular ${post.isLiked ? 'text-purple-600' : 'text-black'}`} style={{ opacity: post.isLiked ? 1 : 0.8 }}>
+                        {post.likeCount || 0}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white mr-1" style={{ opacity: 0.6 }}>
+                        <path fillRule="evenodd" d="M5.337 21.718a6.707 6.707 0 0 1-.533-.074.75.75 0 0 1-.44-1.223 3.73 3.73 0 0 0 .814-1.686c.023-.115-.022-.317-.254-.543C3.274 16.587 2.25 14.41 2.25 12c0-5.03 4.428-9 9.75-9s9.75 3.97 9.75 9c0 5.03-4.428 9-9.75 9-.833 0-1.643-.097-2.417-.279a6.721 6.721 0 0 1-4.246.997Z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-xs font-regular text-white" style={{ opacity: 0.8 }}>
+                        {post.commentCount || 0}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-white text-lg mb-2">{emptyMessage.title}</p>
-              <p className="text-white text-sm" style={{ opacity: 0.6 }}>
-                {emptyMessage.subtitle}
-              </p>
             </div>
-          )}
-          
-          {/* 추가 로딩 인디케이터 */}
-          {loadingMore && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
-              <p className="text-white text-sm" style={{ opacity: 0.6 }}>
-                더 많은 게시글을 불러오는 중...
-              </p>
-            </div>
-          )}
-          
-          {/* 더 이상 데이터가 없을 때 */}
-          {!hasNext && posts.length > 0 && (
-            <div className="text-center py-8">
-              <p className="text-white text-sm" style={{ opacity: 0.6 }}>
-                모든 게시글을 불러왔습니다
-              </p>
-            </div>
-          )}
+          ))
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-white text-lg mb-2">{emptyMessage.title}</p>
+            <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+              {emptyMessage.subtitle}
+            </p>
+          </div>
+        )}
+        
+        {/* 추가 로딩 인디케이터 */}
+        {loadingMore && (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
+            <p className="text-black text-sm" style={{ opacity: 0.6 }}>
+              더 많은 게시글을 불러오는 중...
+            </p>
+          </div>
+        )}
+        
+        {/* 더 이상 데이터가 없을 때 */}
+        {!hasNext && posts.length > 0 && (
+          <div className="text-center py-8">
+            <p className="text-black text-sm" style={{ opacity: 0.6 }}>
+              모든 게시글을 불러왔습니다
+            </p>
+          </div>
+        )}
         </div>
       </div>
 
@@ -500,8 +571,8 @@ function BoardListContent() {
           onClick={handleWriteClick}
           className="fixed bottom-6 right-6 w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 z-50"
           style={{ 
-            bottom: 'max(24px, env(safe-area-inset-bottom) + 12px)',
-            right: 'max(24px, env(safe-area-inset-right) + 12px)'
+            bottom: 'max(24px, env(safe-area-inset-bottom) + 24px)',
+            right: 'max(24px, env(safe-area-inset-right) + 24px)'
           }}
         >
           <svg

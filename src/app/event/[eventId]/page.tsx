@@ -21,6 +21,7 @@ import EventHelp from "@/components/event/EventHelp";
 import EventAdvertisements from "@/components/event/EventAdvertisements";
 import EventChat from "@/components/event/EventChat";
 import { useSimpleNavigation } from "@/utils/navigation";
+import EventSection from "@/components/event/EventSection";
 
 function EventPageContent() {
   const { navigate, goBack } = useSimpleNavigation();
@@ -186,7 +187,7 @@ function EventPageContent() {
   // 인증 상태 확인 중이거나 인증되지 않은 경우 로딩 표시
   if (authLoading || !isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-sm" style={{ opacity: 0.7 }}>
@@ -200,7 +201,7 @@ function EventPageContent() {
   // 로딩 상태 표시
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-sm" style={{ opacity: 0.7 }}>이벤트 정보를 불러오는 중...</p>
@@ -212,7 +213,7 @@ function EventPageContent() {
   // 에러 상태 표시
   if (error) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
         <div className="text-center px-4">
           <div className="text-red-400 text-lg mb-4">⚠️</div>
           <p className="text-white text-lg mb-4">{error}</p>
@@ -230,7 +231,7 @@ function EventPageContent() {
   // 이벤트 데이터가 없는 경우
   if (!featuredData) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
         <div className="text-center px-4">
           <p className="text-white text-lg mb-4">이벤트 정보를 찾을 수 없습니다.</p>
           <button
@@ -245,7 +246,7 @@ function EventPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white relative">
+    <div className="min-h-screen bg-gray-100 text-black relative">
       {/* 메인 컨텐츠 - 스크롤 가능 */}
       <main 
         className="w-full min-h-screen overflow-y-auto"
@@ -269,20 +270,26 @@ function EventPageContent() {
 
         {/* 공지사항 섹션 */}
         {featuredData.notices && (
-          <EventNotice 
-            notices={featuredData.notices} 
-            showViewAllButton={true}
-            onViewAllClick={() => {
-              navigate(`/board/list?eventId=${featuredData.event.id || 'default-event'}&type=notice`);
-            }}
-          />
-        )}
+            <EventSection
+              title="공지사항"
+              subtitle="이벤트 관련 중요한 공지사항을 확인해보세요"
+              rightButton={{
+                text: "전체보기",
+                onClick: () => {
+                  navigate(`/board/list?eventId=${featuredData.event.id || 'default-event'}&type=notice`);
+                }
+              }}
+            > 
+            <EventNotice notices={featuredData.notices} />
+          </EventSection>
+        )}  
+
 
         {/* 실시간 채팅 섹션 */}
-        <EventChat 
+        {/* <EventChat 
           eventId={featuredData.event.id || 'default-event'}
           showViewAllButton={false}
-        />
+        /> */}
 
         {/* 이벤트 경품 섹션 */}
         {featuredData.raffle && (
@@ -292,23 +299,15 @@ function EventPageContent() {
           />
         )}  
 
-        {/* 쿠폰 섹션 */}
-        {featuredData.coupons && (
-          <EventCoupon 
-            coupons={featuredData.coupons} 
-            eventId={featuredData.event.id || 'default-event'}
-          />
-        )}
-
         {/* 광고 섹션 1 */}
-        {featuredData.advertisements && featuredData.advertisements.length > 0 && (
+        {/* {featuredData.advertisements && featuredData.advertisements.length > 0 && (
           <EventAdvertisements 
             advertisements={[featuredData.advertisements[0]]} 
           />
-        )}
+        )} */}
 
         {/* 참여자 섹션 */}
-        {featuredData.participants && (
+        {/* {featuredData.participants && (
           <EventParticipants 
             participants={featuredData.participants}
             showViewAllButton={true}
@@ -316,40 +315,62 @@ function EventPageContent() {
               navigate(`/participants/list?eventId=${featuredData.event.id || 'default-event'}`);
             }}
           />
-        )}
+        )} */}
 
         {/* 타임라인 섹션 */}
         {featuredData.timelines && (
-          <EventTimeline 
-            timelines={featuredData.timelines} 
-            showViewAllButton={true}
-            onViewAllClick={() => {
-              navigate(`/timeline/list?eventId=${featuredData.event.id || 'default-event'}`);
+          <EventSection
+            title="타임라인"
+            subtitle="이벤트 일정을 확인해보세요"
+            rightButton={{
+              text: "전체보기",
+              onClick: () => {
+                navigate(`/timeline/list?eventId=${featuredData.event.id || 'default-event'}`);
+              }
             }}
-          />
+          > 
+            <EventTimeline 
+              timelines={featuredData.timelines} 
+            />
+          </EventSection>
         )}
 
         {/* 광고 섹션 2 */}
-        {featuredData.advertisements && featuredData.advertisements.length > 1 && (
+        {/* {featuredData.advertisements && featuredData.advertisements.length > 1 && (
           <EventAdvertisements 
             advertisements={[featuredData.advertisements[1]]} 
           />
-        )}
+        )} */}
 
         {/* 푸드트럭 섹션 */}
         {featuredData.vendors && (
-          <EventFoodTrucks 
-            vendors={featuredData.vendors} 
-            showViewAllButton={true}
-            eventId={featuredData.event.id || 'default-event'}
-            onViewAllClick={() => {
-              navigate(`/foodtrucks/list?eventId=${featuredData.event.id || 'default-event'}`);
-            }}
-          />
+          <EventSection
+            title="푸드트럭"
+            subtitle="이벤트 장소에서 푸드트럭을 확인해보세요"
+          >     
+            <EventFoodTrucks 
+              vendors={featuredData.vendors} 
+              eventId={featuredData.event.id || 'default-event'}
+            />
+          </EventSection>
         )}
 
+        {/* 쿠폰 섹션 */}
+        {featuredData.coupons && (
+          <EventSection
+            title="쿠폰"
+            subtitle="이벤트 참여자만을 위한 특별한 쿠폰을 확인해보세요"
+          > 
+          <EventCoupon 
+            coupons={featuredData.coupons} 
+            eventId={featuredData.event.id || 'default-event'}
+          />
+          </EventSection>
+        )}
+
+
         {/* 커뮤니티 섹션 */}
-        {featuredData.freeBoard && (
+        {/* {featuredData.freeBoard && (
           <EventCommunity 
             freeBoard={featuredData.freeBoard} 
             showViewAllButton={true}
@@ -357,24 +378,30 @@ function EventPageContent() {
               navigate(`/board/list?eventId=${featuredData.event.id || 'default-event'}`);
             }}
           />
-        )}
+        )} */}
 
         {/* 도움말 섹션 */}
+        <EventSection
+          title="도움말 & 문의"
+          subtitle="이벤트 관련 중요한 도움말을 확인해보세요"
+        > 
         <EventHelp helpData={{
           contact: featuredData.contact,
           faqs: featuredData.faqs,
           emergencyInfo: featuredData.emergencyInfo
         }} />
+        </EventSection>
       </main>
 
       {/* 네비게이션바 - 오버레이 */}
       <div className="absolute top-0 left-0 right-0 z-50">
         <CommonNavigationBar
+          height="44px"
           rightButton={renderProfileButton()}
           onRightClick={handleProfileClick}
           backgroundColor="transparent"
           backgroundOpacity={1}
-          textColor="text-white"
+          textColor="text-black"
         />
       </div>
     </div>
@@ -384,7 +411,7 @@ function EventPageContent() {
 // 로딩 컴포넌트
 function EventPageLoading() {
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+    <div className="min-h-screen bg-white text-black flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
         <p className="text-sm" style={{ opacity: 0.7 }}>이벤트 페이지를 불러오는 중...</p>

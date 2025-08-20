@@ -3,12 +3,9 @@
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { NoticeItem } from "@/types/api";
-import EventSection from "./EventSection";
 
 interface EventNoticeProps {
   notices: NoticeItem[];
-  showViewAllButton?: boolean;
-  onViewAllClick?: () => void;
 }
 
 // 상대적 시간 표시 함수
@@ -35,15 +32,10 @@ const getRelativeTime = (dateString: string): string => {
   return date.toLocaleDateString('ko-KR');
 };
 
-export default function EventNotice({ 
-  notices, 
-  showViewAllButton = false,
-  onViewAllClick 
-}: EventNoticeProps) {
+export default function EventNotice({ notices }: EventNoticeProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // 최대 3개까지만 표시하고 id가 있는 것만 필터링
   const displayNotices = notices
     .filter(notice => notice.id)
     .slice(0, 3);
@@ -53,56 +45,55 @@ export default function EventNotice({
   }
 
   return (
-    <EventSection
-      title="공지사항"
-      subtitle="이벤트 관련 중요한 공지사항을 확인해보세요"
-      rightButton={showViewAllButton ? {
-        text: "전체보기",
-        onClick: onViewAllClick || (() => {
-          console.log('공지사항 전체보기 클릭');
-        })
-      } : undefined}
-    >
-      {/* 공지사항 캐로셀 */}
-      <div className="relative">
-        {/* 스크롤 컨테이너 */}
-        <div
-          ref={scrollContainerRef}
-          className="flex space-x-4 overflow-x-auto scrollbar-hide"
-          style={{ scrollSnapType: 'x mandatory' }}
-        >
-          {displayNotices.map((notice) => (
-            <div
-              key={notice.id}
-              className="flex-shrink-0 w-80 rounded-xl p-4 transition-all duration-300 cursor-pointer hover:bg-white hover:bg-opacity-10"
-              style={{ 
-                scrollSnapAlign: 'start',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)'
-              }}
-              onClick={() => router.push(`/board/${notice.id}?type=notice&eventId=${notice.eventId || 'default-event'}`)}
-            >
-              {/* 공지사항 정보 */}
-              <div className="space-y-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-purple-600 font-medium">공지사항</span>
-                  <span className="text-sm text-white" style={{ opacity: 0.6 }}>
-                    {notice.createdAt ? getRelativeTime(notice.createdAt) : ''}
-                  </span>
-                </div>
-                
-                <h3 className="text-white font-bold text-lg line-clamp-2 mt-3 mb-1">
-                  {notice.title || '제목 없음'}
-                </h3>
-                
-                <p className="text-sm text-white mb-2" style={{ opacity: 0.8 }}>
-                  {notice.content || '내용 없음'}
-                </p>
-
+    <div className="relative w-full bg-gray-100 mb-12">
+      {/* 스크롤 컨테이너 */}
+      <div
+        ref={scrollContainerRef}
+        className="flex space-x-4 overflow-x-auto scrollbar-hide"
+        style={{ 
+          paddingLeft: '16px',
+          paddingRight: '16px',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}
+      >
+        {displayNotices.map((notice) => (
+          <div
+            key={notice.id}
+            className="flex-shrink-0 w-80 rounded-xl p-4 cursor-pointer bg-white"
+            style={{ 
+              scrollSnapAlign: 'start',
+            }}
+            onClick={() => router.push(`/board/${notice.id}?type=notice&eventId=${notice.eventId || 'default-event'}`)}
+          >
+            {/* 공지사항 정보 */}
+            <div>
+              <div className="flex items-center justify-between">
+                <img 
+                  src="/images/icon_notice.png" 
+                  alt="공지사항 아이콘" 
+                  className="w-8 h-8 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+                <span className="text-xs text-gray-500 font-regular">
+                  {notice.createdAt ? getRelativeTime(notice.createdAt) : ''}
+                </span>
               </div>
+              
+              <h3 className="text-black font-bold text-lg mt-3 mb-1">
+                {notice.title || '제목 없음'}
+              </h3>
+              
+              <p className="text-sm text-gray-700 mb-2 leading-relaxed whitespace-pre-wrap">
+                {notice.content || '내용 없음'}
+              </p>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
-    </EventSection>
+    </div>
   );
 } 

@@ -1,83 +1,38 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
-import CommonProfileView from "@/components/common/CommonProfileView";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSimpleNavigation } from "@/utils/navigation";
-import NotificationPermission from "@/components/common/NotificationPermission";
-import EventCarousel from "@/components/common/EventCarousel";
-import EndedEventCarousel from "@/components/common/EndedEventCarousel";
+import { getUserProfile } from "@/lib/api";
+import { UserItem } from "@/types/api";
 
 export default function HomePage() {
   const { navigate } = useSimpleNavigation();
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
+  const [userProfile, setUserProfile] = useState<UserItem | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
 
-  // 메인 페이지 진입 시 히스토리에 추가
+  // 사용자 프로필 정보 가져오기
   useEffect(() => {
-    // 브라우저 히스토리만 사용하므로 별도 관리 불필요
-  }, []);
+    const fetchUserProfile = async () => {
+      if (isAuthenticated && !userProfile && !profileLoading) {
+        setProfileLoading(true);
+        try {
+          const result = await getUserProfile();
+          if (result.success && result.data) {
+            setUserProfile(result.data);
+          }
+        } catch (error) {
+          console.error('프로필 정보 가져오기 실패:', error);
+        } finally {
+          setProfileLoading(false);
+        }
+      }
+    };
 
-  const handleProfileClick = () => {
-    if (isAuthenticated && user) {
-      console.log("프로필 버튼 클릭 - 프로필 페이지로 이동");
-      navigate("/profile");
-    } else {
-      console.log("프로필 버튼 클릭 - 로그인 페이지로 이동");
-      navigate("/sign");
-    }
-  };
-
-  const handleEntryClick = () => {
-    console.log("입장하기 버튼 클릭");
-    
-    // 로그인 상태 확인
-    if (!isAuthenticated || !user) {
-      console.log("로그인이 필요합니다 - 로그인 페이지로 이동");
-      navigate("/sign");
-      return;
-    }
-    
-    console.log("로그인된 사용자 - QR 페이지로 이동");
-    navigate("/qr");
-  };
-
-  const handleEventClick = (eventId: string) => {
-    console.log("이벤트 클릭:", eventId);
-    navigate(`/event/${eventId}`);
-  };
-
-  // 로그인 상태에 따른 프로필 버튼 렌더링
-  const renderProfileButton = () => {
-    if (isAuthenticated && user) {
-      // 로그인된 경우: CommonProfileView 사용
-      return (
-        <CommonProfileView
-          profileImageUrl={user.profileImageUrl}
-          nickname={user.nickname}
-          size="md"
-          showBorder={true}
-          showHover={true}
-        />
-      );
-    } else {
-      // 로그인되지 않은 경우: 투명 배경에 하얀색 보더
-      return (
-        <div 
-          className="rounded-lg px-4 py-1 transition-colors hover:bg-white hover:bg-opacity-10"
-          style={{ 
-            border: '1px solid rgba(255, 255, 255, 0.6)',
-            backgroundColor: 'transparent'
-          }}
-        >
-          <span className="text-white text-sm font-medium">
-            로그인
-          </span>
-        </div>
-      );
-    }
-  };
+    fetchUserProfile();
+  }, [isAuthenticated, userProfile, profileLoading]);
 
   // 인증 로딩 중일 때 로딩 화면 표시
   if (authLoading) {
@@ -92,71 +47,102 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-black text-white scrollbar-hide">
-      {/* 백그라운드 이미지 - 전체 화면 */}
-      <div className="fixed inset-0 w-full h-full blur-xl">
-        <Image
-          src="/images/bg_entrance.png"
-          alt="Background"
-          fill
-          className="object-cover"
-          priority
-          sizes="100vw"
-        />
-      </div>
-
-      {/* 딤 뷰 */}
-      <div className="fixed inset-0 bg-black" style={{ opacity: 0.6 }}></div>
-
-      {/* 컨텐츠 레이어 */}
-      <div className="relative z-10 w-full min-h-screen flex justify-center scrollbar-hide">
-        {/* 메인 컨텐츠 컨테이너 */}
-        <div className="w-full max-w-md lg:max-w-2xl xl:max-w-4xl">
-          {/* 네비게이션바 */}
-          <CommonNavigationBar
-            leftButton={<NotificationPermission compact={true} />}
-            rightButton={renderProfileButton()}
-            onRightClick={handleProfileClick}
-            backgroundColor="transparent"
-            backgroundOpacity={1}
-            textColor="text-white"
-            sticky={false}
-          />
-
-          {/* 메인 컨텐츠 */}
-          <main className="w-full pb-8 scrollbar-hide">
-            {/* 히어로 섹션 */}
-            <section className="pt-8 lg:pt-12 pb-6 lg:pb-8 mb-4 lg:mb-6">
-              <div className="px-4 lg:px-6">
-                <img 
-                  src="/images/img_logo.png" 
-                  alt="HENCE Beta" 
-                  className="h-8 lg:h-12 mb-3 lg:mb-4"
-                  style={{ maxWidth: '300px' }}
-                />
-                <p className="text-lg lg:text-xl text-white text-left" style={{ opacity: 0.6 }}>
-                  이벤트의 시작과 끝.
-                </p>
-              </div>
-            </section>
-            
-            {/* 이벤트 캐러셀 */}
-            <section className="mb-8 lg:mb-12">
-              <EventCarousel 
-                onEventClick={handleEventClick} 
-                onEntryClick={handleEntryClick}
+    <div className="h-screen w-full relative overflow-hidden" style={{ height: '100dvh' }}>
+      {/* 백그라운드 그라데이션 */}
+      <div 
+        className="fixed inset-0 w-full h-full"
+        style={{
+          backgroundImage: 'url(/images/bg_entrance.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      />
+      
+      {/* 검은색 블러 뷰 */}
+      <div 
+        className="fixed inset-0 w-full h-full"
+        style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.6)'
+        }}
+      />
+      
+      {/* 메인 컨텐츠 */}
+      <main className="w-full relative z-10 flex flex-col h-full">
+        <CommonNavigationBar
+        backgroundColor="transparent"
+        backgroundOpacity={0}
+        textColor="text-white"
+        rightButton={
+          <button 
+            className="ml-auto w-8 h-8 rounded-full flex items-center justify-center transition-colors overflow-hidden"
+            style={{
+              backgroundColor: isAuthenticated ? 'transparent' : 'rgba(255, 255, 255, 0.05)'
+            }}
+            onClick={() => navigate(isAuthenticated ? "/profile" : "/sign")}
+          >
+            {isAuthenticated && userProfile?.profileImageUrl ? (
+              <img 
+                src={userProfile.profileImageUrl} 
+                alt="프로필" 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
               />
-            </section>
-            
-            {/* 종료된 이벤트 캐러셀 */}
-            <section className="mb-8 lg:mb-16">
-              <EndedEventCarousel 
-                onEventClick={handleEventClick}
+            ) : isAuthenticated ? (
+              <img 
+                src="/images/icon_profile.png" 
+                alt="프로필 아이콘" 
+                className="w-6 h-6 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
               />
-            </section>
-          </main>
+            ) : (
+              <img 
+                src="/images/icon_profile.png" 
+                alt="프로필 아이콘" 
+                className="w-6 h-6 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            )}
+            
+            {/* 폴백: 초기 이니셜 */}
+            <div className="w-full h-full bg-white bg-opacity-20 rounded-full flex items-center justify-center hidden">
+              <span className="text-white font-bold text-sm">
+                {userProfile?.nickname ? userProfile.nickname.charAt(0).toUpperCase() : 
+                 user?.nickname ? user.nickname.charAt(0).toUpperCase() : 
+                 user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
+              </span>
+            </div>
+          </button>
+        }
+        ></CommonNavigationBar>
+
+        <div className="mt-auto"
+          style={{ paddingBottom: 'max(48px, env(safe-area-inset-bottom) + 48px)' }}>
+          <div className="text-left text-white text-3xl font-bold px-4 py-2 mb-4 leading-11"> 
+            HENCE와 함께하는<br></br>서울과학기술대학교 횃불제
+          </div>
+          <div className="w-full items-center justify-center px-12"> 
+            <button 
+              className="text-white text-md font-bold px-4 py-2 rounded-full w-full h-12"
+              style={{
+                background: 'linear-gradient(135deg,rgb(93, 0, 255), #ec4899)'
+              }}
+              onClick={() => navigate(isAuthenticated ? "/qr" : "/sign")}
+            >
+              입장하기
+            </button>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

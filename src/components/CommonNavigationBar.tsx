@@ -13,6 +13,8 @@ interface CommonNavigationBarProps {
   backgroundOpacity?: number;
   textColor?: string;
   sticky?: boolean;
+  fixedHeight?: boolean;
+  height?: string;
 }
 
 export default function CommonNavigationBar({
@@ -25,11 +27,17 @@ export default function CommonNavigationBar({
   backgroundOpacity = 100,
   textColor = "text-white",
   sticky = true,
+  fixedHeight = false,
+  height = "50px",
 }: CommonNavigationBarProps) {
   const router = useRouter();
   return (
     <nav 
-      className={`bg-${backgroundColor} bg-opacity-${backgroundOpacity} border-${backgroundColor} ${sticky ? 'sticky top-0 z-50 h-[50px]' : ''}`}
+      className={`bg-${backgroundColor} bg-opacity-${backgroundOpacity} border-${backgroundColor} ${sticky ? 'sticky top-0 z-50' : ''}`}
+      style={{
+        height: fixedHeight ? height : 'auto',
+        minHeight: fixedHeight ? height : '44px'
+      }}
     >
       <div className="flex items-center justify-between h-full px-2">
         {/* 왼쪽 버튼 */}
@@ -48,7 +56,7 @@ export default function CommonNavigationBar({
 
         {/* 가운데 타이틀 */}
         <div className="flex-1 text-center">
-          <h1 className={`text-lg font-semibold ${textColor}`}>{title}</h1>
+          <h1 className={`text-md font-semibold ${textColor} text-black`}>{title}</h1>
         </div>
 
         {/* 오른쪽 버튼 */}
@@ -56,7 +64,7 @@ export default function CommonNavigationBar({
           {rightButton ? (
             <button
               onClick={onRightClick}
-              className={`rounded-lg hover:bg-${backgroundColor} hover:bg-opacity-20 active:bg-opacity-30 transition-colors`}
+              className={`rounded-sm hover:bg-${backgroundColor} hover:bg-opacity-20 active:bg-opacity-30 transition-colors`}
             >
               {rightButton}
             </button>
