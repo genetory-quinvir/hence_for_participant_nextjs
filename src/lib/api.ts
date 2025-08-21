@@ -1402,90 +1402,27 @@ export async function updateProfile(userId: string, data: {
       return { success: false, error: '닉네임을 입력해주세요.', };
     }
     
-    // 서버가 기대할 수 있는 다양한 형식 시도
-    const attempts = [
-      // 1. 기본 형식
-      {
-        url: `${API_BASE_URL}/users/${userId}/profile`,
-        body: JSON.stringify({ nickname: data.nickname.trim() }),
-        name: '기본 형식'
-      },
-      // 2. name 필드 사용
-      {
-        url: `${API_BASE_URL}/users/${userId}/profile`,
-        body: JSON.stringify({ name: data.nickname.trim() }),
-        name: 'name 필드'
-      },
-      // 3. 전체 사용자 객체
-      {
-        url: `${API_BASE_URL}/users/${userId}/profile`,
-        body: JSON.stringify({ 
-          nickname: data.nickname.trim(),
-          email: '', // 빈 값으로 설정
-          profileImageUrl: ''
-        }),
-        name: '전체 객체'
-      },
-      // 4. FormData 형식
-      {
-        url: `${API_BASE_URL}/users/${userId}/profile`,
-        body: (() => {
-          const formData = new FormData();
-          formData.append('nickname', data.nickname.trim());
-          return formData;
-        })(),
-        headers: {},
-        name: 'FormData'
-      },
-      // 5. 다른 엔드포인트 시도
-      {
-        url: `${API_BASE_URL}/users/${userId}`,
-        body: JSON.stringify({ nickname: data.nickname.trim() }),
-        name: 'users/{id} 엔드포인트'
-      },
-      // 6. auth 엔드포인트 시도
-      {
-        url: `${API_BASE_URL}/auth/profile`,
-        body: JSON.stringify({ nickname: data.nickname.trim() }),
-        name: 'auth/profile 엔드포인트'
-      }
-    ];
+    // URL 인코딩된 폼 데이터 생성
+    const formData = new URLSearchParams();
+    formData.append('nickname', data.nickname.trim());
     
-    for (const attempt of attempts) {
-      console.log(`🔄 ${attempt.name} 시도 중...`);
-      
-      try {
-        const result = await apiRequest<any>(attempt.url, {
-          method: 'PATCH',
-          body: attempt.body,
-          headers: attempt.headers || {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        console.log(`📥 ${attempt.name} 응답:`, result);
-        
-        if (result.success) {
-          logger.info(`✅ 프로필 변경 성공 (${attempt.name})`, { userId });
-          console.log(`✅ 프로필 변경 성공 (${attempt.name}):`, result.data);
-          return { success: true, data: result.data, };
-        } else if (result.error?.includes('422')) {
-          console.log(`❌ ${attempt.name} - 422 에러, 다음 방법 시도...`);
-          continue;
-        } else {
-          console.log(`❌ ${attempt.name} - 다른 에러:`, result.error);
-          continue;
-        }
-      } catch (error) {
-        console.log(`💥 ${attempt.name} - 예외 발생:`, error);
-        continue;
-      }
+    const result = await apiRequest<any>(`${API_BASE_URL}/users/${userId}/profile`, {
+      method: 'PATCH',
+      body: formData.toString(),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+    
+    console.log('📥 updateProfile 응답:', result);
+    
+    if (result.success) {
+      logger.info('✅ 프로필 변경 성공', { userId });
+      return { success: true, data: result.data };
+    } else {
+      logger.error('❌ 프로필 변경 실패', { userId, error: result.error });
+      return { success: false, error: result.error || '프로필 변경에 실패했습니다.' };
     }
-    
-    // 모든 시도가 실패한 경우
-    logger.error('❌ 모든 프로필 변경 시도 실패', { userId });
-    console.error('❌ 모든 프로필 변경 시도 실패');
-    return { success: false, error: '프로필 변경에 실패했습니다. 서버 설정을 확인해주세요.', };
     
   } catch (error) {
     console.error('💥 updateProfile API 오류:', error);
@@ -1493,6 +1430,105 @@ export async function updateProfile(userId: string, data: {
     return { success: false, error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.', };
   }
 }
+
+// 프로필 이미지 변경 API
+export async function updateProfileImage(userId: string, imageFile: File): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    console.log('🔍 updateProfileImage API 호출 시작:', {
+      userId,
+      fileName: imageFile.name,
+      fileSize: imageFile.size,
+      fileType: imageFile.type
+    });
+    
+    if (!imageFile) {
+      console.warn('⚠️ 이미지 파일이 없음');
+      return { success: false, error: '이미지 파일을 선택해주세요.', };
+    }
+    
+    // 파일 크기 제한 (1MB)
+    if (imageFile.size > 1 * 1024 * 1024) {
+      console.warn('⚠️ 파일 크기 초과:', imageFile.size);
+      return { success: false, error: '파일 크기는 1MB 이하여야 합니다.', };
+    }
+    
+    // 직접 외부 API 호출 (CORS 우회를 위해 다른 방법 사용)
+    const formData = new FormData();
+    formData.append('profile_image', imageFile);
+    
+    // multipart/form-data는 apiRequest 래퍼를 우회하고 직접 처리
+    let accessToken = getAccessToken();
+    
+    if (!accessToken) {
+      return { success: false, error: '인증 토큰이 없습니다.' };
+    }
+
+    const makeRequest = async (token: string) => {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}/profile-image`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'accept': 'application/json',
+        },
+        body: formData,
+      });
+
+      if (response.status === 401) {
+        return { status: 401 };
+      }
+
+      if (!response.ok) {
+        let errorMessage = `API 요청에 실패했습니다. (${response.status})`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // JSON 파싱 실패 시 기본 메시지 사용
+        }
+        return { status: response.status, error: errorMessage };
+      }
+
+      const data = await response.json();
+      return { status: 200, data };
+    };
+
+    // 첫 번째 요청 시도
+    let response = await makeRequest(accessToken);
+
+    // 401 에러가 발생하면 토큰 갱신 시도
+    if (response.status === 401) {
+      console.log('🔄 프로필 이미지 업로드 - Access Token 만료, 토큰 갱신 시도...');
+      
+      const refreshResult = await refreshAccessToken();
+      
+      if (refreshResult.success && refreshResult.accessToken) {
+        console.log('✅ 프로필 이미지 업로드 - 토큰 갱신 성공, 재요청 시도...');
+        accessToken = refreshResult.accessToken;
+        response = await makeRequest(accessToken);
+      } else {
+        console.log('❌ 프로필 이미지 업로드 - 토큰 갱신 실패:', refreshResult.error);
+        return { success: false, error: '인증이 만료되었습니다. 다시 로그인해주세요.' };
+      }
+    }
+
+    // 최종 응답 처리
+    if (response.status === 200) {
+      console.log('📥 updateProfileImage 응답:', response.data);
+      logger.info('✅ 프로필 이미지 변경 성공', { userId });
+      return { success: true, data: response.data };
+    } else {
+      console.log('📥 updateProfileImage 에러:', response.error);
+      logger.error('❌ 프로필 이미지 변경 실패', { userId, error: response.error });
+      return { success: false, error: response.error || '프로필 이미지 변경에 실패했습니다.' };
+    }
+    
+  } catch (error) {
+    console.error('💥 updateProfileImage API 오류:', error);
+    return { success: false, error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.', };
+  }
+}
+
+
 
 // 외치기 관련 API
 export const createShout = async (eventId: string, message: string): Promise<CreateShoutResponse> => {
@@ -1848,88 +1884,26 @@ export const getPostByCommentId = async (
 // 프로필 이미지 삭제 API
 export async function deleteProfileImage(userId: string): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
-    console.log('🔍 프로필 이미지 삭제 시작:', { userId });
-
-    // Access Token 확인
-    const accessToken = getAccessToken();
-    console.log('🔑 Access Token 상태:', {
-      hasToken: !!accessToken,
-      tokenLength: accessToken?.length || 0
-    });
-
-    if (!accessToken) {
-      console.error('❌ Access Token 없음');
-      return {
-        success: false,
-        error: '인증 토큰이 없습니다.',
-      };
-    }
-
-    console.log('🔄 프로필 이미지 삭제 API 호출...');
-
-    const response = await fetch(`${API_BASE_URL}/users/${userId}/profile-image`, {
+    console.log('🔍 deleteProfileImage API 호출 시작:', { userId });
+    
+    // 직접 외부 API 호출
+    const result = await apiRequest<any>(`${API_BASE_URL}/users/${userId}/profile-image`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'accept': 'application/json',
-      },
     });
-
-    console.log('📥 응답 상태:', response.status, response.statusText);
-    console.log('📥 응답 헤더:', Object.fromEntries(response.headers.entries()));
-
-    if (!response.ok) {
-      let errorMessage = `API 요청에 실패했습니다. (${response.status})`;
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-        console.log('📥 에러 응답 데이터:', errorData);
-      } catch (e) {
-        console.log('📥 에러 응답을 JSON으로 파싱할 수 없음');
-      }
-      
-      if (response.status === 401) {
-        console.log('❌ 401 에러 (인증 실패)');
-        return {
-          success: false,
-          error: '인증에 실패했습니다. 다시 로그인해주세요.',
-        };
-      } else if (response.status === 404) {
-        console.log('❌ 404 에러 (이미지가 존재하지 않음)');
-        return {
-          success: false,
-          error: '프로필 이미지가 존재하지 않습니다.',
-        };
-      } else {
-        console.log('❌ 다른 에러:', errorMessage);
-        return {
-          success: false,
-          error: errorMessage,
-        };
-      }
+    
+    console.log('📥 deleteProfileImage 응답:', result);
+    
+    if (result.success) {
+      logger.info('✅ 프로필 이미지 삭제 성공', { userId });
+      return { success: true, data: result.data };
+    } else {
+      logger.error('❌ 프로필 이미지 삭제 실패', { userId, error: result.error });
+      return { success: false, error: result.error || '프로필 이미지 삭제에 실패했습니다.' };
     }
-
-    const data = await response.json();
-    console.log('📥 성공 응답 데이터:', data);
-
-    logger.info('✅ 프로필 이미지 삭제 성공', { userId });
-    console.log('✅ 프로필 이미지 삭제 성공:', data);
-    return {
-      success: true,
-      data: data,
-    };
-
+    
   } catch (error) {
-    console.error('💥 프로필 이미지 삭제 API 오류:', error);
-    if (error instanceof Error) {
-      console.error('💥 에러 메시지:', error.message);
-      console.error('💥 에러 스택:', error.stack);
-    }
-    apiDebugger.logError(`${API_BASE_URL}/users/${userId}/profile-image`, error);
-    return {
-      success: false,
-      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
-    };
+    console.error('💥 deleteProfileImage API 오류:', error);
+    return { success: false, error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.', };
   }
 } 
 

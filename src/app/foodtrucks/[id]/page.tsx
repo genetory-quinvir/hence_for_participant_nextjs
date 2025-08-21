@@ -2,23 +2,35 @@
 
 import { useEffect, useState, Suspense, useCallback, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { VendorItem } from "@/types/api";
-import { getVendorDetail } from "@/lib/api";
+import { VendorItem, FeaturedItem, CouponItem } from "@/types/api";
+import { getVendorDetail, getFeaturedEvent, getVendorsSimple, useCoupon, getAccessToken } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useSimpleNavigation } from "@/utils/navigation";
 import { useImageGallery } from "@/hooks/useImageGallery";
 import ImageGallery from "@/components/common/ImageGallery";
+import CouponActionSheet from "@/components/CouponActionSheet";
+import { useToast } from "@/components/common/Toast";
+import { useRouter } from "next/navigation";
 
 function FoodTruckDetailContent() {
   const params = useParams();
   const { navigate, goBack } = useSimpleNavigation();
   const searchParams = useSearchParams();
   const [vendor, setVendor] = useState<VendorItem | null>(null);
+  const [featuredData, setFeaturedData] = useState<FeaturedItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showVendorSheet, setShowVendorSheet] = useState(false);
+  const [vendors, setVendors] = useState<VendorItem[]>([]);
+  const [selectedCoupon, setSelectedCoupon] = useState<CouponItem | null>(null);
+  const [selectedVendor, setSelectedVendor] = useState<VendorItem | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [usedCoupons, setUsedCoupons] = useState<Set<string>>(new Set());
   const eventId = searchParams.get('eventId') || 'default-event';
   const vendorId = params.id as string;
   const hasCalledApi = useRef(false);
+  const router = useRouter();
+  const { showToast } = useToast();
 
   // 이미지 갤러리 훅
   const { isOpen, images, initialIndex, openGallery, closeGallery } = useImageGallery();
@@ -28,7 +40,7 @@ function FoodTruckDetailContent() {
     // 브라우저 히스토리만 사용하므로 별도 관리 불필요
   }, [params.id]);
 
-  // 벤더 상세 정보 가져오기 (단순화)
+  // 벤더 상세 정보와 이벤트 정보 가져오기
   useEffect(() => {
     console.log('🔄 통합 useEffect 실행:', { 
       vendorId, 
@@ -46,35 +58,128 @@ function FoodTruckDetailContent() {
     if (vendorId && eventId) {
       hasCalledApi.current = true;
       
-      const fetchVendorDetail = async () => {
+      const fetchData = async () => {
         try {
           setLoading(true);
           setError(null);
           
           console.log('🔄 벤더 상세 정보 요청:', { eventId, vendorId });
-          const result = await getVendorDetail(eventId, vendorId);
+          const vendorResult = await getVendorDetail(eventId, vendorId);
           
-          if (result.success && result.data) {
-            setVendor(result.data);
-            console.log('✅ 벤더 상세 정보 로드 완료:', result.data);
+          if (vendorResult.success && vendorResult.data) {
+            setVendor(vendorResult.data);
+            console.log('✅ 벤더 상세 정보 로드 완료:', vendorResult.data);
           } else {
-            setError(result.error || "푸드트럭을 불러오는데 실패했습니다.");
-            console.error('❌ 벤더 상세 정보 로드 실패:', result.error);
+            setError(vendorResult.error || "푸드트럭을 불러오는데 실패했습니다.");
+            console.error('❌ 벤더 상세 정보 로드 실패:', vendorResult.error);
+            return;
+          }
+
+          // 이벤트 정보와 쿠폰 정보 가져오기
+          console.log('🔄 이벤트 정보 요청:', { eventId });
+          const eventResult = await getFeaturedEvent(eventId);
+          
+          if (eventResult.success && eventResult.featured) {
+            setFeaturedData(eventResult.featured);
+            console.log('✅ 이벤트 정보 로드 완료:', eventResult.featured);
+          } else {
+            console.error('❌ 이벤트 정보 로드 실패:', eventResult.error);
+            // 이벤트 정보 로드 실패는 치명적이지 않으므로 계속 진행
           }
         } catch (err) {
-          console.error("푸드트럭 로드 오류:", err);
+          console.error("데이터 로드 오류:", err);
           setError("푸드트럭을 불러오는데 실패했습니다.");
         } finally {
           setLoading(false);
         }
       };
       
-      fetchVendorDetail();
+      fetchData();
     }
   }, [vendorId, eventId]); // 단순한 의존성 배열
 
   const handleBackClick = () => {
     goBack();
+  };
+
+  const handleCouponUse = async (coupon: CouponItem) => {
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+      router.push('/sign');
+      return;
+    }
+
+    if (coupon.discountType === 'EXCHANGE') {
+      setSelectedCoupon(coupon);
+      setShowVendorSheet(true);
+      return;
+    }
+
+    if (coupon.discountType === 'FIXED_AMOUNT' || coupon.discountType === 'PERCENTAGE') {
+      setSelectedCoupon(coupon);
+      setCouponLoading(true);
+      
+      try {
+        const result = await getVendorsSimple(eventId, "FOOD_TRUCK");
+        
+        if (result.success && result.data) {
+          const vendorArray = Array.isArray(result.data) ? result.data : [];
+          setVendors(vendorArray);
+          
+          // 현재 푸드트럭을 찾아서 자동 선택
+          const currentVendor = vendorArray.find(v => v.id === vendorId);
+          if (currentVendor) {
+            setSelectedVendor(currentVendor);
+          }
+          
+          setShowVendorSheet(true);
+        } else if (result.error === 'AUTH_REQUIRED') {
+          showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+          router.push('/sign');
+        } else {
+          showToast(result.error || '사용 가능한 벤더를 불러오는데 실패했습니다.', 'error');
+        }
+      } catch (error) {
+        showToast('사용 가능한 벤더를 불러오는데 실패했습니다.', 'error');
+      } finally {
+        setCouponLoading(false);
+      }
+    }
+  };
+
+  const handleVendorSelect = (vendor: VendorItem) => {
+    setSelectedVendor(vendor);
+  };
+
+  const markCouponAsUsed = (couponId: string) => {
+    setUsedCoupons(prev => new Set(prev).add(couponId));
+  };
+
+  const handleUseSelectedVendor = async () => {
+    if (!selectedCoupon) return;
+    
+    setShowVendorSheet(false);
+    setCouponLoading(true);
+    
+    try {
+      const result = await useCoupon(eventId, selectedCoupon.id!, selectedVendor?.id);
+      if (result.success) {
+        showToast(selectedCoupon.discountType === 'EXCHANGE' ? '교환권이 사용되었습니다!' : '쿠폰이 사용되었습니다!', 'success');
+        markCouponAsUsed(selectedCoupon.id!);
+      } else if (result.error === 'AUTH_REQUIRED') {
+        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+        router.push('/sign');
+      } else {
+        showToast(result.error || (selectedCoupon.discountType === 'EXCHANGE' ? '교환권 사용에 실패했습니다.' : '쿠폰 사용에 실패했습니다.'), 'error');
+      }
+    } catch (error) {
+      showToast(selectedCoupon.discountType === 'EXCHANGE' ? '교환권 사용 중 오류가 발생했습니다.' : '쿠폰 사용 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setCouponLoading(false);
+      setSelectedCoupon(null);
+      setSelectedVendor(null);
+    }
   };
 
   // 푸드트럭 이미지 클릭 핸들러
@@ -141,12 +246,12 @@ function FoodTruckDetailContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white text-black flex flex-col">
       <CommonNavigationBar 
-        title='푸드트럭'
+        title={vendor.name || '푸드트럭'}
         leftButton={
           <svg
-            className="w-6 h-6 text-white"
+            className="w-6 h-6 text-black"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -155,20 +260,23 @@ function FoodTruckDetailContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
-        backgroundColor="black"
+        backgroundColor="white"
         backgroundOpacity={1}
-        textColor="text-white"
+        textColor="text-black"
+        sticky={true}
+        fixedHeight={true}
       />
       
-      <div className="px-4 py-0" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {/* 썸네일 이미지 - 상단 정방형 */}
-        <div className="mb-6">
-          <div className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer relative" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+      {/* 푸드트럭 카드 */}
+      <div className="flex-1 overflow-y-auto px-1 py-4" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="w-full rounded-xl overflow-hidden cursor-pointer flex flex-col" style={{ backgroundColor: 'white' }}>
+          {/* 썸네일 이미지 */}
+          <div className="w-full aspect-[5/3] overflow-hidden relative p-3" style={{ backgroundColor: "white" }}>
             {vendor.imageUrl ? (
               <img 
                 src={vendor.imageUrl} 
-                alt={vendor.name || '푸드트럭 이미지'}
-                className="w-full h-full object-cover"
+                alt={vendor.name || '푸드트럭 이미지'} 
+                className="w-full h-full object-cover rounded-lg"
                 onClick={handleVendorImageClick}
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
@@ -178,19 +286,8 @@ function FoodTruckDetailContent() {
             ) : vendor.thumbImageUrl ? (
               <img 
                 src={vendor.thumbImageUrl} 
-                alt={vendor.name || '푸드트럭 썸네일'}
-                className="w-full h-full object-cover"
-                onClick={handleVendorImageClick}
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                }}
-              />
-            ) : vendor.logoUrl ? (
-              <img 
-                src={vendor.logoUrl} 
-                alt={vendor.name || '푸드트럭 로고'}
-                className="w-full h-full object-cover"
+                alt={vendor.name || '푸드트럭 이미지'} 
+                className="w-full h-full object-cover rounded-lg"
                 onClick={handleVendorImageClick}
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
@@ -198,143 +295,223 @@ function FoodTruckDetailContent() {
                 }}
               />
             ) : null}
-            <svg className="w-24 h-24 text-white opacity-50 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-            </svg>
-            
-            {/* 영업중 배지 - 우측 상단 */}
-            <div className="absolute top-3 right-3">
-              <span className="px-4 py-2 rounded-full text-xs font-medium bg-purple-600 text-white">
-                {vendor.status === 'open' ? '영업중' : vendor.status === 'closed' ? '영업종료' : vendor.isActive ? '영업중' : '영업종료'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* 푸드트럭 기본 정보 */}
-        <div className="mb-6">
-          <h1 className="text-xl font-bold text-white mb-2">
-            {vendor.name || '푸드트럭'}
-          </h1>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-white text-md" style={{ opacity: 0.8 }}>
-              {vendor.category || vendor.type || '푸드트럭'}
-            </span>
-            {/* {vendor.rating && (
-              <div className="flex items-center bg-black bg-opacity-10 px-3 py-1 rounded-lg">
-                <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>
-                <span className="text-white font-bold">{vendor.rating.toFixed(1)}</span>
-                {vendor.reviewCount && (
-                  <span className="text-white text-lg ml-1" style={{ opacity: 0.7 }}>({vendor.reviewCount}개)</span>
-                )}
-              </div>
-            )} */}
-          </div>
-          {vendor.description && (
-            <p className="text-white text-md mb-4" style={{ opacity: 0.8 }}>
-              {vendor.description}
-            </p>
-          )}
-          
-          {/* 위치 */}
-          {vendor.location && (
-            <div className="flex items-center mb-2">
-              <span className="text-white text-md mr-3" style={{ opacity: 0.6 }}>
-                장소
-              </span>
-              <span className="text-white text-md" style={{ opacity: 0.9 }}>
-                {vendor.location}
-              </span>
-            </div>
-          )}
-
-          {/* 운영시간 */}
-          {vendor.operationTime && (
-            <div className="flex items-center mb-2">
-              <span className="text-white text-md mr-3" style={{ opacity: 0.6 }}>
-                운영시간
-              </span>
-              <span className="text-white text-md" style={{ opacity: 0.9 }}>
-                {vendor.operationTime}
-              </span>
-            </div>
-          )}
-
-          {/* 평균 가격 */}
-          {vendor.priceAverage && (
-            <div className="flex items-center mb-2">
-              <span className="text-white text-md mr-3" style={{ opacity: 0.6 }}>
-                가격대
-              </span>
-              <span className="text-white text-md" style={{ opacity: 0.9 }}>
-                평균 {vendor.priceAverage}
-              </span>
-            </div>
-          )}
-
-          {/* 연락처 */}
-          {vendor.contactInfo && (
-            <div className="flex items-center">
-              <svg className="w-5 h-5 text-purple-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            <div className="w-full h-full flex items-center justify-center hidden">
+              <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="text-white text-md" style={{ opacity: 0.9 }}>
-                {vendor.contactInfo}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* 메뉴 섹션 - 실제 메뉴 데이터가 있을 때만 표시 */}
-        {vendor.menus && vendor.menus.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-white mb-4">메뉴</h2>
-            <div className="space-y-3">
-              {vendor.menus.map((menu, index) => (
-                <div key={menu.id} className="rounded-xl p-4 flex items-center" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
-                  <div className="w-16 h-16 rounded-lg mr-4 flex-shrink-0 overflow-hidden cursor-pointer">
-                    {menu.thumbImageUrl ? (
-                      <img 
-                        src={menu.thumbImageUrl} 
-                        alt={menu.name || '메뉴 이미지'}
-                        className="w-full h-full object-cover"
-                        onClick={() => handleMenuImageClick(index)}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-purple-900 flex items-center justify-center">
-                        <svg className="w-8 h-8 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-white font-bold text-md mb-1">{menu.name || '메뉴명'}</h3>
-                    {menu.description && (
-                      <p className="text-white text-md" style={{ opacity: 0.7 }}>
-                        {menu.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-white font-bold text-md">
-                    ₩{menu.price?.toLocaleString() || '0'}
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
-        )}
+          
+          {/* 푸드트럭 정보 */}
+          <div className="px-4 flex-1 flex flex-col">
+            <h3 className="text-black font-bold text-lg text-left">
+              {vendor.name || '푸드트럭'}
+            </h3>
+            
+            {vendor.description && (
+              <p className="text-sm text-black text-left mb-4" style={{ opacity: 0.8 }}>
+                {vendor.description}
+              </p>
+            )}
+            
+            <div className="mt-auto mb-4">
+              {vendor.location && (
+                <div className="flex items-center justify-start mb-1">
+                  <svg className="w-4 h-4 text-black mr-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                    <path fillRule="evenodd" d="M11.906 1.994a8.002 8.002 0 0 1 8.09 8.421 7.996 7.996 0 0 1-1.297 3.957.996.996 0 0 1-.133.204l-.108.129c-.178.243-.37.477-.573.699l-5.112 6.224a1 1 0 0 1-1.545 0L5.982 15.26l-.002-.002a18.146 18.146 0 0 1-.309-.38l-.133-.163a.999.999 0 0 1-.13-.202 7.995 7.995 0 0 1 6.498-12.518ZM15 9.997a3 3 0 1 1-5.999 0 3 3 0 0 1 5.999 0Z" clipRule="evenodd"/>
+                  </svg>
+                  <span className="text-sm text-black">
+                    {vendor.location}
+                  </span>
+                </div>
+              )}
 
+              <div className="flex items-center justify-start mt-1">
+                <svg className="w-4 h-4 text-black mr-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path fillRule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm11-4a1 1 0 1 0-2 0v4a1 1 0 0 0 .293.707l3 3a1 1 0 0 0 1.414-1.414L13 11.586V8Z" clipRule="evenodd"/>
+                </svg>
+                <span className="text-sm text-black">
+                  {vendor.operationTime || '10:00-18:00'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* 이미지 갤러리 */}
-      <ImageGallery
-        images={images}
-        initialIndex={initialIndex}
-        isOpen={isOpen}
-        onClose={closeGallery}
+      {/* 쿠폰 카드 섹션 */}
+      {featuredData?.coupons && featuredData.coupons.filter(coupon => coupon.discountType === 'FIXED_AMOUNT').length > 0 && (
+        <div className="px-4 pt-0 pb-4">
+          <div className="space-y-4">
+            {featuredData.coupons
+              .filter(coupon => coupon.discountType === 'FIXED_AMOUNT')
+              .map((coupon) => (
+              <div
+                key={coupon.id}
+                className="w-full rounded-xl p-4 transition-all duration-300 relative overflow-hidden"
+                style={{ 
+                  background: coupon.discountType === 'PERCENTAGE' 
+                    ? 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)' :
+                    coupon.discountType === 'FIXED_AMOUNT' 
+                    ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)' :
+                    coupon.discountType === 'EXCHANGE' 
+                    ? 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)' :
+                    'linear-gradient(135deg, #6b7280 0%, #9ca3af 100%)'
+                }}
+              >
+                {/* 쿠폰 구멍 */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gray-100 rounded-full -translate-x-3"></div>
+                  <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gray-100 rounded-full translate-x-3"></div>
+                </div>
+                
+                {/* 배경 패턴 */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-0 right-0 w-32 h-32 transform translate-x-8 -translate-y-8">
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <circle cx="50" cy="50" r="40" fill="currentColor" className="text-white"/>
+                    </svg>
+                  </div>
+                  <div className="absolute bottom-0 left-0 w-24 h-24 transform -translate-x-6 translate-y-6">
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <circle cx="50" cy="50" r="30" fill="currentColor" className="text-white"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                {/* 카드 내용 */}
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-transparent rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        {coupon.iconImageUrl ? (
+                          <img 
+                            src={coupon.iconImageUrl} 
+                            alt="쿠폰 아이콘" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-full h-full flex items-center justify-center ${coupon.iconImageUrl ? 'hidden' : ''}`}>
+                          {coupon.discountType === 'PERCENTAGE' && (
+                            <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                          )}
+                          {coupon.discountType === 'FIXED_AMOUNT' && (
+                            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                          )}
+                          {coupon.discountType === 'EXCHANGE' && (
+                            <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-white font-bold text-base line-clamp-1">
+                          {coupon.title}
+                          {coupon.discountType === 'PERCENTAGE' && ' 할인권'}
+                          {coupon.discountType === 'FIXED_AMOUNT' && ' 쿠폰'}
+                          {coupon.discountType === 'EXCHANGE' && ' 교환권'}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <button
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-lg flex-shrink-0 ${
+                        coupon.status?.toLowerCase() === 'active' && !coupon.isUsed && !usedCoupons.has(coupon.id!)
+                          ? coupon.discountType === 'PERCENTAGE'
+                            ? 'bg-purple-600 bg-opacity-80 text-white hover:bg-opacity-90'
+                            : coupon.discountType === 'FIXED_AMOUNT'
+                            ? 'bg-green-700 bg-opacity-80 text-white hover:bg-opacity-90'
+                            : coupon.discountType === 'EXCHANGE'
+                            ? 'bg-orange-600 bg-opacity-80 text-white hover:bg-opacity-90'
+                            : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      }`}
+                      disabled={coupon.status?.toLowerCase() !== 'active' || coupon.isUsed || usedCoupons.has(coupon.id!)}
+                      onClick={() => handleCouponUse(coupon)}
+                    >
+                      {couponLoading ? '처리 중...' : 
+                       coupon.isUsed || usedCoupons.has(coupon.id!) ? '이미 사용한 쿠폰' :
+                       coupon.status?.toLowerCase() === 'active' ? '사용하기' : '사용 불가능한 쿠폰'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 메뉴 리스트 섹션 */}
+      {vendor.menus && vendor.menus.length > 0 && (
+        <div className="px-4 py-4">
+          <h2 className="text-lg font-bold text-black mb-4">메뉴</h2>
+          <div className="space-y-2">
+            {vendor.menus.map((menu, index) => (
+              <div key={menu.id || index} className="w-full bg-white h-16">
+                <div className="flex h-full">
+                  {/* 메뉴 정보 */}
+                  <div className="flex-1 flex flex-col justify-center">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-black font-semibold text-base truncate">
+                          {menu.name || '메뉴명'}
+                        </h3>
+                        {menu.description && (
+                          <p className="text-xs text-gray-500 truncate mt-0.5">
+                            {menu.description}
+                          </p>
+                        )}
+                      </div>
+                      {menu.price && (
+                        <span className="text-base font-bold text-black ml-2 flex-shrink-0">
+                          {typeof menu.price === 'number' 
+                            ? `${menu.price.toLocaleString()}원`
+                            : menu.price
+                          }
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <CouponActionSheet
+        isOpen={showVendorSheet}
+        onClose={() => {
+          setShowVendorSheet(false);
+          setSelectedCoupon(null);
+          setSelectedVendor(null);
+        }}
+        title={selectedCoupon?.discountType === 'EXCHANGE' ? '교환권 사용' : '사용할 쿠폰을 선택하세요'}
+        selectedItem={selectedCoupon?.discountType === 'EXCHANGE' ? {
+          label: selectedCoupon.title || '알 수 없는 교환권',
+          onClick: () => {},
+        } : selectedVendor ? {
+          label: selectedVendor.name || '알 수 없는 벤더',
+          onClick: () => {},
+        } : null}
+        onUseSelected={handleUseSelectedVendor}
+        couponType={selectedCoupon?.discountType as 'PERCENTAGE' | 'FIXED_AMOUNT' | 'EXCHANGE' | undefined}
+        items={selectedCoupon?.discountType === 'EXCHANGE' ? [] : (Array.isArray(vendors) ? vendors : []).map((vendor) => {
+          const item = {
+            label: vendor.name || '알 수 없는 벤더',
+            onClick: () => handleVendorSelect(vendor),
+          };
+          return item;
+        })}
       />
     </div>
   );

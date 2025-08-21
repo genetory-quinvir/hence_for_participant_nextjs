@@ -199,7 +199,7 @@ function TimelineListContent() {
                 <div className="flex flex-col items-center mr-4">
                   {/* 시간 */}
                   <div 
-                    className="text-md font-normal mb-2 mt-1 flex-shrink-0"
+                    className="text-sm font-normal mb-2 mt-1 flex-shrink-0"
                     style={{ 
                       color: timeline.status === 'COMPLETED' 
                         ? 'rgba(0, 0, 0, 0.4)' 
@@ -277,14 +277,9 @@ function TimelineListContent() {
                       <div className="flex items-center space-x-4">
                         {timeline.location && (
                           <div className="flex items-center">
-                            <img
-                              src="/images/icon_pin.png"
-                              alt="위치 아이콘"
-                              className="w-6 h-6 mr-1 object-contain"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
+                            <svg className={`w-4 h-4 ${timeline.status === 'COMPLETED' ? 'text-gray-400' : timeline.status === 'ACTIVE' ? 'text-purple-700' : 'text-gray-800'} dark:text-white mr-1`} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                              <path fillRule="evenodd" d="M11.906 1.994a8.002 8.002 0 0 1 8.09 8.421 7.996 7.996 0 0 1-1.297 3.957.996.996 0 0 1-.133.204l-.108.129c-.178.243-.37.477-.573.699l-5.112 6.224a1 1 0 0 1-1.545 0L5.982 15.26l-.002-.002a18.146 18.146 0 0 1-.309-.38l-.133-.163a.999.999 0 0 1-.13-.202 7.995 7.995 0 0 1 6.498-12.518ZM15 9.997a3 3 0 1 1-5.999 0 3 3 0 0 1 5.999 0Z" clipRule="evenodd"/>
+                            </svg>
                             <span 
                               className="text-sm"
                               style={{ 

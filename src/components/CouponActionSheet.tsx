@@ -16,6 +16,7 @@ interface CouponActionSheetProps {
   title?: string;
   selectedItem?: ActionSheetItem | null;
   onUseSelected?: () => void;
+  couponType?: 'PERCENTAGE' | 'FIXED_AMOUNT' | 'EXCHANGE';
 }
 
 export default function CouponActionSheet({ 
@@ -24,7 +25,8 @@ export default function CouponActionSheet({
   items, 
   title,
   selectedItem,
-  onUseSelected
+  onUseSelected,
+  couponType
 }: CouponActionSheetProps) {
   // PWA 환경 감지
   const isPWA = typeof window !== 'undefined' && (
@@ -35,61 +37,16 @@ export default function CouponActionSheet({
   // 액션시트가 열렸을 때 body에 스타일 적용
   useEffect(() => {
     if (isOpen) {
-      // 현재 스크롤 위치 저장
-      const scrollY = window.scrollY;
-      
-      // body에 스타일 추가 (overflow: hidden 제거)
-      document.body.style.touchAction = 'none';
-      document.body.style.userSelect = 'none';
-      document.body.style.webkitUserSelect = 'none';
-      
-      // 스크롤 위치를 강제로 유지
-      const preventScroll = (e: Event) => {
-        e.preventDefault();
-        window.scrollTo(0, scrollY);
-      };
-      
-      // 이벤트 리스너 추가
-      document.addEventListener('scroll', preventScroll, { passive: false });
-      document.addEventListener('touchmove', preventScroll, { passive: false });
-      document.addEventListener('wheel', preventScroll, { passive: false });
-      
-      // 스크롤 위치를 sessionStorage에 저장
-      sessionStorage.setItem('actionSheetScrollY', scrollY.toString());
-      
-      // cleanup 함수 반환
-      return () => {
-        document.removeEventListener('scroll', preventScroll);
-        document.removeEventListener('touchmove', preventScroll);
-        document.removeEventListener('wheel', preventScroll);
-      };
+      // 간단하게 body overflow만 hidden으로 설정
+      document.body.style.overflow = 'hidden';
     } else {
-      // body 스타일 복원
-      document.body.style.touchAction = '';
-      document.body.style.userSelect = '';
-      document.body.style.webkitUserSelect = '';
-      
-      // 저장된 스크롤 위치 복원
-      const savedScrollY = sessionStorage.getItem('actionSheetScrollY');
-      if (savedScrollY) {
-        const scrollY = parseInt(savedScrollY, 10);
-        window.scrollTo(0, scrollY);
-        sessionStorage.removeItem('actionSheetScrollY');
-      }
+      // body overflow 복원
+      document.body.style.overflow = '';
     }
 
     // 컴포넌트 언마운트 시 스타일 복원
     return () => {
-      document.body.style.touchAction = '';
-      document.body.style.userSelect = '';
-      document.body.style.webkitUserSelect = '';
-      
-      const savedScrollY = sessionStorage.getItem('actionSheetScrollY');
-      if (savedScrollY) {
-        const scrollY = parseInt(savedScrollY, 10);
-        window.scrollTo(0, scrollY);
-        sessionStorage.removeItem('actionSheetScrollY');
-      }
+      document.body.style.overflow = '';
     };
   }, [isOpen]);
 
@@ -113,7 +70,7 @@ export default function CouponActionSheet({
           WebkitTouchCallout: 'none',
           WebkitTapHighlightColor: 'transparent',
           overflow: 'hidden'
-        }}
+        }}  
       />
       
       {/* 액션시트 컨테이너 */}
@@ -126,92 +83,129 @@ export default function CouponActionSheet({
         }}
       >
         <div 
-          className="w-full bg-white rounded-t-xl p-4"
+          className="w-full bg-white rounded-t-xl flex flex-col action-sheet-content"
           style={{ 
             pointerEvents: 'auto',
             userSelect: 'auto',
             WebkitUserSelect: 'auto',
+            maxHeight: 'calc(100vh - 100px)',
             paddingBottom: isPWA 
-              ? 'max(40px, env(safe-area-inset-bottom) + 32px)'
-              : 'max(24px, env(safe-area-inset-bottom) + 16px)'
+              ? 'max(16px, env(safe-area-inset-bottom) + 16px)'
+              : 'max(16px, env(safe-area-inset-bottom) + 16px)'
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* 드래그 핸들 */}
-          <div className="w-12 h-1 bg-purple-700 rounded-full mx-auto mb-4"></div>
-          
-          {/* 제목 (선택사항) */}
-          {title && (
-            <div className="text-center mb-4">
-              <h3 className="text-black text-lg font-medium">{title}</h3>
-            </div>
-          )}
-          
-          {/* 선택된 쿠폰 안내 메시지 */}
-          {selectedItem && (
-            <div className="mb-4 p-4 rounded-lg" style={{backgroundColor: 'rgba(124, 58, 237, 0.1)'}}>
-              <div className="flex items-center mb-2 space-x-1">
-                <img 
-                  src="/images/icon_coupon.png" 
-                  alt="쿠폰 아이콘" 
-                  className="w-10 h-10 object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-                <span className="text-purple-700 text-sm font-medium">선택된 쿠폰</span>
+          {/* 고정된 상단 영역 */}
+          <div className="p-4 pb-0">
+            {/* 드래그 핸들 */}
+            <div className="w-12 h-1 bg-purple-700 rounded-full mx-auto mb-4"></div>
+            
+            {/* 제목 (선택사항) */}
+            {title && (
+              <div className="text-center mb-4">
+                <h3 className="text-black text-lg font-medium">{title}</h3>
               </div>
-              <div className="text-black font-normal text-lg">
-                <span className="text-black font-bold">{selectedItem.label}</span>을 교환해드려요.
+            )}
+            
+            {/* 선택된 쿠폰 안내 메시지 */}
+            {selectedItem && (
+              <div className="mb-4 p-4 rounded-lg" style={{backgroundColor: 'rgba(124, 58, 237, 0.1)'}}>
+                <div className="flex items-center mb-2 space-x-1">
+                  <img 
+                    src="/images/icon_coupon.png" 
+                    alt="쿠폰 아이콘" 
+                    className="w-14 h-14 object-contain"
+                    style={{
+                      animation: 'float 1s ease-in-out infinite',
+                      transformStyle: 'preserve-3d'
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+                <div className="text-black font-normal text-lg mt-2">
+                  {couponType === 'FIXED_AMOUNT' ? (
+                    <span><span className="text-black font-bold">{selectedItem.label}</span>에서<br></br><span className="text-purple-700 font-bold">1,000원</span>을 할인 받으실건가요?</span>
+                  ) : (
+                    <span><span className="text-black font-bold">{selectedItem.label}</span>을 교환해드려요.</span>
+                  )}
+                </div>
+                <div className="mt-2">
+                <span className="text-purple-700 text-sm">반드시 관련자에게 보여주셔야 사용이 가능합니다.</span>
+                </div>
               </div>
-              <div className="mt-2">
-              <span className="text-purple-700 text-sm">반드시 관련자에게 보여주셔야 사용이 가능합니다.</span>
-              </div>
-            </div>
-          )}
-          
-          {/* 액션 아이템들 */}
-          <div className="space-y-2">
-            {items && items.length > 0 ? (
-              items.map((item, index) => {
-                const isSelected = selectedItem && selectedItem.label === item.label;
-                return (
-                  <button
-                    key={index}
-                    onClick={item.onClick}
-                    className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                      item.variant === 'destructive'
-                        ? 'text-red-400 hover:bg-red-900 hover:bg-opacity-20'
-                        : 'text-black'
-                    }`}
-                  >
-                    {item.icon && (
-                      <div className="flex-shrink-0">
-                        {item.icon}
-                      </div>
-                    )}
-                    <span className="flex-1 text-left">{item.label}</span>
-                    {isSelected && (
-                      <div className="flex-shrink-0">
-                        <svg 
-                          className="w-5 h-5 text-purple-600" 
-                          fill="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                );
-              })
-            ) : (
-              <div></div>
             )}
           </div>
           
-          {/* 취소 버튼 */}
-          <div className="mt-4 pt-4">
+          {/* 스크롤 가능한 액션 아이템 영역 */}
+          <div 
+            className="flex-1 overflow-y-auto px-4"
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              minHeight: '100px',
+              maxHeight: 'calc(100vh - 300px)',
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y'
+            }}
+          >
+            {/* 액션 아이템들 */}
+            <div className="space-y-2">
+              {items && items.length > 0 ? (
+                items.map((item, index) => {
+                  const isSelected = selectedItem && selectedItem.label === item.label;
+                  return (
+                    <button
+                      key={index}
+                      data-item-index={index}
+                      onClick={() => {
+                        item.onClick();
+                        // 선택된 아이템이 보이도록 스크롤
+                        setTimeout(() => {
+                          const selectedElement = document.querySelector(`[data-item-index="${index}"]`) as HTMLElement;
+                          if (selectedElement) {
+                            selectedElement.scrollIntoView({
+                              behavior: 'smooth',
+                              block: 'center'
+                            });
+                          }
+                        }, 100);
+                      }}
+                      className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                        item.variant === 'destructive'
+                          ? 'text-red-400 hover:bg-red-900 hover:bg-opacity-20'
+                          : 'text-black'
+                      }`}
+                    >
+                      {item.icon && (
+                        <div className="flex-shrink-0">
+                          {item.icon}
+                        </div>
+                      )}
+                      <span className="flex-1 text-left">{item.label}</span>
+                      {isSelected && (
+                        <div className="flex-shrink-0">
+                          <svg 
+                            className="w-5 h-5 text-purple-600" 
+                            fill="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })
+              ) : (
+                <div></div>
+              )}
+            </div>
+          </div>
+          
+          {/* 고정된 버튼 영역 */}
+          <div className="px-4 mt-2" style={{ paddingBottom: '0px' }}>
             {selectedItem ? (
               // 선택된 아이템이 있을 때: 취소 + 사용하기 버튼
               <div className="flex space-x-3">

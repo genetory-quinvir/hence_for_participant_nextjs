@@ -45,7 +45,7 @@ export default function EventNotice({ notices }: EventNoticeProps) {
   }
 
   return (
-    <div className="relative w-full bg-gray-100 mb-12">
+    <div className="relative w-full bg-gray-100 mb-8">
       {/* 스크롤 컨테이너 */}
       <div
         ref={scrollContainerRef}

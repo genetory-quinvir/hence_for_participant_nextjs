@@ -83,6 +83,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateUser = (user: User) => {
     logger.info('👤 사용자 정보 업데이트', { userId: user.id });
     
+    // 로컬 스토리지에 사용자 정보 저장
+    storeUser(user);
+    
     setAuthState(prev => ({
       ...prev,
       user,

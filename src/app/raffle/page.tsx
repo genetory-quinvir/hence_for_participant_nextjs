@@ -445,7 +445,7 @@ function RaffleContent() {
               className={`w-full py-3 rounded-lg font-medium transition-colors ${
                 name.trim() && phone.trim() && agreed && !isSubmitting
                   ? "bg-purple-600 hover:bg-purple-700 text-white text-md"
-                  : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}
             >
               {isSubmitting ? (

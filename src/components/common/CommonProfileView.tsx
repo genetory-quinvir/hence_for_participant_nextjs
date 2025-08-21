@@ -28,11 +28,11 @@ const CommonProfileView: React.FC<CommonProfileViewProps> = ({
   };
 
   // 기본 스타일
-  const baseClasses = `bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 ${sizeClasses[size]}`;
+  const baseClasses = `bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 ${sizeClasses[size]}`;
   
   // 추가 스타일
   const additionalClasses = [
-    showBorder && 'border-2 border-white border-opacity-20',
+    showBorder && 'border-2 border-gray-100',
     showHover && 'hover:border-opacity-40 transition-all',
     onClick && 'cursor-pointer',
     className
@@ -51,7 +51,7 @@ const CommonProfileView: React.FC<CommonProfileViewProps> = ({
       className={finalClasses}
       onClick={onClick}
       style={{
-        backgroundColor: profileImageUrl ? 'transparent' : 'rgba(255, 255, 255, 0.4)',
+        backgroundColor: profileImageUrl ? 'transparent' : '#f3f4f6',
         border: showBorder ? 'none' : 'none'
       }}
     >
@@ -64,7 +64,7 @@ const CommonProfileView: React.FC<CommonProfileViewProps> = ({
           />
         </div>
       ) : (
-        <span className="text-white font-semibold">
+        <span className="text-black font-semibold">
           {getUserInitial()}
         </span>
       )}

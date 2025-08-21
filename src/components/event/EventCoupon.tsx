@@ -250,6 +250,7 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
           onClick: () => {},
         } : null}
         onUseSelected={handleUseSelectedVendor}
+        couponType={selectedCoupon?.discountType as 'PERCENTAGE' | 'FIXED_AMOUNT' | 'EXCHANGE' | undefined}
         items={selectedCoupon?.discountType === 'EXCHANGE' ? [] : (Array.isArray(vendors) ? vendors : []).map((vendor) => {
           const item = {
             label: vendor.name || '알 수 없는 벤더',

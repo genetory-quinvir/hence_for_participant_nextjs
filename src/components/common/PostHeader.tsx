@@ -55,21 +55,37 @@ export default function PostHeader({
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
       {isNotice ? (
-        // 공지사항 모드: 프로필 대신 공지사항 라벨과 날짜
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-col">
-            <span className={`text-purple-600 font-semibold ${
-              isSmall ? 'text-xs' : 'text-sm'
-            }`}>
-              운영위원회
-            </span>
-            <span className={`text-black ${
-              isSmall ? 'text-xs' : 'text-xs'
-            }`} style={{ opacity: 0.6 }}>
-              {createdAt ? getRelativeTime(createdAt) : ''}
-            </span>
+        // 공지사항 모드: 프로필과 닉네임 (운영위원회 라벨 추가)
+        <>
+          <CommonProfileView
+            profileImageUrl={profileImageUrl}
+            nickname={displayName}
+            size={isSmall ? 'sm' : 'md'}
+            showBorder={true}
+          />
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col">
+              <div className="flex items-center space-x-2">
+                <span className={`text-purple-600 font-semibold ${
+                  isSmall ? 'text-xs' : 'text-sm'
+                }`}>
+                  운영위원회
+                </span>
+                <span className={`text-black font-semibold ${
+                  isSmall ? 'text-xs' : 'text-sm'
+                }`}>
+                  {displayName}
+                </span>
+              </div>
+              <span className={`text-black ${
+                isSmall ? 'text-xs' : 'text-xs'
+              }`} style={{ opacity: 0.6 }}>
+                {createdAt ? getRelativeTime(createdAt) : ''}
+              </span>
+            </div>
           </div>
-        </div>
+        </>
       ) : (
         // 일반 모드: 프로필과 닉네임
         <>

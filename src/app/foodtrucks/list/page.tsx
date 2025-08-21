@@ -48,12 +48,12 @@ function FoodTrucksContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white">
+      <div className="min-h-screen bg-white text-black">
         <CommonNavigationBar 
           title="푸드트럭"
           leftButton={
             <svg
-              className="w-6 h-6 text-white"
+              className="w-6 h-6 text-black"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -62,9 +62,11 @@ function FoodTrucksContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
-          backgroundColor="black"
+          backgroundColor="white"
           backgroundOpacity={1}
-          textColor="text-white"
+          textColor="text-black"
+          fixedHeight={true}
+          sticky={true}
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-lg">로딩 중...</div>
@@ -75,12 +77,12 @@ function FoodTrucksContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black text-white">
+      <div className="min-h-screen bg-white text-black">
         <CommonNavigationBar 
           title="푸드트럭"
           leftButton={
             <svg
-              className="w-6 h-6 text-white"
+              className="w-6 h-6 text-black"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -89,9 +91,9 @@ function FoodTrucksContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
-          backgroundColor="black"
+          backgroundColor="white"
           backgroundOpacity={1}
-          textColor="text-white"
+          textColor="text-black"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-lg text-red-400">{error}</div>
@@ -101,12 +103,12 @@ function FoodTrucksContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white text-black flex flex-col">
       <CommonNavigationBar 
         title="푸드트럭"
         leftButton={
           <svg
-            className="w-6 h-6 text-white"
+            className="w-6 h-6 text-black"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -115,43 +117,36 @@ function FoodTrucksContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
-        backgroundColor="black"
+        backgroundColor="white"
         backgroundOpacity={1}
-        textColor="text-white"
+        textColor="text-black"
+        fixedHeight={true}
+        sticky={true}
       />
       
-      <div className="px-4 py-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {/* 그리드 레이아웃 */}
-        <div className="grid grid-cols-2 gap-4">
+      {/* 푸드트럭 2열 그리드 */}
+      <div className="flex-1 overflow-y-auto px-1 py-1" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="grid grid-cols-2">
           {vendors.length > 0 ? (
             vendors.map((vendor) => (
               <div
                 key={vendor.id}
-                className="rounded-xl overflow-hidden transition-all duration-300 cursor-pointer hover:bg-white hover:bg-opacity-10"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+                className="rounded-xl overflow-hidden cursor-pointer flex flex-col"
+                style={{ 
+                  backgroundColor: 'white',
+                }}
                 onClick={() => {
                   const url = `/foodtrucks/${vendor.id}?eventId=${eventId}`;
-                  console.log('🔗 푸드트럭 클릭:', url);
                   navigate(url);
                 }}
               >
                 {/* 썸네일 이미지 */}
-                <div className="w-full aspect-[4/3] overflow-hidden relative" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                <div className="w-full aspect-[5/3] overflow-hidden relative p-3" style={{ backgroundColor: "white" }}>
                   {vendor.thumbImageUrl ? (
                     <img 
                       src={vendor.thumbImageUrl} 
                       alt={vendor.name || '푸드트럭 이미지'} 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : vendor.imageUrl ? (
-                    <img 
-                      src={vendor.imageUrl} 
-                      alt={vendor.name || '푸드트럭 이미지'} 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-lg"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                         e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -159,83 +154,52 @@ function FoodTrucksContent() {
                     />
                   ) : null}
                   <div className="w-full h-full flex items-center justify-center hidden">
-                    <svg className="w-16 h-16 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                  </div>
-                  {/* 영업중 배지 */}
-                  <div className="absolute top-3 right-3">
-                    <span className="px-4 py-2 rounded-full text-xs font-medium bg-purple-600 text-white">
-                      {vendor.isActive ? '영업중' : '영업종료'}
-                    </span>
                   </div>
                 </div>
                 
                 {/* 푸드트럭 정보 */}
-                <div className="p-4">
-                  {/* 푸드트럭 이름 */}
-                  <h3 className="text-white font-bold text-lg text-left mb-1">
+                <div className="px-4 flex-1 flex flex-col">
+                  <h3 className="text-black font-bold text-lg text-left">
                     {vendor.name || '푸드트럭'}
                   </h3>
                   
-                  {/* 설명 */}
                   {vendor.description && (
-                    <p className="text-sm text-white text-left mb-3" style={{ opacity: 0.8 }}>
+                    <p className="text-sm text-black text-left mb-4" style={{ opacity: 0.8 }}>
                       {vendor.description}
                     </p>
                   )}
                   
-                  {/* 위치 */}
-                  {vendor.location && (
-                    <div className="flex items-center justify-start mb-1">
-                      <span className="text-sm text-white" style={{ opacity: 0.7 }}>
-                        {vendor.location}
-                      </span>
-                    </div>
-                  )}
+                  <div className="mt-auto mb-4">
+                    {vendor.location && (
+                      <div className="flex items-center justify-start mb-1">
+                        <svg className="w-4 h-4 text-black mr-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                          <path fillRule="evenodd" d="M11.906 1.994a8.002 8.002 0 0 1 8.09 8.421 7.996 7.996 0 0 1-1.297 3.957.996.996 0 0 1-.133.204l-.108.129c-.178.243-.37.477-.573.699l-5.112 6.224a1 1 0 0 1-1.545 0L5.982 15.26l-.002-.002a18.146 18.146 0 0 1-.309-.38l-.133-.163a.999.999 0 0 1-.13-.202 7.995 7.995 0 0 1 6.498-12.518ZM15 9.997a3 3 0 1 1-5.999 0 3 3 0 0 1 5.999 0Z" clipRule="evenodd"/>
+                        </svg>
+                        <span className="text-sm text-black">
+                          {vendor.location}
+                        </span>
+                      </div>
+                    )}
 
-                  {/* 운영시간 */}
-                  <div className="flex items-center justify-start mb-2">
-                    <span className="text-sm text-white" style={{ opacity: 0.7 }}>
-                      {vendor.operationTime || '10:00-18:00'}
-                    </span>
-                  </div>
-
-                  {/* 가격 및 평점
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="text-white font-bold text-l">
-                      {vendor.priceAverage || '8,000원대'}
-                    </div>
-                    <div className="flex items-center">
-                      <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    <div className="flex items-center justify-start mt-1">
+                      <svg className="w-4 h-4 text-black mr-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path fillRule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm11-4a1 1 0 1 0-2 0v4a1 1 0 0 0 .293.707l3 3a1 1 0 0 0 1.414-1.414L13 11.586V8Z" clipRule="evenodd"/>
                       </svg>
-                      <span className="text-l text-white" style={{ opacity: 0.7 }}>
-                        {vendor.rating ? `${vendor.rating} (${vendor.reviewCount || 0}개)` : '4.5 (12개)'}
+                      <span className="text-sm text-black">
+                        {vendor.operationTime || '10:00-18:00'}
                       </span>
                     </div>
-                  </div> */}
-
-                  {/* 웹사이트 링크 */}
-                  {vendor.website && (
-                    <div className="pt-2">
-                      <a
-                        href={vendor.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-purple-600 text-white hover:bg-purple-700 text-center"
-                      >
-                        웹사이트 방문
-                      </a>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
             ))
           ) : (
             <div className="col-span-2 text-center py-12">
-              <p className="text-white text-lg mb-2">아직 푸드트럭이 없습니다</p>
-              <p className="text-white text-sm" style={{ opacity: 0.6 }}>새로운 푸드트럭을 기다려주세요!</p>
+              <p className="text-black text-lg mb-2">아직 푸드트럭이 없습니다</p>
+              <p className="text-black text-sm" style={{ opacity: 0.6 }}>새로운 푸드트럭을 기다려주세요!</p>
             </div>
           )}
         </div>
@@ -243,7 +207,7 @@ function FoodTrucksContent() {
         {/* 모든 푸드트럭을 불러왔습니다 메시지 */}
         {vendors.length > 0 && (
           <div className="text-center py-6">
-            <p className="text-sm text-white" style={{ opacity: 0.6 }}>
+            <p className="text-sm text-black" style={{ opacity: 0.6 }}>
               모든 푸드트럭을 불러왔습니다
             </p>
           </div>

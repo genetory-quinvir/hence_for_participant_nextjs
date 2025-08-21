@@ -145,6 +145,21 @@ function BoardListContent() {
   }, [handleScroll]);
 
   const handlePostClick = (post: BoardItem) => {
+    // 선택된 카드를 화면 중앙으로 스크롤
+    const postElement = document.querySelector(`[data-post-id="${post.id}"]`) as HTMLElement;
+    if (postElement && scrollContainerRef.current) {
+      const containerRect = scrollContainerRef.current.getBoundingClientRect();
+      const elementRect = postElement.getBoundingClientRect();
+      const containerCenter = containerRect.height / 2;
+      const elementCenter = elementRect.top + elementRect.height / 2;
+      const scrollOffset = elementCenter - containerCenter;
+      
+      scrollContainerRef.current.scrollBy({
+        top: scrollOffset,
+        behavior: 'smooth'
+      });
+    }
+    
     const url = `/board/${post.id}?type=${type}&eventId=${post.eventId || eventId}`;
     router.push(url);
   };
@@ -358,11 +373,12 @@ function BoardListContent() {
           msOverflowStyle: 'none'
         }}
       >
-        <div className="space-y-2" style={{ paddingBottom: 'min(24px, env(safe-area-inset-bottom) + 24px)' }}>
+        <div className="space-y-0" style={{ paddingBottom: 'min(24px, env(safe-area-inset-bottom) + 24px)' }}>
         {sortedPosts.length > 0 ? (
           sortedPosts.map((post) => (
             <div
               key={post.id}
+              data-post-id={post.id}
               className={`rounded-xl overflow-hidden transition-all duration-300 cursor-pointer ${
                 type === 'notice' 
                   ? 'bg-white hover:bg-gray-50' 
@@ -375,7 +391,9 @@ function BoardListContent() {
               }}
               onClick={() => handlePostClick(post)}
             >
-              <div className="px-6 py-2 h-full flex flex-col">
+              <div className="px-6 py-2 h-full flex flex-col relative">
+                {/* 보더 - 양쪽 인셋 적용 */}
+                <div className="absolute" style={{ bottom: '0px', left: '24px', right: '24px', borderBottom: '1px solid rgb(229, 231, 235)' }}></div>
                 {/* 게시글 헤더 (커뮤니티에서만 표시) */}
                 {type !== 'notice' && (
                   <PostHeader 
@@ -392,7 +410,7 @@ function BoardListContent() {
                 {/* 공지사항인 경우 EventNotice 스타일 적용 */}
                 {type === 'notice' ? (
                   <div className="flex-1">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-3 mt-2">
                       <img 
                         src="/images/icon_notice.png" 
                         alt="공지사항 아이콘" 
@@ -419,7 +437,7 @@ function BoardListContent() {
                   <div className="flex-1 flex space-x-3">
                     <div className="flex-1 min-w-0">
                       {post.content && (
-                        <div className="text-md text-black font-regular line-clamp-3 whitespace-pre-wrap">
+                        <div className="text-md text-black font-regular line-clamp-3 whitespace-pre-wrap mt-2">
                           {post.content}
                         </div>
                       )}
@@ -456,7 +474,7 @@ function BoardListContent() {
                 )}
                 
                 {/* 액션 버튼 - 고정 높이 */}
-                <div className="mt-auto pt-3">
+                <div className="mt-auto pt-3 mb-2">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center">
                       <svg 

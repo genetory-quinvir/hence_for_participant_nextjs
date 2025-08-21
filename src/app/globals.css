@@ -36,7 +36,6 @@ body {
   min-height: 100dvh;
   height: 100vh;
   height: 100dvh;
-  overflow: hidden;
 }
 
 /* Safe Area 지원 */
@@ -46,7 +45,6 @@ body {
     padding-right: max(0px, env(safe-area-inset-right));
     padding-top: max(0px, env(safe-area-inset-top));
     padding-bottom: 0px;
-    background-color: #ffffff;
   }
   
   /* Safe Area 영역 배경색 설정 */
@@ -57,7 +55,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ffffff;
+    background-color: #f3f4f6; /* gray-100과 동일한 색상 */
     z-index: -1;
   }
 }
@@ -66,13 +64,13 @@ body {
 html {
   height: 100%;
   width: 100%;
-  background-color: #ffffff;
+  background-color: #f3f4f6; /* gray-100과 동일한 색상 */
 }
 
 body {
   height: 100%;
   width: 100%;
-  background-color: #ffffff;
+  background-color: #f3f4f6; /* gray-100과 동일한 색상 */
   /* 스크롤바 숨기기 */
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
@@ -102,17 +100,17 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
 
 /* 댓글 입력 폼 플레이스홀더 스타일 */
 .comment-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: rgba(0, 0, 0, 0.4) !important;
 }
 
 /* 글쓰기 페이지 플레이스홀더 스타일 */
 .board-write-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: rgba(0, 0, 0, 0.4) !important;
 }
 
 /* 코드 입력 필드 플레이스홀더 스타일 */
 .code-input-field::placeholder {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: rgba(0, 0, 0, 0.4) !important;
 }
 
 /* 타임라인 닷 펄스 애니메이션 */
@@ -159,4 +157,17 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
+}
+
+/* 3D 플로팅 애니메이션 */
+@keyframes float {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(2deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
 }

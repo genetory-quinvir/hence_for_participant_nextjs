@@ -62,12 +62,16 @@ export default function CommonNavigationBar({
         {/* 오른쪽 버튼 */}
         <div className="flex items-center">
           {rightButton ? (
-            <button
-              onClick={onRightClick}
-              className={`rounded-sm hover:bg-${backgroundColor} hover:bg-opacity-20 active:bg-opacity-30 transition-colors`}
-            >
-              {rightButton}
-            </button>
+            onRightClick ? (
+              <button
+                onClick={onRightClick}
+                className={`rounded-sm hover:bg-${backgroundColor} hover:bg-opacity-20 active:bg-opacity-30 transition-colors`}
+              >
+                {rightButton}
+              </button>
+            ) : (
+              rightButton
+            )
           ) : (
             <div className="w-10 h-10"></div>
           )}

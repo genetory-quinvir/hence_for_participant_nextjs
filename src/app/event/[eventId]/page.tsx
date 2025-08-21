@@ -347,6 +347,12 @@ function EventPageContent() {
           <EventSection
             title="푸드트럭"
             subtitle="이벤트 장소에서 푸드트럭을 확인해보세요"
+            rightButton={{
+              text: "전체보기",
+              onClick: () => {
+                navigate(`/foodtrucks/list?eventId=${featuredData.event.id || 'default-event'}`);
+              }
+            }}
           >     
             <EventFoodTrucks 
               vendors={featuredData.vendors} 
