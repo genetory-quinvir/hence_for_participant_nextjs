@@ -101,7 +101,7 @@ function TimelineListContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-black">
+      <div className="min-h-screen bg-white text-black flex flex-col">
         <CommonNavigationBar 
           title="타임라인"
           leftButton={
@@ -118,11 +118,57 @@ function TimelineListContent() {
           backgroundColor="white"
           backgroundOpacity={1}
           textColor="text-black"
+          fixedHeight={true}
+          sticky={true}
         />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="text-sm" style={{ opacity: 0.7 }}>타임라인을 불러오는 중...</p>
+        
+        {/* 타임라인 스켈레톤 */}
+        <div className="flex-1 overflow-y-auto px-4 py-2 scrollbar-hide" style={{ 
+          paddingBottom: 'max(24px, env(safe-area-inset-bottom) + 24px)',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch',
+          overflow: 'auto'
+        }}>
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="flex">
+                {/* 왼쪽 시간 및 연결선 스켈레톤 */}
+                <div className="flex flex-col items-center mr-4">
+                  {/* 시간 스켈레톤 */}
+                  <div className="w-12 h-4 bg-gray-200 rounded animate-pulse mb-2 mt-1"></div>
+                  
+                  {/* 닷 스켈레톤 */}
+                  <div className="w-4 h-4 bg-gray-200 rounded-full animate-pulse"></div>
+                  
+                  {/* 연결선 스켈레톤 (마지막 항목이 아닌 경우에만) */}
+                  {index < 4 && (
+                    <div className="w-0.5 flex-1 bg-gray-200 animate-pulse"></div>
+                  )}
+                </div>
+
+                {/* 오른쪽 내용 스켈레톤 */}
+                <div className="flex-1">
+                  <div className="rounded-xl p-5 bg-gray-100">
+                    {/* 제목 스켈레톤 */}
+                    <div className="w-3/4 h-5 bg-gray-200 rounded animate-pulse mb-2"></div>
+                    
+                    {/* 설명 스켈레톤 */}
+                    <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                    <div className="w-2/3 h-4 bg-gray-200 rounded animate-pulse mb-4"></div>
+                    
+                    {/* 장소 및 상태 스켈레톤 */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="w-4 h-4 bg-gray-200 rounded mr-2 animate-pulse"></div>
+                        <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                      <div className="w-16 h-6 bg-gray-200 rounded-full animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -283,7 +329,7 @@ function TimelineListContent() {
                             <span 
                               className="text-sm"
                               style={{ 
-                                color: timeline.status === 'COMPLETED' ? 'rgba(0, 0, 0, 0.2)' : timeline.status === 'ACTIVE' ? '#7c3aed' : 'rgba(0, 0, 0, 0.7)'
+                                color: timeline.status === 'COMPLETED' ? 'rgba(0, 0, 0, 0.2)' : timeline.status === 'ACTIVE' ? '#7c3aed' : 'rgba(0, 0, 0, 1)'
                               }}
                             >
                               {timeline.location}
@@ -295,17 +341,26 @@ function TimelineListContent() {
                       {/* 상태 표시 */}
                       {timeline.status === 'COMPLETED' && (
                         <div className="flex-shrink-0">
-                          <span className="px-4 py-2 rounded-full text-xs font-bold text-gray-400" 
+                          <span className="px-4 py-2 rounded-full text-xs font-normal text-gray-400"  
                           style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}>
                             종료
                           </span>
-                        </div>
+                        </div>  
                       )}
                       
                       {timeline.status === 'ACTIVE' && (
                         <div className="flex-shrink-0">
                           <span className="px-4 py-2 rounded-full text-xs font-bold bg-purple-600 text-white">
                             진행중
+                          </span>
+                        </div>
+                      )}
+                      
+                      {timeline.status === 'PENDING' && (
+                        <div className="flex-shrink-0">
+                          <span className="px-4 py-2 rounded-full text-xs font-normal text-gray-400" 
+                          style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}>
+                            예정중
                           </span>
                         </div>
                       )}
@@ -350,10 +405,64 @@ function TimelineListContent() {
 // 로딩 컴포넌트
 function TimelineListLoading() {
   return (
-    <div className="min-h-screen bg-white text-black flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-        <p className="text-sm" style={{ opacity: 0.7 }}>타임라인 목록을 불러오는 중...</p>
+    <div className="min-h-screen bg-white text-black flex flex-col">
+      {/* 네비게이션바 스켈레톤 */}
+      <div className="h-16 bg-white border-b border-gray-100 flex items-center px-4">
+        <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+        <div className="flex-1 flex justify-center">
+          <div className="w-24 h-6 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+        <div className="w-6 h-6"></div>
+      </div>
+      
+      {/* 타임라인 스켈레톤 */}
+      <div className="flex-1 overflow-y-auto px-4 py-2 scrollbar-hide" style={{ 
+        paddingBottom: 'max(24px, env(safe-area-inset-bottom) + 24px)',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+        WebkitOverflowScrolling: 'touch',
+        overflow: 'auto'
+      }}>
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="flex">
+              {/* 왼쪽 시간 및 연결선 스켈레톤 */}
+              <div className="flex flex-col items-center mr-4">
+                {/* 시간 스켈레톤 */}
+                <div className="w-12 h-4 bg-gray-200 rounded animate-pulse mb-2 mt-1"></div>
+                
+                {/* 닷 스켈레톤 */}
+                <div className="w-4 h-4 bg-gray-200 rounded-full animate-pulse"></div>
+                
+                {/* 연결선 스켈레톤 (마지막 항목이 아닌 경우에만) */}
+                {index < 3 && (
+                  <div className="w-0.5 flex-1 bg-gray-200 animate-pulse"></div>
+                )}
+              </div>
+
+              {/* 오른쪽 내용 스켈레톤 */}
+              <div className="flex-1">
+                <div className="rounded-xl p-5 bg-gray-100">
+                  {/* 제목 스켈레톤 */}
+                  <div className="w-3/4 h-5 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  
+                  {/* 설명 스켈레톤 */}
+                  <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  <div className="w-2/3 h-4 bg-gray-200 rounded animate-pulse mb-4"></div>
+                  
+                  {/* 장소 및 상태 스켈레톤 */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-gray-200 rounded mr-2 animate-pulse"></div>
+                      <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="w-16 h-6 bg-gray-200 rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -67,8 +67,8 @@ export default function EventNotice({ notices }: EventNoticeProps) {
             onClick={() => router.push(`/board/${notice.id}?type=notice&eventId=${notice.eventId || 'default-event'}`)}
           >
             {/* 공지사항 정보 */}
-            <div>
-              <div className="flex items-center justify-between">
+            <div className="flex-1 flex flex-col">
+              <div className="flex items-center mb-3">
                 <img 
                   src="/images/icon_notice.png" 
                   alt="공지사항 아이콘" 
@@ -78,18 +78,69 @@ export default function EventNotice({ notices }: EventNoticeProps) {
                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
                   }}
                 />
-                <span className="text-xs text-gray-500 font-regular">
-                  {notice.createdAt ? getRelativeTime(notice.createdAt) : ''}
-                </span>
               </div>
               
-              <h3 className="text-black font-bold text-lg mt-3 mb-1">
+              <h3 className="text-black font-bold text-md mb-1">
                 {notice.title || '제목 없음'}
               </h3>
               
-              <p className="text-sm text-gray-700 mb-2 leading-relaxed whitespace-pre-wrap">
+              <p className="text-sm text-gray-700 mb-3 leading-relaxed whitespace-pre-wrap line-clamp-3">
                 {notice.content || '내용 없음'}
               </p>
+              
+              {/* 액션 버튼 - 고정 높이 */}
+              <div className="mt-auto pt-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center">
+                      {notice.isLiked ? (
+                        <svg 
+                          className="w-4 h-4 mr-1 text-purple-700" 
+                          fill="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                      ) : (
+                        <svg 
+                          className="w-4 h-4 mr-1 text-black" 
+                          style={{ opacity: 0.6 }}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                      )}
+                      <span className={`text-xs font-regular ${notice.isLiked ? 'text-purple-700' : 'text-black'}`} style={{ opacity: notice.isLiked ? 1 : 0.8 }}>
+                        {notice.likeCount || 0}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <svg 
+                        className="w-4 h-4 text-black mr-1" 
+                        style={{ opacity: 0.6 }}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span className="text-xs font-regular text-black" style={{ opacity: 0.8 }}>
+                        {notice.commentCount || 0}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* 날짜 - 오른쪽 정렬 */}
+                  <span className="text-xs text-gray-500 font-regular">
+                    {notice.createdAt ? getRelativeTime(notice.createdAt) : ''}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         ))}

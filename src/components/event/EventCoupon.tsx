@@ -223,8 +223,8 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
                     onClick={() => handleCouponUse(coupon)}
                   >
                     {loading ? '처리 중...' : 
-                     coupon.isUsed || usedCoupons.has(coupon.id!) ? '이미 사용한 쿠폰' :
-                     coupon.status?.toLowerCase() === 'active' ? '쿠폰 사용하기' : '사용 불가능한 쿠폰'}
+                     coupon.isUsed || usedCoupons.has(coupon.id!) ? '사용완료' :
+                     coupon.status?.toLowerCase() === 'active' ? '사용하기' : '사용불가'}
                   </button>
                 );
               })()}

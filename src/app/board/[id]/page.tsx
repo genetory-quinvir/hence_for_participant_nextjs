@@ -275,10 +275,83 @@ function BoardDetailContent() {
           sticky={true}
           fixedHeight={true}
         />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-            <p className="text-black text-sm" style={{ opacity: 0.7 }}>게시글을 불러오는 중...</p>
+        
+        {/* 게시글 상세 스켈레톤 */}
+        <div className="px-4 py-6 pb-8">
+          {/* 게시글 헤더 스켈레톤 */}
+          <div className="flex items-center space-x-2 mb-8">
+            <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse"></div>
+            <div className="flex-1 space-y-2">
+              <div className="w-32 h-5 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+          
+          {/* 제목 스켈레톤 */}
+          <div className="mb-8 space-y-2">
+            <div className="w-3/4 h-6 bg-gray-200 rounded animate-pulse"></div>
+            <div className="w-1/2 h-6 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          
+          {/* 이미지 스켈레톤 */}
+          <div className="mb-8 space-y-4">
+            <div className="w-full h-48 bg-gray-200 rounded-2xl animate-pulse"></div>
+            <div className="w-full h-32 bg-gray-200 rounded-2xl animate-pulse"></div>
+          </div>
+          
+          {/* 내용 스켈레톤 */}
+          <div className="mb-8 space-y-3">
+            <div className="w-full h-4 bg-gray-200 rounded animate-pulse"></div>
+            <div className="w-full h-4 bg-gray-200 rounded animate-pulse"></div>
+            <div className="w-3/4 h-4 bg-gray-200 rounded animate-pulse"></div>
+            <div className="w-full h-4 bg-gray-200 rounded animate-pulse"></div>
+            <div className="w-2/3 h-4 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          
+          {/* 액션 버튼 스켈레톤 */}
+          <div className="flex items-center justify-between py-4 mb-8 border-b border-gray-100">
+            <div className="flex items-center space-x-8">
+              <div className="flex items-center space-x-2">
+                <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
+                <div className="w-8 h-4 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
+                <div className="w-8 h-4 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+            <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+
+          {/* 댓글 섹션 헤더 스켈레톤 */}
+          <div className="mb-6">
+            <div className="w-16 h-6 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+
+          {/* 댓글 입력 스켈레톤 */}
+          <div className="mb-8 p-6 bg-gray-50 rounded-2xl">
+            <div className="w-full h-20 bg-white rounded-xl animate-pulse"></div>
+            <div className="flex justify-end mt-4">
+              <div className="w-24 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* 댓글 목록 스켈레톤 */}
+          <div className="space-y-6">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="flex items-start space-x-4">
+                <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="w-full h-3 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="w-3/4 h-3 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -350,9 +423,9 @@ function BoardDetailContent() {
               <div className="flex flex-col">
                 <div className="flex items-center space-x-2">
                   {postType === 'notice' ? (
-                    <span className="text-black font-bold text-lg">운영위원회</span>
+                    <span className="text-black font-semibold text-md">운영위원회</span>
                   ) : (
-                    <span className="text-black font-bold text-lg">
+                    <span className="text-black font-semibold text-md">
                       {post.user?.nickname || '익명'}
                     </span>
                   )}
@@ -364,7 +437,7 @@ function BoardDetailContent() {
           {/* 제목 */}
           {post.title && (
             <div className="mb-8">
-              <h1 className="text-black font-bold text-2xl leading-tight">
+              <h1 className="text-black font-bold text-md leading-tight">
                 {post.title}
               </h1>
             </div>
@@ -398,39 +471,59 @@ function BoardDetailContent() {
           
           {/* 액션 버튼 */}
           <div className="flex items-center justify-between py-4 mb-8 border-b border-gray-100">
-            <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-4">
               <button 
-                className={`flex items-center space-x-2 transition-colors ${
+                className={`flex items-center transition-colors ${
                   isLiking ? 'opacity-50 cursor-not-allowed' : post.isLiked ? 'hover:text-purple-800' : 'hover:text-purple-600'
-                } ${post.isLiked ? 'text-purple-700' : 'text-gray-600'}`}
+                } ${post.isLiked ? 'text-purple-700' : 'text-black'}`}
                 onClick={handleLikeToggle}
                 disabled={isLiking}
               >
-                <svg 
-                  className={`w-5 h-5 ${post.isLiked ? 'text-purple-700' : 'text-gray-600'}`}
-                  fill="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-                <span className={`text-sm font-medium ${post.isLiked ? 'text-purple-700' : 'text-gray-600'}`}>
+                {post.isLiked ? (
+                  <svg 
+                    className="w-4 h-4 mr-1 text-purple-700" 
+                    fill="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                ) : (
+                  <svg 
+                    className="w-4 h-4 mr-1 text-black" 
+                    style={{ opacity: 0.6 }}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                )}
+                <span className={`text-xs font-regular ${post.isLiked ? 'text-purple-700' : 'text-black'}`} style={{ opacity: post.isLiked ? 1 : 0.8 }}>
                   {post.likeCount || 0}
                 </span>
               </button>
               
-              <button className="flex items-center space-x-2 text-gray-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              <div className="flex items-center">
+                <svg 
+                  className="w-4 h-4 text-black mr-1" 
+                  style={{ opacity: 0.6 }}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                <span className="text-sm font-medium">
+                <span className="text-xs font-regular text-black" style={{ opacity: 0.8 }}>
                   {comments.length}
                 </span>
-              </button>
+              </div>
             </div>
             
-            {/* 날짜 */}
+            {/* 날짜 - 오른쪽 정렬 */}
             {post.createdAt && (
-              <span className="text-gray-400 text-sm font-normal">
+              <span className="text-xs text-gray-500 font-regular">
                 {getRelativeTime(post.createdAt)}
               </span>
             )}

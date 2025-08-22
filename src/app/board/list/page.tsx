@@ -271,7 +271,7 @@ function BoardListContent() {
           title={pageTitle}
           leftButton={
             <svg
-              className="w-6 h-6 text-white"
+              className="w-6 h-6 text-black"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -284,8 +284,82 @@ function BoardListContent() {
           backgroundOpacity={1}
           textColor="text-black"
         />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">로딩 중...</div>
+        
+        {/* 정렬 드롭다운 스켈레톤 (커뮤니티에서만 표시) */}
+        {type === 'free' && (
+          <div className="px-4">
+            <div className="flex justify-end mb-2">
+              <div className="relative mt-2">
+                <div className="w-16 h-8 bg-gray-200 rounded-lg animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* 게시글 스켈레톤 리스트 */}
+        <div className="space-y-0">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="px-6 py-2">
+              <div className="flex flex-col space-y-3">
+                {/* 게시글 헤더 스켈레톤 (커뮤니티에서만 표시) */}
+                {type !== 'notice' && (
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                )}
+                
+                {/* 공지사항 스켈레톤 */}
+                {type === 'notice' ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center mb-3">
+                      <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="w-3/4 h-5 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-full h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-2/3 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                ) : (
+                  /* 커뮤니티 스켈레톤 */
+                  <div className="flex space-x-3">
+                    <div className="flex-1 space-y-2">
+                      <div className="w-full h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-3/4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-1/2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    
+                    {/* 이미지 스켈레톤 */}
+                    <div className="w-20 h-20 bg-gray-200 rounded-lg animate-pulse"></div>
+                  </div>
+                )}
+                
+                {/* 액션 버튼 스켈레톤 */}
+                <div className="flex items-center justify-between pt-3">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-1">
+                      <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-6 h-3 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-6 h-3 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+              
+              {/* 구분선 */}
+              <div className="border-b border-gray-100 mt-2"></div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -410,7 +484,7 @@ function BoardListContent() {
                 {/* 공지사항인 경우 EventNotice 스타일 적용 */}
                 {type === 'notice' ? (
                   <div className="flex-1">
-                    <div className="flex items-center justify-between mb-3 mt-2">
+                    <div className="flex items-center mb-3 mt-2">
                       <img 
                         src="/images/icon_notice.png" 
                         alt="공지사항 아이콘" 
@@ -419,16 +493,13 @@ function BoardListContent() {
                           e.currentTarget.style.display = 'none';
                         }}
                       />
-                      <span className="text-xs text-gray-500 font-regular">
-                        {post.createdAt ? getRelativeTime(post.createdAt) : ''}
-                      </span>
                     </div>
                     
-                    <h3 className="text-black font-bold text-lg mb-1 line-clamp-2">
+                    <h3 className="text-black font-bold text-md mb-1 line-clamp-2">
                       {post.title || '제목 없음'}
                     </h3>
                     
-                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap line-clamp-3">
                       {post.content || '내용 없음'}
                     </p>
                   </div>
@@ -475,29 +546,55 @@ function BoardListContent() {
                 
                 {/* 액션 버튼 - 고정 높이 */}
                 <div className="mt-auto pt-3 mb-2">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <svg 
-                        className={`w-4 h-4 mr-1 ${post.isLiked ? 'text-purple-600' : 'text-black'}`} 
-                        style={{ opacity: post.isLiked ? 1 : 0.6 }} 
-                        fill="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
-                      <span className={`text-xs font-regular ${post.isLiked ? 'text-purple-600' : 'text-black'}`} style={{ opacity: post.isLiked ? 1 : 0.8 }}>
-                        {post.likeCount || 0}
-                      </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center">
+                        {post.isLiked ? (
+                          <svg 
+                            className="w-4 h-4 mr-1 text-purple-700" 
+                            fill="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                          </svg>
+                        ) : (
+                          <svg 
+                            className="w-4 h-4 mr-1 text-black" 
+                            style={{ opacity: 0.6 }}
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                          </svg>
+                        )}
+                        <span className={`text-xs font-regular ${post.isLiked ? 'text-purple-700' : 'text-black'}`} style={{ opacity: post.isLiked ? 1 : 0.8 }}>
+                          {post.likeCount || 0}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center">
+                        <svg 
+                          className="w-4 h-4 text-black mr-1" 
+                          style={{ opacity: 0.6 }}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <span className="text-xs font-regular text-black" style={{ opacity: 0.8 }}>
+                          {post.commentCount || 0}
+                        </span>
+                      </div>
                     </div>
                     
-                    <div className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white mr-1" style={{ opacity: 0.6 }}>
-                        <path fillRule="evenodd" d="M5.337 21.718a6.707 6.707 0 0 1-.533-.074.75.75 0 0 1-.44-1.223 3.73 3.73 0 0 0 .814-1.686c.023-.115-.022-.317-.254-.543C3.274 16.587 2.25 14.41 2.25 12c0-5.03 4.428-9 9.75-9s9.75 3.97 9.75 9c0 5.03-4.428 9-9.75 9-.833 0-1.643-.097-2.417-.279a6.721 6.721 0 0 1-4.246.997Z" clipRule="evenodd" />
-                      </svg>
-                      <span className="text-xs font-regular text-white" style={{ opacity: 0.8 }}>
-                        {post.commentCount || 0}
-                      </span>
-                    </div>
+                    {/* 날짜 - 오른쪽 정렬 */}
+                    <span className="text-xs text-gray-500 font-regular">
+                      {post.createdAt ? getRelativeTime(post.createdAt) : ''}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -609,10 +706,63 @@ function BoardListContent() {
 // 로딩 컴포넌트
 function BoardListLoading() {
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-        <p className="text-sm" style={{ opacity: 0.7 }}>게시글 목록을 불러오는 중...</p>
+    <div className="min-h-screen bg-white">
+      {/* 네비게이션바 스켈레톤 */}
+      <div className="h-16 bg-white border-b border-gray-100 flex items-center px-4">
+        <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+        <div className="flex-1 flex justify-center">
+          <div className="w-24 h-6 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+        <div className="w-6 h-6"></div>
+      </div>
+      
+      {/* 게시글 스켈레톤 리스트 */}
+      <div className="space-y-0">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="px-6 py-2">
+            <div className="flex flex-col space-y-3">
+              {/* 게시글 헤더 스켈레톤 */}
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              
+              {/* 내용 스켈레톤 */}
+              <div className="flex space-x-3">
+                <div className="flex-1 space-y-2">
+                  <div className="w-full h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-3/4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-1/2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                
+                {/* 이미지 스켈레톤 */}
+                <div className="w-20 h-20 bg-gray-200 rounded-lg animate-pulse"></div>
+              </div>
+              
+              {/* 액션 버튼 스켈레톤 */}
+              <div className="flex items-center justify-between pt-3">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="w-6 h-3 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="w-6 h-3 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+            
+            {/* 구분선 */}
+            <div className="border-b border-gray-100 mt-2"></div>
+          </div>
+        ))}
       </div>
     </div>
   );

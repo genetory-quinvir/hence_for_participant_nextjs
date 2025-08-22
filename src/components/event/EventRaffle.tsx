@@ -95,11 +95,24 @@ export default function EventRaffle({ raffle, eventId }: EventRaffleProps) {
                 src="/images/img_giftbox.png" 
                 alt="경품 아이콘" 
                 className="w-full h-full object-contain"
+                style={{ 
+                  animation: 'gentleBounce 1.5s ease-in-out infinite'
+                }}
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   e.currentTarget.nextElementSibling?.classList.remove('hidden');
                 }}
               />
+              <style jsx>{`
+                @keyframes gentleBounce {
+                  0%, 100% {
+                    transform: translateY(0);
+                  }
+                  50% {
+                    transform: translateY(-4px);
+                  }
+                }
+              `}</style>
             </div>
             <div className="flex-1">
               <h4 className="text-white font-bold text-xl mb-2">

@@ -48,7 +48,7 @@ function FoodTrucksContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-black">
+      <div className="min-h-screen bg-white text-black flex flex-col">
         <CommonNavigationBar 
           title="푸드트럭"
           leftButton={
@@ -68,8 +68,46 @@ function FoodTrucksContent() {
           fixedHeight={true}
           sticky={true}
         />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">로딩 중...</div>
+        
+        {/* 푸드트럭 2열 그리드 스켈레톤 */}
+        <div className="flex-1 overflow-y-auto px-1 py-1 scrollbar-hide" style={{ 
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch',
+          overflow: 'auto'
+        }}>
+          <div className="grid grid-cols-2">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={index}
+                className="rounded-xl overflow-hidden flex flex-col"
+                style={{ backgroundColor: 'white' }}
+              >
+                {/* 썸네일 이미지 스켈레톤 */}
+                <div className="w-full aspect-[5/3] overflow-hidden relative p-3" style={{ backgroundColor: "white" }}>
+                  <div className="w-full h-full bg-gray-200 rounded-lg animate-pulse"></div>
+                </div>
+                
+                {/* 푸드트럭 정보 스켈레톤 */}
+                <div className="px-4 flex-1 flex flex-col">
+                  <div className="w-3/4 h-5 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  <div className="w-2/3 h-4 bg-gray-200 rounded animate-pulse mb-4"></div>
+                  
+                  <div className="mt-auto mb-4 space-y-2">
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-gray-200 rounded mr-2 animate-pulse"></div>
+                      <div className="w-1/2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-gray-200 rounded mr-2 animate-pulse"></div>
+                      <div className="w-1/3 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -125,7 +163,13 @@ function FoodTrucksContent() {
       />
       
       {/* 푸드트럭 2열 그리드 */}
-      <div className="flex-1 overflow-y-auto px-1 py-1" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="flex-1 overflow-y-auto px-1 py-1 scrollbar-hide" style={{ 
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+        WebkitOverflowScrolling: 'touch',
+        overflow: 'auto'
+      }}>
         <div className="grid grid-cols-2">
           {vendors.length > 0 ? (
             vendors.map((vendor) => (
@@ -162,7 +206,7 @@ function FoodTrucksContent() {
                 
                 {/* 푸드트럭 정보 */}
                 <div className="px-4 flex-1 flex flex-col">
-                  <h3 className="text-black font-bold text-lg text-left">
+                  <h3 className="text-black font-bold text-md text-left">
                     {vendor.name || '푸드트럭'}
                   </h3>
                   
@@ -175,7 +219,7 @@ function FoodTrucksContent() {
                   <div className="mt-auto mb-4">
                     {vendor.location && (
                       <div className="flex items-center justify-start mb-1">
-                        <svg className="w-4 h-4 text-black mr-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-black mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                           <path fillRule="evenodd" d="M11.906 1.994a8.002 8.002 0 0 1 8.09 8.421 7.996 7.996 0 0 1-1.297 3.957.996.996 0 0 1-.133.204l-.108.129c-.178.243-.37.477-.573.699l-5.112 6.224a1 1 0 0 1-1.545 0L5.982 15.26l-.002-.002a18.146 18.146 0 0 1-.309-.38l-.133-.163a.999.999 0 0 1-.13-.202 7.995 7.995 0 0 1 6.498-12.518ZM15 9.997a3 3 0 1 1-5.999 0 3 3 0 0 1 5.999 0Z" clipRule="evenodd"/>
                         </svg>
                         <span className="text-sm text-black">
@@ -185,7 +229,7 @@ function FoodTrucksContent() {
                     )}
 
                     <div className="flex items-center justify-start mt-1">
-                      <svg className="w-4 h-4 text-black mr-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-black mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                         <path fillRule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm11-4a1 1 0 1 0-2 0v4a1 1 0 0 0 .293.707l3 3a1 1 0 0 0 1.414-1.414L13 11.586V8Z" clipRule="evenodd"/>
                       </svg>
                       <span className="text-sm text-black">
@@ -220,10 +264,55 @@ function FoodTrucksContent() {
 // 로딩 컴포넌트
 function FoodTrucksLoading() {
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-        <p className="text-sm" style={{ opacity: 0.7 }}>푸드트럭 목록을 불러오는 중...</p>
+    <div className="min-h-screen bg-white text-black flex flex-col">
+      {/* 네비게이션바 스켈레톤 */}
+      <div className="h-16 bg-white border-b border-gray-100 flex items-center px-4">
+        <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+        <div className="flex-1 flex justify-center">
+          <div className="w-24 h-6 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+        <div className="w-6 h-6"></div>
+      </div>
+      
+      {/* 푸드트럭 2열 그리드 스켈레톤 */}
+      <div className="flex-1 overflow-y-auto px-1 py-1 scrollbar-hide" style={{ 
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+        WebkitOverflowScrolling: 'touch',
+        overflow: 'auto'
+      }}>
+        <div className="grid grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="rounded-xl overflow-hidden flex flex-col"
+              style={{ backgroundColor: 'white' }}
+            >
+              {/* 썸네일 이미지 스켈레톤 */}
+              <div className="w-full aspect-[5/3] overflow-hidden relative p-3" style={{ backgroundColor: "white" }}>
+                <div className="w-full h-full bg-gray-200 rounded-lg animate-pulse"></div>
+              </div>
+              
+              {/* 푸드트럭 정보 스켈레톤 */}
+              <div className="px-4 flex-1 flex flex-col">
+                <div className="w-3/4 h-5 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="w-2/3 h-4 bg-gray-200 rounded animate-pulse mb-4"></div>
+                
+                <div className="mt-auto mb-4 space-y-2">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-gray-200 rounded mr-2 animate-pulse"></div>
+                    <div className="w-1/2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-gray-200 rounded mr-2 animate-pulse"></div>
+                    <div className="w-1/3 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -212,17 +212,88 @@ function FoodTruckDetailContent() {
   // 로딩 상태 표시
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white">
+      <div className="min-h-screen bg-white text-black flex flex-col">
         <CommonNavigationBar 
           title='푸드트럭'
-          backgroundColor="transparent"
-          backgroundOpacity={0}
-          textColor="text-white"
+          leftButton={
+            <svg
+              className="w-6 h-6 text-black"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          }
+          backgroundColor="white"
+          backgroundOpacity={1}
+          textColor="text-black"
+          sticky={true}
+          fixedHeight={true}
         />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="text-sm" style={{ opacity: 0.7 }}>푸드트럭 정보를 불러오는 중...</p>
+        
+        {/* 푸드트럭 스켈레톤 */}
+        <div className="flex-1 overflow-y-auto px-1">
+          <div className="w-full rounded-xl flex flex-col" style={{ backgroundColor: 'white' }}>
+            {/* 썸네일 이미지 스켈레톤 */}
+            <div className="w-full aspect-[5/3] relative p-3" style={{ backgroundColor: "white" }}>
+              <div className="w-full h-full bg-gray-200 rounded-lg animate-pulse"></div>
+            </div>
+
+            {/* 푸드트럭 정보 스켈레톤 */}
+            <div className="px-4 flex-1 flex flex-col">
+              <div className="w-3/4 h-5 bg-gray-200 rounded animate-pulse mb-3"></div>
+              <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+              <div className="w-2/3 h-4 bg-gray-200 rounded animate-pulse mb-8"></div>
+              
+              <div className="mt-auto mb-8 space-y-2">
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-gray-200 rounded mr-2 animate-pulse"></div>
+                  <div className="w-1/2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-gray-200 rounded mr-1 animate-pulse"></div>
+                  <div className="w-1/3 h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 쿠폰 스켈레톤 */}
+        <div className="px-4 pb-4">
+          <div className="space-y-4">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <div key={index} className="w-full rounded-xl p-4 relative overflow-hidden bg-gray-200 animate-pulse">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gray-300 rounded-lg animate-pulse"></div>
+                    <div className="flex-1">
+                      <div className="w-32 h-4 bg-gray-300 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="w-20 h-8 bg-gray-300 rounded-lg animate-pulse"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 메뉴 스켈레톤 */}
+        <div className="px-4 py-4">
+          <div className="w-16 h-6 bg-gray-200 rounded animate-pulse mb-4"></div>
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="w-full bg-white h-16">
+                <div className="flex h-full items-center">
+                  <div className="flex-1 space-y-2">
+                    <div className="w-2/3 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="w-1/2 h-3 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                  <div className="w-20 h-4 bg-gray-200 rounded animate-pulse ml-2"></div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -246,7 +317,8 @@ function FoodTruckDetailContent() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-black flex flex-col">
+    <div className="min-h-screen bg-white text-black flex flex-col"
+      style={{ paddingBottom: 'min(env(safe-area-inset-bottom) + 16px, 16px)' }}>
       <CommonNavigationBar 
         title={vendor.name || '푸드트럭'}
         leftButton={
@@ -268,10 +340,10 @@ function FoodTruckDetailContent() {
       />
       
       {/* 푸드트럭 카드 */}
-      <div className="flex-1 overflow-y-auto px-1 py-4" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="w-full rounded-xl overflow-hidden cursor-pointer flex flex-col" style={{ backgroundColor: 'white' }}>
+      <div className="flex-1 overflow-y-auto px-1">
+        <div className="w-full rounded-xl cursor-pointer flex flex-col" style={{ backgroundColor: 'white' }}>
           {/* 썸네일 이미지 */}
-          <div className="w-full aspect-[5/3] overflow-hidden relative p-3" style={{ backgroundColor: "white" }}>
+          <div className="w-full aspect-[5/3] relative p-3" style={{ backgroundColor: "white" }}>
             {vendor.imageUrl ? (
               <img 
                 src={vendor.imageUrl} 
@@ -295,18 +367,13 @@ function FoodTruckDetailContent() {
                 }}
               />
             ) : null}
-            <div className="w-full h-full flex items-center justify-center hidden">
-              <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
           </div>
-          
+
           {/* 푸드트럭 정보 */}
           <div className="px-4 flex-1 flex flex-col">
-            <h3 className="text-black font-bold text-lg text-left">
-              {vendor.name || '푸드트럭'}
-            </h3>
+              <h3 className="text-black font-bold text-md text-left">
+                {vendor.name || '푸드트럭'}
+              </h3>
             
             {vendor.description && (
               <p className="text-sm text-black text-left mb-4" style={{ opacity: 0.8 }}>
@@ -314,10 +381,10 @@ function FoodTruckDetailContent() {
               </p>
             )}
             
-            <div className="mt-auto mb-4">
+            <div className="mt-auto mb-8">
               {vendor.location && (
                 <div className="flex items-center justify-start mb-1">
-                  <svg className="w-4 h-4 text-black mr-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-black mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                     <path fillRule="evenodd" d="M11.906 1.994a8.002 8.002 0 0 1 8.09 8.421 7.996 7.996 0 0 1-1.297 3.957.996.996 0 0 1-.133.204l-.108.129c-.178.243-.37.477-.573.699l-5.112 6.224a1 1 0 0 1-1.545 0L5.982 15.26l-.002-.002a18.146 18.146 0 0 1-.309-.38l-.133-.163a.999.999 0 0 1-.13-.202 7.995 7.995 0 0 1 6.498-12.518ZM15 9.997a3 3 0 1 1-5.999 0 3 3 0 0 1 5.999 0Z" clipRule="evenodd"/>
                   </svg>
                   <span className="text-sm text-black">
@@ -341,7 +408,7 @@ function FoodTruckDetailContent() {
 
       {/* 쿠폰 카드 섹션 */}
       {featuredData?.coupons && featuredData.coupons.filter(coupon => coupon.discountType === 'FIXED_AMOUNT').length > 0 && (
-        <div className="px-4 pt-0 pb-4">
+        <div className="px-4 pb-4">
           <div className="space-y-4">
             {featuredData.coupons
               .filter(coupon => coupon.discountType === 'FIXED_AMOUNT')
@@ -388,7 +455,7 @@ function FoodTruckDetailContent() {
                           <img 
                             src={coupon.iconImageUrl} 
                             alt="쿠폰 아이콘" 
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover ml-2"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                               e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -424,7 +491,7 @@ function FoodTruckDetailContent() {
                     </div>
 
                     <button
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-lg flex-shrink-0 ${
+                      className={`px-4 py-2 mr-2 rounded-lg text-sm font-semibold transition-colors shadow-lg flex-shrink-0 ${
                         coupon.status?.toLowerCase() === 'active' && !coupon.isUsed && !usedCoupons.has(coupon.id!)
                           ? coupon.discountType === 'PERCENTAGE'
                             ? 'bg-purple-600 bg-opacity-80 text-white hover:bg-opacity-90'
@@ -453,7 +520,7 @@ function FoodTruckDetailContent() {
       {/* 메뉴 리스트 섹션 */}
       {vendor.menus && vendor.menus.length > 0 && (
         <div className="px-4 py-4">
-          <h2 className="text-lg font-bold text-black mb-4">메뉴</h2>
+          <h2 className="text-lg font-bold text-black">메뉴</h2>
           <div className="space-y-2">
             {vendor.menus.map((menu, index) => (
               <div key={menu.id || index} className="w-full bg-white h-16">

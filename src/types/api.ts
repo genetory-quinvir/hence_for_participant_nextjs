@@ -397,6 +397,20 @@ export interface CommentListResponse {
   error?: string;
 }
 
+// 동아리 아이템 타입
+export interface ClubItem {
+  id?: string;
+  name?: string;
+  description?: string;
+  imageUrl?: string;
+  voteCount?: number;
+  rank?: number;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+
 // FeaturedItem 타입 (이벤트 종합 정보)
 export interface FeaturedItem {
   event: EventItem;
@@ -406,6 +420,7 @@ export interface FeaturedItem {
   timelines: TimelineItem[];
   vendors: VendorItem[];
   notices: BoardItem[];
+  clubs?: ClubItem[];
   lastUpdated: string;
   contact?: ContactInfo;
   faqs?: FaqItem[];

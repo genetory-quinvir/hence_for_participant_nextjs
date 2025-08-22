@@ -18,7 +18,8 @@ import {
   UserItem,
   EventItem,
   CommentItem,
-  ParticipantItem
+  ParticipantItem,
+  ClubItem
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
@@ -1982,6 +1983,215 @@ export async function getEventsList(page: number = 1, limit: number = 20, status
     const statusParam = statuses && statuses.length > 0 ? statuses.map(s => `&status=${s}`).join('') : '';
     console.error('💥 getEventsList 예외 발생:', error);
     apiDebugger.logError(`${API_BASE_URL}/events?page=${page}&limit=${limit}${statusParam}`, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
+
+// 동아리 랭킹 가져오기
+export async function getClubsRanking(eventId: string, limit: number = 50): Promise<{ success: boolean; error?: string; data?: ClubItem[]; isVoted?: boolean; votedClub?: any }> {
+  try {
+    // event_id를 포함한 URL로 수정 (API 문서에 따름)
+    const url = `${API_BASE_URL}/clubs/ranking?event_id=${eventId}&limit=${limit}`;
+
+    console.log('🔄 getClubsRanking API 호출:', url);
+
+    // 토큰 가져오기
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      console.error('❌ 액세스 토큰이 없습니다.');
+      return {
+        success: false,
+        error: '인증 토큰이 없습니다. 다시 로그인해주세요.',
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-cache'
+    });
+
+    console.log('🔍 getClubsRanking 응답 상태:', response.status, response.statusText);
+
+    if (!response.ok) {
+      let errorMessage = `API 요청에 실패했습니다. (${response.status})`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+        console.log('🔍 getClubsRanking 에러 응답:', errorData);
+      } catch (e) {
+        console.log('🔍 getClubsRanking 에러 응답을 JSON으로 파싱할 수 없음');
+      }
+      
+      console.error('❌ getClubsRanking 실패:', errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+
+    const data = await response.json();
+    console.log('✅ getClubsRanking 성공:', data);
+    logger.info('✅ 동아리 랭킹 조회 성공', data);
+    
+    return {
+      success: true,
+      data: data.data?.items || data.items || [],
+      isVoted: data.isVoted || false,
+      votedClub: data.votedClub || null
+    };
+  } catch (error) {
+    console.error('💥 getClubsRanking 예외 발생:', error);
+    apiDebugger.logError(`${API_BASE_URL}/clubs/ranking?limit=${limit}`, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
+
+
+
+// 동아리 투표하기
+export async function getMyVotes(eventId: string): Promise<{ success: boolean; error?: string; data?: ClubItem[] }> {
+  try {
+    const url = `${API_BASE_URL}/clubs/my/votes?event_id=${eventId}`;
+
+    console.log('🔄 getMyVotes API 호출:', url);
+
+    // 토큰 가져오기
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      console.error('❌ 액세스 토큰이 없습니다.');
+      return {
+        success: false,
+        error: '인증 토큰이 없습니다. 다시 로그인해주세요.',
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-cache'
+    });
+
+    console.log('🔍 getMyVotes 응답 상태:', response.status, response.statusText);
+
+    if (!response.ok) {
+      let errorMessage = `API 요청에 실패했습니다. (${response.status})`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+        console.log('🔍 getMyVotes 에러 응답:', errorData);
+      } catch (e) {
+        console.log('🔍 getMyVotes 에러 응답을 JSON으로 파싱할 수 없음');
+      }
+      
+      console.error('❌ getMyVotes 실패:', errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+
+    const data = await response.json();
+    console.log('✅ getMyVotes 성공:', data);
+    console.log('🔍 getMyVotes 데이터 타입:', typeof data);
+    console.log('🔍 getMyVotes 데이터가 배열인가?', Array.isArray(data));
+    console.log('🔍 getMyVotes 데이터 길이:', data ? (Array.isArray(data) ? data.length : '배열 아님') : 'null/undefined');
+    logger.info('✅ 내 투표 정보 조회 성공', data);
+    
+    return {
+      success: true,
+      data: data
+    };
+  } catch (error) {
+    console.error('💥 getMyVotes 예외 발생:', error);
+    apiDebugger.logError(`${API_BASE_URL}/clubs/my/votes`, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
+
+export async function voteForClub(eventId: string, inviteCode: string): Promise<{ success: boolean; error?: string; data?: any }> {
+  try {
+    const url = `${API_BASE_URL}/clubs/vote`;
+
+    console.log('🔄 voteForClub API 호출:', url, { eventId, inviteCode });
+
+    // 토큰 가져오기
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      console.error('❌ 액세스 토큰이 없습니다.');
+      return {
+        success: false,
+        error: '인증 토큰이 없습니다. 다시 로그인해주세요.',
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        eventId,
+        inviteCode
+      }),
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-cache'
+    });
+
+    console.log('🔍 voteForClub 응답 상태:', response.status, response.statusText);
+
+    if (!response.ok) {
+      let errorMessage = `API 요청에 실패했습니다. (${response.status})`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+        console.log('🔍 voteForClub 에러 응답:', errorData);
+      } catch (e) {
+        console.log('🔍 voteForClub 에러 응답을 JSON으로 파싱할 수 없음');
+      }
+      
+      console.error('❌ voteForClub 실패:', errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+
+    const data = await response.json();
+    console.log('✅ voteForClub 성공:', data);
+    logger.info('✅ 동아리 투표 성공', data);
+    
+    return {
+      success: true,
+      data: data
+    };
+  } catch (error) {
+    console.error('💥 voteForClub 예외 발생:', error);
+    apiDebugger.logError(`${API_BASE_URL}/clubs/vote`, error);
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',

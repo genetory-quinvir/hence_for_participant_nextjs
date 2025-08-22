@@ -1,20 +1,87 @@
 "use client";
 
 import { TimelineItem } from "@/types/api";
+import { useState, useEffect } from "react";
 
 interface EventTimelineProps {
   timelines: TimelineItem[];
 }
 
 export default function EventTimeline({ timelines }: EventTimelineProps) {
-  const displayTimelines = timelines.filter(timeline => timeline.id);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // 현재 시간을 1분마다 업데이트 (로컬 시간 사용)
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date(); // 브라우저의 로컬 시간 사용
+      setCurrentTime(now);
+    };
+
+    updateTime(); // 초기 실행
+    const interval = setInterval(updateTime, 60000); // 1분마다 업데이트
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // 시간에 따라 상태를 계산하는 함수
+  const getTimelineStatus = (timeline: TimelineItem, index: number) => {
+    // 시간 정보가 없으면 PENDING으로 처리
+    if (!timeline.time) {
+      return 'PENDING';
+    }
+
+    try {
+      // 현재 시간을 로컬 시간으로 변환하여 시간 문자열 생성
+      const currentHour = currentTime.getHours();
+      const currentMinute = currentTime.getMinutes();
+      const currentTimeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+      
+      // timeline.time과 현재 시간 문자열 비교
+      const timelineTimeString = timeline.time;
+      
+      // 다음 타임라인의 시간 찾기
+      let nextTimelineTimeString: string | null = null;
+      if (index < timelines.length - 1) {
+        const nextTimeline = timelines[index + 1];
+        if (nextTimeline.time) {
+          nextTimelineTimeString = nextTimeline.time;
+        }
+      }
+      
+      // 시간 문자열 비교 (HH:MM 형식)
+      // 현재 시간이 타임라인 시간보다 작으면 PENDING
+      if (currentTimeString < timelineTimeString) {
+        return 'PENDING';
+      }
+      // 현재 시간이 타임라인 시간과 같거나 크고, 다음 타임라인이 없거나 다음 타임라인 시간보다 작으면 ACTIVE
+      else if (currentTimeString >= timelineTimeString && (!nextTimelineTimeString || currentTimeString < nextTimelineTimeString)) {
+        return 'ACTIVE';
+      }
+      // 그 외의 경우 (다음 타임라인이 시작된 경우) COMPLETED
+      else {
+        return 'COMPLETED';
+      }
+    } catch (error) {
+      // 시간 파싱에 실패하면 PENDING으로 처리
+      console.error('시간 파싱 오류:', error);
+      return 'PENDING';
+    }
+  };
+
+  // 시간 기반으로 상태를 계산한 타임라인 생성 (원본 status 무시)
+  const updatedTimelines = timelines.map((timeline, index) => ({
+    ...timeline,
+    status: getTimelineStatus(timeline, index) // 원본 status 대신 시간 기반 status 사용
+  }));
+
+  const displayTimelines = updatedTimelines.filter(timeline => timeline.id);
 
   if (!displayTimelines || displayTimelines.length === 0) {
     return null;
   }
 
   return (
-    <div className="px-4 mb-12">
+    <div className="px-4 mb-4">
       <div className="space-y-4">
         {displayTimelines.map((timeline, index) => (
           <div key={timeline.id} className="flex">
@@ -118,7 +185,7 @@ export default function EventTimeline({ timelines }: EventTimelineProps) {
                   {/* 상태 표시 */}
                   {timeline.status === 'COMPLETED' && (
                     <div className="flex-shrink-0">
-                      <span className="px-4 py-2 rounded-full text-xs font-bold text-gray-400" 
+                      <span className="px-4 py-2 rounded-full text-xs font-normal text-gray-400" 
                       style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}>
                         종료
                       </span>
@@ -135,7 +202,7 @@ export default function EventTimeline({ timelines }: EventTimelineProps) {
                   
                   {timeline.status === 'PENDING' && (
                     <div className="flex-shrink-0">
-                      <span className="px-4 py-2 rounded-full text-xs font-bold text-gray-400" 
+                      <span className="px-4 py-2 rounded-full text-xs font-normal text-gray-400" 
                       style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}>
                         예정중
                       </span>

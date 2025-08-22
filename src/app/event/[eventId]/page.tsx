@@ -20,6 +20,7 @@ import EventShout from "@/components/event/EventShout";
 import EventHelp from "@/components/event/EventHelp";
 import EventAdvertisements from "@/components/event/EventAdvertisements";
 import EventChat from "@/components/event/EventChat";
+import EventClubs from "@/components/event/EventClubs";
 import { useSimpleNavigation } from "@/utils/navigation";
 import EventSection from "@/components/event/EventSection";
 
@@ -284,20 +285,19 @@ function EventPageContent() {
           </EventSection>
         )}  
 
+        {/* 동아리 투표 랭킹 섹션 */}
+        {featuredData.clubs && (
+          <EventClubs 
+            clubs={featuredData.clubs} 
+            eventId={featuredData.event.id || 'default-event'}
+          />
+        )}
 
         {/* 실시간 채팅 섹션 */}
         {/* <EventChat 
           eventId={featuredData.event.id || 'default-event'}
           showViewAllButton={false}
         /> */}
-
-        {/* 이벤트 경품 섹션 */}
-        {featuredData.raffle && (
-          <EventRaffle 
-            raffle={featuredData.raffle} 
-            eventId={featuredData.event.id || 'default-event'}
-          />
-        )}  
 
         {/* 광고 섹션 1 */}
         {/* {featuredData.advertisements && featuredData.advertisements.length > 0 && (
@@ -334,6 +334,14 @@ function EventPageContent() {
             />
           </EventSection>
         )}
+
+        {/* 이벤트 경품 섹션 */}
+        {featuredData.raffle && (
+          <EventRaffle 
+            raffle={featuredData.raffle} 
+            eventId={featuredData.event.id || 'default-event'}
+          />
+        )}  
 
         {/* 광고 섹션 2 */}
         {/* {featuredData.advertisements && featuredData.advertisements.length > 1 && (
@@ -400,7 +408,7 @@ function EventPageContent() {
       </main>
 
       {/* 네비게이션바 - 오버레이 */}
-      <div className="absolute top-0 left-0 right-0 z-50">
+      <div className="absolute top-2 left-0 right-0 z-50">
         <CommonNavigationBar
           height="44px"
           rightButton={renderProfileButton()}
