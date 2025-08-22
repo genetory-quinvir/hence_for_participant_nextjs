@@ -11,7 +11,7 @@ import CodeInputModal from "@/components/common/CodeInputModal";
 
 export default function QRPage() {
   const { navigate, goBack, replace } = useSimpleNavigation();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const { showToast } = useToast();
   
   const [isChecking, setIsChecking] = useState(false);
@@ -25,10 +25,10 @@ export default function QRPage() {
 
   // 인증되지 않은 경우 메인 페이지로 리다이렉트
   useEffect(() => {
-    if (!isAuthenticated || !user) {
+    if (!authLoading && (!isAuthenticated || !user)) {
       navigate("/");
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, authLoading]);
 
   // QR 스캐너 정리 함수
   const stopScanner = () => {
@@ -112,6 +112,13 @@ export default function QRPage() {
   const startScanner = async () => {
     console.log("QR 스캐너 시작 시도");
     
+    // 카메라 지원 여부 확인
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error("카메라를 지원하지 않는 브라우저입니다");
+        setCameraError("이 브라우저는 카메라를 지원하지 않습니다.\n다른 브라우저를 사용해주세요.");
+        return;
+      }
+    
     // 비디오 요소가 준비될 때까지 잠시 대기
     let attempts = 0;
     while (!videoRef.current && attempts < 10) {
@@ -122,7 +129,7 @@ export default function QRPage() {
     
     if (!videoRef.current) {
       console.error("비디오 요소를 찾을 수 없습니다");
-      setCameraError("비디오 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.");
+      setCameraError("비디오 요소를 찾을 수 없습니다.\n페이지를 새로고침해주세요.");
       return;
     }
     
@@ -179,20 +186,20 @@ export default function QRPage() {
       
       if (error instanceof Error) {
         if (error.name === 'NotAllowedError') {
-          setCameraError("카메라 권한이 거부되었습니다. 브라우저 설정에서 카메라 권한을 허용해주세요.");
+          setCameraError("카메라 권한이 거부되었습니다.\n브라우저 설정에서 카메라 권한을 허용해주세요.");
           showToast("카메라 권한이 거부되었습니다.", "error");
         } else if (error.name === 'NotFoundError') {
-          setCameraError("카메라를 찾을 수 없습니다. 카메라가 연결되어 있는지 확인해주세요.");
+          setCameraError("카메라를 찾을 수 없습니다.\n카메라가 연결되어 있는지 확인해주세요.");
           showToast("카메라를 찾을 수 없습니다.", "error");
         } else if (error.name === 'NotSupportedError') {
-          setCameraError("이 브라우저는 카메라를 지원하지 않습니다.");
+          setCameraError("이 브라우저는 카메라를 지원하지 않습니다.\n다른 브라우저를 사용해주세요.");
           showToast("이 브라우저는 카메라를 지원하지 않습니다.", "error");
         } else {
-          setCameraError("카메라 시작에 실패했습니다: " + error.message);
+          setCameraError("카메라 시작에 실패했습니다:\n" + error.message);
           showToast("카메라 시작에 실패했습니다.", "error");
         }
       } else {
-        setCameraError("알 수 없는 카메라 오류가 발생했습니다.");
+        setCameraError("알 수 없는 카메라 오류가 발생했습니다.\n다시 시도해주세요.");
         showToast("카메라 시작에 실패했습니다.", "error");
       }
     }
@@ -224,12 +231,14 @@ export default function QRPage() {
   }, []);
 
   // 인증되지 않은 경우 로딩 표시
-  if (!isAuthenticated || !user) {
+  if (authLoading || !isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-sm" style={{ opacity: 0.7 }}>메인 페이지로 이동 중...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-8"></div>
+          <p className="text-sm" style={{ opacity: 0.7 }}>
+            {authLoading ? '인증 확인 중...' : '메인 페이지로 이동 중...'}
+          </p>
         </div>
       </div>
     );
@@ -326,13 +335,23 @@ export default function QRPage() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black text-white flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-white text-black flex flex-col overflow-hidden" style={{ 
+      height: '100dvh',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      overflow: 'hidden',
+      WebkitOverflowScrolling: 'auto',
+      overscrollBehavior: 'none'
+    }}>
       {/* 네비게이션바 */}
       <CommonNavigationBar
         title="QR 코드 확인"
         leftButton={
           <svg
-            className="w-6 h-6 text-white"
+            className="w-6 h-6 text-black"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -341,24 +360,32 @@ export default function QRPage() {
           </svg>
         }
         onLeftClick={handleBackClick}
-        backgroundColor="black"
+        backgroundColor="white"
         backgroundOpacity={1}
-        textColor="text-white"
+        textColor="text-black"
+        sticky={false}
+        fixedHeight={true}
       />
 
       {/* 메인 컨텐츠 */}
-      <main className="flex-1 flex flex-col px-4 overflow-hidden"
-            style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom) + 12px)' }}>
+      <main className="flex-1 flex flex-col overflow-y-auto scrollbar-hide" style={{ 
+        minHeight: 0,
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+        WebkitOverflowScrolling: 'touch',
+        WebkitUserSelect: 'none',
+        userSelect: 'none'
+      }}>
         {/* QR 카메라 영역 */}
-        <section className="flex-1 flex flex-col items-center justify-center min-h-0 overflow-hidden">
+        <section className="flex-1 flex flex-col items-center justify-center px-4" style={{ minHeight: 0 }}>
           <div className="w-full max-w-sm">
             {cameraError ? (
               // 카메라 오류 상태
-              <div className="bg-black rounded-xl p-6 w-full">
+              <div className="bg-gray-100 rounded-xl p-6 w-full">
                 <div className="aspect-square bg-transparent rounded-lg flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-4xl mb-4">📷</div>
-                    <p className="text-md font-regular text-white mb-4" style={{ opacity: 0.7 }}>
+                    <p className="text-md font-regular text-black mb-4" style={{ opacity: 0.7, whiteSpace: 'pre-line' }}>
                       {cameraError}
                     </p>
                     <button
@@ -372,7 +399,7 @@ export default function QRPage() {
               </div>
             ) : (
               // 카메라 컨테이너 (항상 렌더링)
-              <div className="relative bg-black rounded-xl overflow-hidden">
+              <div className="relative bg-gray-100 rounded-xl overflow-hidden">
                 {/* 비디오 요소 (항상 렌더링하되 조건부로 표시) */}
                 <video
                   ref={videoRef}
@@ -406,16 +433,12 @@ export default function QRPage() {
                   // 카메라 시작 전 상태
                   <div className="aspect-square bg-transparent rounded-lg flex items-center justify-center">
                     <div className="text-center">
-                      <p className="text-md font-regular text-white mb-4" style={{ opacity: 0.7 }}>
+                      <p className="text-sm font-regular text-black mb-4" style={{ opacity: 0.7 }}>
                         QR 코드를 스캔하려면
                       </p>
                       <button
                         onClick={startScanner}
                         className="px-6 py-3 text-sm bg-purple-600 text-white rounded-full font-semibold hover:bg-purple-700 transition-colors"
-                        style={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)'
-                        }}          
                       >
                         카메라 시작하기
                       </button>
@@ -428,7 +451,7 @@ export default function QRPage() {
         </section>
 
         {/* 하단 버튼들 */}
-        <section className="flex-shrink-0" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom) + 16px)' }}>
+        <section className="flex-shrink-0 px-4 pb-4" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom) + 16px)' }}>
           <div className="space-y-3"> 
             {/* 수동 입력 버튼 */}
             <button
@@ -438,14 +461,14 @@ export default function QRPage() {
                 isChecking ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)'
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                border: '1px solid rgba(0, 0, 0, 0.1)'
               }}
             >
-              <div className="text-white font-semibold text-md flex items-center justify-center">
+              <div className="text-black font-semibold text-md flex items-center justify-center">
                 {isChecking ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
                     확인 중...
                   </>
                 ) : (

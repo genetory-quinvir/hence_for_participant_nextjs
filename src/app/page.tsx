@@ -73,14 +73,16 @@ export default function HomePage() {
         backgroundColor="transparent"
         backgroundOpacity={0}
         textColor="text-white"
-        rightButton={
-          <button 
-            className="ml-auto w-8 h-8 rounded-full flex items-center justify-center transition-colors overflow-hidden"
-            style={{
-              backgroundColor: isAuthenticated ? 'transparent' : 'rgba(255, 255, 255, 0.05)'
-            }}
-            onClick={() => navigate(isAuthenticated ? "/profile" : "/sign")}
-          >
+                 rightButton={
+           <button 
+             className={`ml-auto flex items-center justify-center transition-colors ${
+               isAuthenticated ? 'w-8 h-8 rounded-full overflow-hidden' : 'px-4 py-2 rounded-lg mt-2'
+             }`}
+             style={{
+               backgroundColor: isAuthenticated ? 'transparent' : 'rgba(255, 255, 255, 0.05)'
+             }}
+             onClick={() => navigate(isAuthenticated ? "/profile" : "/sign")}
+           >
             {isAuthenticated && userProfile?.profileImageUrl ? (
               <img 
                 src={userProfile.profileImageUrl} 
@@ -91,31 +93,23 @@ export default function HomePage() {
                   e.currentTarget.nextElementSibling?.classList.remove('hidden');
                 }}
               />
-            ) : isAuthenticated ? (
-              <img 
-                src="/images/icon_profile.png" 
-                alt="프로필 아이콘" 
-                className="w-6 h-6 object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                }}
-              />
+                         ) : isAuthenticated ? (
+              <div className="w-full h-full bg-gray-100 rounded-full flex items-center justify-center">
+                <span className="text-black font-bold text-sm">
+                  {userProfile?.nickname ? userProfile.nickname.charAt(0).toUpperCase() : 
+                   user?.nickname ? user.nickname.charAt(0).toUpperCase() : 
+                   user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
+                </span>
+              </div>
             ) : (
-              <img 
-                src="/images/icon_profile.png" 
-                alt="프로필 아이콘" 
-                className="w-6 h-6 object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                }}
-              />
+              <span className="text-white text-sm font-bold">
+                로그인
+              </span>
             )}
             
             {/* 폴백: 초기 이니셜 */}
-            <div className="w-full h-full bg-white bg-opacity-20 rounded-full flex items-center justify-center hidden">
-              <span className="text-white font-bold text-sm">
+            <div className="w-full h-full bg-gray-100 rounded-full flex items-center justify-center hidden">
+              <span className="text-black font-bold text-sm">
                 {userProfile?.nickname ? userProfile.nickname.charAt(0).toUpperCase() : 
                  user?.nickname ? user.nickname.charAt(0).toUpperCase() : 
                  user?.email ? user.email.charAt(0).toUpperCase() : 'U'}

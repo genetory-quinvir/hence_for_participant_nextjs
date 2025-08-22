@@ -103,12 +103,12 @@ function SignContent() {
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-black text-white overflow-hidden">
+    <div className="fixed inset-0 w-full h-full bg-white text-black overflow-hidden">
       {/* 네비게이션바 */}
       <CommonNavigationBar
         leftButton={
           <svg
-            className="w-6 h-6 text-white"
+            className="w-6 h-6 text-black"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -117,9 +117,11 @@ function SignContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
-        backgroundColor="transparent"
-        backgroundOpacity={0}
-        textColor="text-white"
+        backgroundColor="white"
+        backgroundOpacity={1}
+        textColor="text-black"
+        sticky={true}
+        fixedHeight={true}
       />
 
       {/* 메인 컨텐츠 */}
@@ -127,10 +129,13 @@ function SignContent() {
         <div className="w-full">
           {/* 로고/제목 섹션 */}
           <div className="text-center mb-4">
-            <h1 className="text-2xl font-semibold text-white mb-0 tracking-wider">
-              HENCE
-            </h1>
-            <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+            <img 
+              src="/images/img_logo_black.png" 
+              alt="HENCE" 
+              className="h-8 mx-auto mb-2"
+              style={{ maxWidth: '200px' }}
+            />
+            <p className="text-black text-sm" style={{ opacity: 0.6 }}>
               이벤트의 시작과 끝
             </p>
           </div>
@@ -140,7 +145,7 @@ function SignContent() {
             <div className="space-y-6 mb-6">
               {/* 이메일 입력 */}
               <div>
-                <label className="block text-white text-sm mb-2" style={{ opacity: 0.8 }}>
+                <label className="block text-black text-sm mb-2" style={{ opacity: 0.8 }}>
                   이메일
                 </label>
                 <input
@@ -150,18 +155,18 @@ function SignContent() {
                   placeholder="이메일을 입력하세요"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 rounded-xl bg-black text-white focus:outline-none transition-all placeholder-custom h-14"
+                  className="w-full px-4 rounded-xl bg-gray-100 text-black focus:outline-none transition-all h-14"
                   style={{
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    border: '1px solid rgba(0, 0, 0, 0.2)',
                   }}
-                  onFocus={(e) => e.target.style.border = '1px solid rgba(255, 255, 255, 0.5)'}
-                  onBlur={(e) => e.target.style.border = '1px solid rgba(255, 255, 255, 0.2)'}
+                  onFocus={(e) => e.target.style.border = '1px solid #7C3AED'}
+                  onBlur={(e) => e.target.style.border = '1px solid rgba(0, 0, 0, 0.2)'}
                 />
               </div>
 
               {/* 비밀번호 입력 */}
               <div>
-                <label className="block text-white text-sm mb-2" style={{ opacity: 0.8 }}>
+                <label className="block text-black text-sm mb-2" style={{ opacity: 0.8 }}>
                   비밀번호
                 </label>
                 <input
@@ -171,12 +176,12 @@ function SignContent() {
                   placeholder="비밀번호를 입력하세요"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 rounded-xl bg-black text-white focus:outline-none transition-all placeholder-custom h-14"
+                  className="w-full px-4 rounded-xl bg-gray-100 text-black focus:outline-none transition-all h-14"
                   style={{
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    border: '1px solid rgba(0, 0, 0, 0.2)',
                   }}
-                  onFocus={(e) => e.target.style.border = '1px solid rgba(255, 255, 255, 0.5)'}
-                  onBlur={(e) => e.target.style.border = '1px solid rgba(255, 255, 255, 0.2)'}
+                  onFocus={(e) => e.target.style.border = '1px solid #7C3AED'}
+                  onBlur={(e) => e.target.style.border = '1px solid rgba(0, 0, 0, 0.2)'}
                 />
 
                 {/* 비밀번호 찾기 버튼 */}
@@ -184,7 +189,7 @@ function SignContent() {
                   <button
                     type="button"
                     onClick={() => console.log("비밀번호 찾기 클릭")}
-                    className="text-white text-xs hover:text-white transition-colors underline"
+                    className="text-black text-xs hover:text-black transition-colors underline"
                     style={{ opacity: 0.7 }}
                   >
                     비밀번호를 잊어버리셨나요?
@@ -197,7 +202,7 @@ function SignContent() {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full rounded-xl p-4 mb-4 transition-colors h-14 ${
+              className={`w-full rounded-xl py-3 mb-4 transition-colors ${
                 isLoading
                   ? 'bg-purple-400 cursor-not-allowed'
                   : 'bg-purple-600 hover:bg-purple-700 active:bg-purple-800'
@@ -221,49 +226,59 @@ function SignContent() {
             <button
               type="button"
               onClick={handleSignUp}
-              className="text-white text-sm"
-              style={{ opacity: 0.6 }}
+              className="text-black text-sm"
             >
-              계정이 없으신가요? <span className="text-purple-400 hover:text-purple-300">회원가입</span>
+              계정이 없으신가요? <span className="text-purple-700 hover:text-purple-800">회원가입</span>
             </button>
           </div>
 
           {/* 추가 옵션 */}
           <div className="mt-8 text-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-            <p className="text-white text-sm" style={{ opacity: 0.6 }}>
-              소셜 로그인으로 간편하게 시작하세요
-            </p>
+            <div className="flex items-center justify-center mb-6">
+              <div className="flex-1 h-px bg-gray-300 mx-4"></div>
+              <span className="text-black text-sm px-4">또는</span>
+              <div className="flex-1 h-px bg-gray-300 mx-4"></div>
+            </div>
 
             {/* 소셜 로그인 버튼들 */}
             <div className="flex justify-center space-x-4 mt-6">
               {/* 카카오 */}
               <button
                 type="button"
-                className="w-12 h-12 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
-                style={{ backgroundColor: '#FEE500' }}
+                className="w-12 h-12 rounded-full flex items-center justify-center transition-opacity hover:opacity-80 bg-white overflow-hidden"
                 onClick={() => handleSocialLogin('kakao')}
               >
-                <span className="text-black font-bold text-sm">K</span>
+                <img 
+                  src="/images/icon_kakao.png" 
+                  alt="카카오 로그인" 
+                  className="w-full h-full object-cover"
+                />
               </button>
 
               {/* 네이버 */}
               <button
                 type="button"
-                className="w-12 h-12 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
-                style={{ backgroundColor: '#03C75A' }}
+                className="w-12 h-12 rounded-full flex items-center justify-center transition-opacity hover:opacity-80 bg-white overflow-hidden"
                 onClick={() => handleSocialLogin('naver')}
               >
-                <span className="text-white font-bold text-sm">N</span>
+                <img 
+                  src="/images/icon_naver.png" 
+                  alt="네이버 로그인" 
+                  className="w-full h-full object-cover"
+                />
               </button>
 
               {/* 구글 */}
               <button
                 type="button"
-                className="w-12 h-12 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
-                style={{ backgroundColor: '#ffffff' }}
+                className="w-12 h-12 rounded-full flex items-center justify-center transition-opacity hover:opacity-80 bg-white overflow-hidden"
                 onClick={() => handleSocialLogin('google')}
               >
-                <span className="text-black font-bold text-sm">G</span>
+                <img 
+                  src="/images/icon_google.png" 
+                  alt="구글 로그인" 
+                  className="w-full h-full object-cover"
+                />
               </button>
             </div>
           </div>
@@ -276,9 +291,9 @@ function SignContent() {
 // 로딩 컴포넌트
 function SignLoading() {
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+    <div className="min-h-screen bg-white text-black flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
         <p className="text-sm" style={{ opacity: 0.7 }}>로그인 페이지를 불러오는 중...</p>
       </div>
     </div>

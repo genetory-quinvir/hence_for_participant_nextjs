@@ -4,42 +4,93 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useSimpleNavigation } from "@/utils/navigation";
-import { updateProfile, updateProfileImage, deleteProfileImage } from "@/lib/api";
+import { updateProfile, updateProfileImage, deleteProfileImage, getUserProfile } from "@/lib/api";
+import { UserItem } from "@/types/api";
 
 function ProfileEditContent() {
   const { navigate, goBack, replace } = useSimpleNavigation();
-  const { user, updateUser, isAuthenticated } = useAuth();
+  const { user, updateUser, isAuthenticated, isLoading: authLoading } = useAuth();
   
+  const [userProfile, setUserProfile] = useState<UserItem | null>(null);
   const [nickname, setNickname] = useState("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [profileLoading, setProfileLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 인증되지 않은 경우 메인 페이지로 리다이렉트
   useEffect(() => {
-    if (!isAuthenticated || !user) {
+    if (!authLoading && (!isAuthenticated || !user)) {
       navigate("/");
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, authLoading]);
+
+  // 최신 프로필 정보 가져오기
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (isAuthenticated && !userProfile && !profileLoading) {
+        setProfileLoading(true);
+        try {
+          console.log('프로필 정보 가져오기 시작');
+          const result = await getUserProfile();
+          if (result.success && result.data) {
+            console.log('프로필 정보 가져오기 성공:', result.data);
+            setUserProfile(result.data);
+          } else {
+            console.error('프로필 정보 가져오기 실패:', result.error);
+          }
+        } catch (error) {
+          console.error('프로필 정보 가져오기 예외:', error);
+        } finally {
+          setProfileLoading(false);
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, [isAuthenticated, userProfile, profileLoading]);
 
   // 사용자 정보로 폼 초기화
   useEffect(() => {
-    if (user) {
-      console.log('사용자 정보 로드:', user);
-      setNickname((user.nickname || user.name || "") as string);
-      setProfileImage(user.profileImageUrl || null);
+    const currentUser = userProfile || user;
+    if (currentUser) {
+      console.log('사용자 정보 로드:', currentUser);
+      setNickname((currentUser.nickname || currentUser.name || "") as string);
+      
+      // 프로필 이미지 URL이 있는 경우에만 설정
+      if (currentUser.profileImageUrl && currentUser.profileImageUrl.trim() !== '') {
+        console.log('프로필 이미지 URL 설정:', currentUser.profileImageUrl);
+        setProfileImage(currentUser.profileImageUrl);
+      } else {
+        console.log('프로필 이미지 없음 - 이니셜 표시');
+        setProfileImage(null);
+      }
     }
-  }, [user]);
+  }, [userProfile, user]);
 
   // 인증되지 않은 경우 로딩 표시
-  if (!isAuthenticated || !user) {
+  if (authLoading || !isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-sm" style={{ opacity: 0.7 }}>메인 페이지로 이동 중...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-sm" style={{ opacity: 0.7 }}>
+            {authLoading ? '인증 확인 중...' : '메인 페이지로 이동 중...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 프로필 로딩 중일 때 로딩 화면 표시
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-sm" style={{ opacity: 0.7 }}>프로필 정보를 불러오는 중...</p>
         </div>
       </div>
     );
@@ -73,7 +124,8 @@ function ProfileEditContent() {
       console.log('닉네임 변경 성공:', nicknameResult.data);
       
       // 프로필 이미지 변경 API 호출 (이미지가 있는 경우)
-      let newProfileImageUrl = user.profileImageUrl;
+      const currentUser = userProfile || user;
+      let newProfileImageUrl = currentUser.profileImageUrl;
       
       if (profileImageFile) {
         console.log('프로필 이미지 업로드 시작');
@@ -100,10 +152,10 @@ function ProfileEditContent() {
         if (newProfileImageUrl) {
           setProfileImage(newProfileImageUrl);
         }
-      } else if (user.profileImageUrl && !profileImage) {
+      } else if (currentUser.profileImageUrl && !profileImage) {
         // 기존 이미지가 있었는데 삭제된 경우
         console.log('프로필 이미지 삭제 시작');
-        const deleteResult = await deleteProfileImage(user!.id!);
+        const deleteResult = await deleteProfileImage(currentUser.id);
         
         if (!deleteResult.success) {
           console.error('프로필 이미지 삭제 실패:', deleteResult.error);
@@ -113,14 +165,11 @@ function ProfileEditContent() {
         
         console.log('프로필 이미지 삭제 성공:', deleteResult.data);
         newProfileImageUrl = null; // 이미지 삭제됨
-        
-        // 미리보기도 제거하여 이니셜이 표시되도록 함
-        setProfileImage('');
       }
       
       // 로컬 상태 업데이트
       const updatedUser = {
-        ...user,
+        ...currentUser,
         nickname: nickname.trim(),
         profileImageUrl: newProfileImageUrl,
       };
@@ -142,7 +191,8 @@ function ProfileEditContent() {
   };
 
   const handleCancel = () => {
-    if (nickname !== (user?.nickname || user?.name || "") || profileImage !== (user?.profileImageUrl || null)) {
+    const currentUser = userProfile || user;
+    if (nickname !== (currentUser?.nickname || currentUser?.name || "") || profileImage !== (currentUser?.profileImageUrl || null)) {
       if (confirm("변경사항이 있습니다. 정말 취소하시겠습니까?")) {
         replace("/profile");
       }
@@ -266,39 +316,17 @@ function ProfileEditContent() {
     }
   };
 
-  const handleImageDelete = async () => {
-    try {
-      console.log('프로필 이미지 삭제 시작');
-      
-      // 실제 API 호출
-      const result = await deleteProfileImage(user!.id!);
-      
-      if (result.success) {
-        console.log('프로필 이미지 삭제 성공:', result.data);
-        
-        // 로컬 상태 업데이트
-        setProfileImage(''); // 빈 문자열로 설정하여 이니셜이 표시되도록 함
-        setProfileImageFile(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-        
-        // 사용자 정보 업데이트
-        const updatedUser = {
-          ...user,
-          profileImageUrl: null,
-        };
-        updateUser(updatedUser);
-        
-        console.log('프로필 이미지 삭제 완료 - 이니셜 표시됨');
-      } else {
-        console.error('프로필 이미지 삭제 실패:', result.error);
-        setError(result.error || "프로필 이미지 삭제에 실패했습니다. 다시 시도해주세요.");
-      }
-    } catch (error) {
-      console.error("프로필 이미지 삭제 오류:", error);
-      setError("프로필 이미지 삭제 중 오류가 발생했습니다. 다시 시도해주세요.");
+  const handleImageDelete = () => {
+    console.log('프로필 이미지 삭제 (로컬 상태만 변경)');
+    
+    // 로컬 상태만 업데이트 (API 호출 없음)
+    setProfileImage(null); // null로 설정하여 이니셜이 표시되도록 함
+    setProfileImageFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
+    
+    console.log('프로필 이미지 삭제 완료 - 이니셜 표시됨 (저장하기 버튼을 눌러야 실제 삭제됨)');
   };
 
   const handleImageClick = () => {
@@ -337,26 +365,30 @@ function ProfileEditContent() {
               className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer relative overflow-hidden border-2 border-gray-200"
               onClick={handleImageClick}
             >
-              {profileImage && profileImage.trim() !== '' ? (
+              {profileImage ? (
                 <img 
                   src={profileImage} 
                   alt="프로필 이미지" 
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.log('프로필 이미지 로드 실패, 이니셜 표시');
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
                 />
-              ) : (
-                <span className="text-black text-3xl font-bold">
-                  {nickname.charAt(0).toUpperCase() || 'U'}
-                </span>
-              )}
+              ) : null}
+              <span className={`text-black text-3xl font-bold ${profileImage ? 'hidden' : ''}`}>
+                {nickname.charAt(0).toUpperCase() || 'U'}
+              </span>
               
               {/* 편집 오버레이 */}
             </div>
             
             {/* 삭제 버튼 */}
-            {profileImage && profileImage.trim() !== '' && (
+            {profileImage && (
               <button
                 onClick={handleImageDelete}
-                className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
+                className="absolute -top-0 -right-0 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg z-10"
               >
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

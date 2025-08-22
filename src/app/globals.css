@@ -98,6 +98,12 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   color: rgba(255, 255, 255, 0.4);
 }
 
+/* 로그인 페이지 플레이스홀더 스타일 */
+input[type="email"]::placeholder,
+input[type="password"]::placeholder {
+  color: #9CA3AF !important; /* gray-400 */
+}
+
 /* 댓글 입력 폼 플레이스홀더 스타일 */
 .comment-textarea::placeholder {
   color: rgba(0, 0, 0, 0.4) !important;

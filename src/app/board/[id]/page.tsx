@@ -3,13 +3,15 @@
 import { useEffect, useState, Suspense, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { BoardItem, CommentItem } from "@/types/api";
-import { getBoardDetail, getComments, createComment, getAccessToken, deleteBoard } from "@/lib/api";
+import { getBoardDetail, getComments, createComment, getAccessToken, deleteBoard, toggleLike } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import CommonProfileView from "@/components/common/CommonProfileView";
 import { useSimpleNavigation } from "@/utils/navigation";
 import CommonActionSheet from "@/components/CommonActionSheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/common/Toast";
+import { useImageGallery } from "@/hooks/useImageGallery";
+import ImageGallery from "@/components/common/ImageGallery";
 
 function BoardDetailContent() {
   const params = useParams();
@@ -29,6 +31,10 @@ function BoardDetailContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [commentContent, setCommentContent] = useState('');
+  const [isLiking, setIsLiking] = useState(false);
+
+  // 이미지 갤러리 훅
+  const { isOpen, images, initialIndex, openGallery, closeGallery } = useImageGallery();
 
   // 게시글 상세 정보 및 댓글 로드
   useEffect(() => {
@@ -132,7 +138,6 @@ function BoardDetailContent() {
           setComments(commentsResult.data);
         }
         setCommentContent('');
-        showToast('댓글이 작성되었습니다.', 'success');
       } else {
         if (result.error?.includes('로그인이 만료')) {
           showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
@@ -196,6 +201,60 @@ function BoardDetailContent() {
 
   const handleCloseActionSheet = () => {
     setShowActionSheet(false);
+  };
+
+  // 이미지 클릭 핸들러
+  const handleImageClick = (imageIndex: number) => {
+    if (post?.images && post.images.length > 0) {
+      openGallery(post.images, imageIndex);
+    }
+  };
+
+  // 좋아요 토글 핸들러
+  const handleLikeToggle = async () => {
+    if (!post) return;
+
+    try {
+      // 인증 상태 확인
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+        const currentUrl = window.location.pathname + window.location.search;
+        navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+        return;
+      }
+
+      setIsLiking(true);
+      const eventId = searchParams.get('eventId') || 'default-event';
+      const postId = params.id as string;
+      
+      const result = await toggleLike(eventId, postType, postId, post.isLiked || false);
+      
+      if (result.success) {
+        // 로컬 상태 업데이트
+        setPost(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            isLiked: result.updatedIsLiked !== undefined ? result.updatedIsLiked : !prev.isLiked,
+            likeCount: result.updatedLikeCount !== undefined ? result.updatedLikeCount : (prev.isLiked ? (prev.likeCount || 0) - 1 : (prev.likeCount || 0) + 1)
+          };
+        });
+      } else {
+        if (result.error?.includes('로그인이 만료')) {
+          showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+          const currentUrl = window.location.pathname + window.location.search;
+          navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+        } else {
+          showToast(result.error || '좋아요 처리에 실패했습니다.', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('좋아요 토글 오류:', error);
+      showToast('좋아요 처리 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   // 로딩 상태
@@ -279,17 +338,17 @@ function BoardDetailContent() {
       }}>
         <div className="px-4 py-6 pb-8">
           {/* 게시글 헤더 */}
-          <div className="flex items-center space-x-4 mb-8">
+          <div className="flex items-center space-x-2 mb-8">
             <CommonProfileView
               profileImageUrl={post.user?.profileImageUrl}
               nickname={post.user?.nickname || '익명'}
-              size="lg"
+              size="md"
               showBorder={true}
             />
             
             <div className="flex-1 min-w-0">
               <div className="flex flex-col">
-                <div className="flex items-center space-x-2 mb-2">
+                <div className="flex items-center space-x-2">
                   {postType === 'notice' ? (
                     <span className="text-black font-bold text-lg">운영위원회</span>
                   ) : (
@@ -298,24 +357,18 @@ function BoardDetailContent() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center space-x-3">
-                  <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">
-                    {post.type === 'FREE' ? '자유게시판' : '공지사항'}
-                  </span>
-                </div>
               </div>
             </div>
           </div>
           
           {/* 제목 */}
-          <div className="mb-8">
-            <h1 className="text-black font-bold text-2xl leading-tight mb-2">
-              {post.title || '제목 없음'}
-            </h1>
-            <span className="text-gray-400 text-sm font-medium">
-              {post.createdAt ? getRelativeTime(post.createdAt) : ''}
-            </span>
-          </div>
+          {post.title && (
+            <div className="mb-8">
+              <h1 className="text-black font-bold text-2xl leading-tight">
+                {post.title}
+              </h1>
+            </div>
+          )}
           
           {/* 이미지 */}
           {post.images && post.images.length > 0 && (
@@ -325,7 +378,8 @@ function BoardDetailContent() {
                   <img 
                     src={image} 
                     alt={`게시글 이미지 ${index + 1}`}
-                    className="w-full h-auto object-cover"
+                    className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => handleImageClick(index)}
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
@@ -343,28 +397,43 @@ function BoardDetailContent() {
           </div>
           
           {/* 액션 버튼 */}
-          <div className="flex items-center space-x-8 py-4 mb-8 border-b border-gray-100">
-            <button className="flex items-center space-x-2 text-gray-600 hover:text-purple-600 transition-colors">
-              <svg 
-                className={`w-5 h-5 ${post.isLiked ? 'text-purple-600' : 'text-gray-600'}`}
-                fill="currentColor" 
-                viewBox="0 0 24 24"
+          <div className="flex items-center justify-between py-4 mb-8 border-b border-gray-100">
+            <div className="flex items-center space-x-8">
+              <button 
+                className={`flex items-center space-x-2 transition-colors ${
+                  isLiking ? 'opacity-50 cursor-not-allowed' : post.isLiked ? 'hover:text-purple-800' : 'hover:text-purple-600'
+                } ${post.isLiked ? 'text-purple-700' : 'text-gray-600'}`}
+                onClick={handleLikeToggle}
+                disabled={isLiking}
               >
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-              </svg>
-              <span className={`text-sm font-medium ${post.isLiked ? 'text-purple-600' : 'text-gray-600'}`}>
-                {post.likeCount || 0}
-              </span>
-            </button>
+                <svg 
+                  className={`w-5 h-5 ${post.isLiked ? 'text-purple-700' : 'text-gray-600'}`}
+                  fill="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <span className={`text-sm font-medium ${post.isLiked ? 'text-purple-700' : 'text-gray-600'}`}>
+                  {post.likeCount || 0}
+                </span>
+              </button>
+              
+              <button className="flex items-center space-x-2 text-gray-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <span className="text-sm font-medium">
+                  {comments.length}
+                </span>
+              </button>
+            </div>
             
-            <button className="flex items-center space-x-2 text-gray-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <span className="text-sm font-medium">
-                {comments.length}
+            {/* 날짜 */}
+            {post.createdAt && (
+              <span className="text-gray-400 text-sm font-normal">
+                {getRelativeTime(post.createdAt)}
               </span>
-            </button>
+            )}
           </div>
 
           {/* 댓글 섹션 헤더 */}
@@ -398,7 +467,7 @@ function BoardDetailContent() {
           </div>
 
           {/* 댓글 목록 */}
-          <div className="space-y-6">
+          <div className="space-y-6 mb-4">
             {comments.length > 0 ? (
               comments.map((comment) => (
                 <div key={comment.id} className="flex items-start space-x-4">
@@ -426,11 +495,6 @@ function BoardDetailContent() {
               ))
             ) : (
               <div className="text-center py-16">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
                 <p className="text-gray-500 text-base font-medium mb-1">아직 댓글이 없습니다</p>
                 <p className="text-gray-400 text-sm">첫 번째 댓글을 작성해보세요!</p>
               </div>
@@ -461,6 +525,14 @@ function BoardDetailContent() {
             variant: 'default'
           }
         ]}
+      />
+
+      {/* 이미지 갤러리 */}
+      <ImageGallery
+        images={images}
+        initialIndex={initialIndex}
+        isOpen={isOpen}
+        onClose={closeGallery}
       />
     </div>
   );

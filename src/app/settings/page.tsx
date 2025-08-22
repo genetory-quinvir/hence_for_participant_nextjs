@@ -70,8 +70,14 @@ export default function SettingsPage() {
       />
 
       {/* 메인 컨텐츠 */}
-      <main className="w-full h-full flex flex-col px-4 py-4" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="w-full h-full flex flex-col">
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 px-4 py-4 overflow-y-auto scrollbar-hide" style={{ 
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          scrollbarWidth: 'none', 
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch'
+        }}>
+          <div className="w-full flex flex-col">
           {/* 설정 메뉴 */}
           <div className="space-y-4">
             {/* 계정 정보 */}
@@ -108,6 +114,7 @@ export default function SettingsPage() {
               로그아웃
             </button>
           </div>
+        </div>
         </div>
       </main>
     </div>

@@ -751,7 +751,7 @@ function ProfilePageContent() {
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-white text-black overflow-hidden">
+    <div className="fixed inset-0 bg-white text-black flex flex-col overflow-hidden">
       {/* 네비게이션바 */}
       <CommonNavigationBar
         title="프로필"
@@ -782,12 +782,18 @@ function ProfilePageContent() {
         backgroundOpacity={1}
         textColor="text-black"
         fixedHeight={true}
-        sticky={true}
+        sticky={false}
       />
 
       {/* 메인 컨텐츠 */}
-      <main className="w-full h-full flex flex-col px-4 py-4">
-        <div className="w-full h-full flex flex-col">
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 px-4 py-4 overflow-y-auto scrollbar-hide" style={{ 
+          scrollbarWidth: 'none', 
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch',
+          paddingBottom: 'max(32px, env(safe-area-inset-bottom) + 16px)'
+        }}>
+          <div className="w-full flex flex-col">
           {/* 프로필 아바타 섹션 */}
           <div className="flex items-center mb-6">
             <div className="mr-3">
@@ -865,12 +871,7 @@ function ProfilePageContent() {
           </div>
 
           {/* 탭 컨텐츠 */}
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 pb-8" style={{ 
-            scrollbarWidth: 'none', 
-            msOverflowStyle: 'none',
-            WebkitOverflowScrolling: 'touch',
-            paddingBottom: 'max(32px, env(safe-area-inset-bottom) + 16px)'
-          }}>
+          <div className="flex-1 min-h-0">
             {isLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
@@ -880,6 +881,7 @@ function ProfilePageContent() {
               renderTabContent()
             )}
           </div>
+        </div>
         </div>
       </main>
     </div>
