@@ -27,6 +27,98 @@ import { apiDebugger, logger } from '@/utils/logger';
 const API_BASE_URL = 'https://api-participant.hence.events';
 
 
+// 회원가입 API 호출
+export async function registerUser(email: string, password: string, nickname: string, confirmPassword?: string, provider?: string): Promise<LoginResponse> {
+  const url = `${API_BASE_URL}/auth/register`;
+  
+  try {
+    // 네트워크 상태 체크
+    if (!apiDebugger.checkNetworkStatus()) {
+      return {
+        success: false,
+        error: '네트워크 연결을 확인해주세요.',
+      };
+    }
+
+    const requestBody = { 
+      email, 
+      password, 
+      confirmPassword: confirmPassword || password, 
+      nickname, 
+      provider: provider || "email" 
+    };
+    const headers = { 'Content-Type': 'application/json' };
+    const jsonBody = JSON.stringify(requestBody);
+    
+    // 요청 로깅
+    apiDebugger.logRequest('POST', url, headers, requestBody);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: jsonBody,
+    });
+
+    const responseText = await response.text();
+    const responseHeaders = Object.fromEntries(response.headers.entries());
+    
+    // 응답 로깅
+    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
+
+    if (response.status === 200 || response.status === 201) {
+      const responseData = JSON.parse(responseText);
+      
+      // Swagger 응답 형식에 맞게 수정
+      if (responseData.data && responseData.data.user) {
+        logger.info('✅ 회원가입 성공 (data.user 형식)', responseData.data.user);
+        return {
+          success: true,
+          data: responseData.data.user,
+          access_token: responseData.data.token?.accessToken || '',
+          refresh_token: responseData.data.token?.refreshToken || '',
+        };
+      } else if (responseData.user) {
+        logger.info('✅ 회원가입 성공 (user 형식)', responseData.user);
+        return {
+          success: true,
+          data: responseData.user,
+          access_token: responseData.access_token || responseData.accessToken || '',
+          refresh_token: responseData.refresh_token || responseData.refreshToken || '',
+        };
+      } else {
+        logger.error('❌ 응답에서 사용자 데이터를 찾을 수 없음', responseData);
+        return {
+          success: false,
+          error: '서버 응답에서 사용자 정보를 찾을 수 없습니다.',
+        };
+      }
+    } else {
+      // 에러 응답 처리
+      try {
+        const errorData = JSON.parse(responseText);
+        const errorMessage = errorData.message || '회원가입에 실패했습니다.';
+        logger.error('❌ 회원가입 실패', { status: response.status, error: errorMessage });
+        return {
+          success: false,
+          error: errorMessage,
+        };
+      } catch (e) {
+        logger.error('❌ 에러 응답 파싱 실패', e);
+        return {
+          success: false,
+          error: '회원가입에 실패했습니다.',
+        };
+      }
+    }
+  } catch (error) {
+    logger.error('💥 회원가입 네트워크 오류', error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
+
 // 로그인 API 호출
 export async function loginUser(email: string, password: string): Promise<LoginResponse> {
   const url = `${API_BASE_URL}/auth/login`;

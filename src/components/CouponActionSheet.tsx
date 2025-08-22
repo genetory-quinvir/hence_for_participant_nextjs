@@ -138,22 +138,22 @@ export default function CouponActionSheet({
             )}
           </div>
           
-          {/* 스크롤 가능한 액션 아이템 영역 */}
-          <div 
-            className="flex-1 overflow-y-auto px-4"
-            style={{
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              minHeight: '100px',
-              maxHeight: 'calc(100vh - 300px)',
-              WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-y'
-            }}
-          >
-            {/* 액션 아이템들 */}
-            <div className="space-y-2">
-              {items && items.length > 0 ? (
-                items.map((item, index) => {
+          {/* 스크롤 가능한 액션 아이템 영역 - 교환권이 아닐 때만 표시 */}
+          {items && items.length > 0 && (
+            <div 
+              className="flex-1 overflow-y-auto px-4"
+              style={{
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                minHeight: '100px',
+                maxHeight: 'calc(100vh - 300px)',
+                WebkitOverflowScrolling: 'touch',
+                touchAction: 'pan-y'
+              }}
+            >
+              {/* 액션 아이템들 */}
+              <div className="space-y-2">
+                {items.map((item, index) => {
                   const isSelected = selectedItem && selectedItem.label === item.label;
                   return (
                     <button
@@ -197,12 +197,10 @@ export default function CouponActionSheet({
                       )}
                     </button>
                   );
-                })
-              ) : (
-                <div></div>
-              )}
+                })}
+              </div>
             </div>
-          </div>
+          )}
           
           {/* 고정된 버튼 영역 */}
           <div className="px-4 mt-2" style={{ paddingBottom: '0px' }}>

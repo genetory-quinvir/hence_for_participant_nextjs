@@ -247,10 +247,10 @@ function EventPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 text-black relative">
+    <div className="min-h-screen bg-gray-100 text-black relative overflow-x-hidden">
       {/* 메인 컨텐츠 - 스크롤 가능 */}
       <main 
-        className="w-full min-h-screen overflow-y-auto"
+        className="w-full min-h-screen overflow-y-auto overflow-x-hidden"
         style={{
           scrollbarWidth: 'none', /* Firefox */
           msOverflowStyle: 'none', /* Internet Explorer 10+ */

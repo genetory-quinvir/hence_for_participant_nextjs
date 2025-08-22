@@ -44,7 +44,7 @@ export default function EventHelp({ helpData }: EventHelpProps) {
             />
           <h3 className="text-lg font-bold text-black">자주 묻는 질문</h3>
         </div>
-        <div className="space-y-8">
+        <div className="space-y-8 mb-4">
           {helpData?.faqs && helpData.faqs.length > 0 ? (
             helpData.faqs.map((faq) => (
               <div key={faq.id}>

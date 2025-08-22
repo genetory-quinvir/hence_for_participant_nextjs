@@ -49,10 +49,8 @@ export default function EventNotice({ notices }: EventNoticeProps) {
       {/* 스크롤 컨테이너 */}
       <div
         ref={scrollContainerRef}
-        className="flex space-x-4 overflow-x-auto scrollbar-hide"
+        className="flex space-x-4 overflow-x-auto scrollbar-hide px-4"
         style={{ 
-          paddingLeft: '16px',
-          paddingRight: '16px',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none'
         }}

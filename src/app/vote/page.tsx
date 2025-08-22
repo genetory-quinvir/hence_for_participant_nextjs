@@ -298,21 +298,23 @@ function VoteContent() {
   const remainingClubs = clubsData.slice(3).filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-white">
-      <CommonNavigationBar 
-        onLeftClick={handleBackClick}
-        leftButton={
-          <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        }
-        sticky={false}
-        fixedHeight={true}
-        backgroundColor="white"
-        textColor="text-black"
-      />
+    <div className="min-h-screen bg-white overflow-x-hidden">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white">
+        <CommonNavigationBar 
+          onLeftClick={handleBackClick}
+          leftButton={
+            <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          }
+          sticky={false}
+          fixedHeight={true}
+          backgroundColor="white"
+          textColor="text-black"
+        />
+      </div>
       
-      <div className="p-4">
+      <div className="p-4 overflow-x-hidden pt-20">
         {/* 투표 정보 헤더 섹션 */}
         <div className="items-center justify-center flex flex-col px-4 py-4 mb-8">
           <h2 className="text-2xl font-bold text-black text-center leading-relaxed mb-6">

@@ -102,7 +102,7 @@ export default function HomePage() {
                 </span>
               </div>
             ) : (
-              <span className="text-white text-sm font-bold">
+              <span className="text-white text-sm font-semibold">
                 로그인
               </span>
             )}

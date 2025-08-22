@@ -26,10 +26,8 @@ export default function EventFoodTrucks({
     <div className="mb-12">
       <div
         ref={scrollContainerRef}
-        className="flex space-x-4 overflow-x-auto mb-12 scrollbar-hide"
+        className="flex space-x-4 overflow-x-auto mb-12 scrollbar-hide px-4"
         style={{ 
-          paddingLeft: '16px',
-          paddingRight: '16px',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none'
         }}

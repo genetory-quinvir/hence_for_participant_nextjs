@@ -92,11 +92,11 @@ export default function EventClubs({ clubs, eventId }: EventClubsProps) {
   }, []);
 
   return (
-    <div className="relative overflow-visible px-4 py-8 bg-gray-100 mb-4">
+    <div className="relative overflow-hidden px-4 py-8 bg-gray-100 mb-8">
       {/* 카드 내용 */}
       <div 
         ref={cardRef}
-        className="relative z-10 p-6 rounded-xl transition-transform duration-200 ease-out"
+        className="relative z-10 p-6 rounded-xl transition-transform duration-200 ease-out overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
@@ -151,16 +151,18 @@ export default function EventClubs({ clubs, eventId }: EventClubsProps) {
                 <div className="flex items-center justify-center mb-4"
                   style={{
                     width: isFirst ? '64px' : '48px',
-                    height: isFirst ? '64px' : '48px',
-                    background: isFirst ? 'linear-gradient(135deg, #FFD700, #FFA500)' : // 1등: 금색
-                              isSecond ? 'linear-gradient(135deg, #C0C0C0, #A9A9A9)' : // 2등: 은색
-                              'linear-gradient(135deg, #CD7F32, #B8860B)', // 3등: 동색
-                    borderRadius: '50%',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                    height: isFirst ? '64px' : '48px'
                   }}>
-                  <span className="text-white font-bold" style={{ fontSize: isFirst ? '24px' : '20px' }}>
-                    {isFirst ? '🥇' : isSecond ? '🥈' : '🥉'}
-                  </span>
+                  <img
+                    src={isFirst ? '/images/icon_gold_medal.png' : 
+                         isSecond ? '/images/icon_silver_medal.png' : 
+                         '/images/icon_bronze_medal.png'}
+                    alt="메달 아이콘"
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
                 </div>
                 
                 {/* 동아리 정보 */}
