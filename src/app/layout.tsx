@@ -53,11 +53,13 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#ffffff" />
       </head>
       <body className="font-sans antialiased bg-white text-black">
-        <AuthProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
-        </AuthProvider>
+        <div className="mx-auto w-full max-w-lg min-h-screen bg-white" style={{ maxWidth: '700px' }}>
+          <AuthProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </AuthProvider>
+        </div>
       </body>
     </html>
   );
