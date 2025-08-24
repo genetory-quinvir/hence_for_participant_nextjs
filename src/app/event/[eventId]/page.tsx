@@ -398,7 +398,7 @@ function EventPageContent() {
         {/* 설문조사 섹션 */}
         <EventSection
           title="설문조사"
-          subtitle="설문 참여하고 커피 쿠폰 받아가세요"
+          subtitle="설문 참여하고 커피 쿠폰 받아가세요!"
         > 
           <EventSurvey eventId={featuredData.event.id || 'default-event'} />
         </EventSection>

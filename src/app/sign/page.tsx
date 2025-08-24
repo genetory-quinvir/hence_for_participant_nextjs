@@ -105,28 +105,29 @@ function SignContent() {
 
   return (
     <div className="fixed inset-0 w-full h-full bg-white text-black overflow-hidden">
-      {/* 네비게이션바 */}
-      <CommonNavigationBar
-        leftButton={
-          <svg
-            className="w-6 h-6 text-black"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        }
-        onLeftClick={handleBackClick}
-        backgroundColor="white"
-        backgroundOpacity={1}
-        textColor="text-black"
-        sticky={true}
-        fixedHeight={true}
-      />
+      <div className="w-full max-w-[700px] mx-auto h-full flex flex-col overflow-hidden">
+        {/* 네비게이션바 */}
+        <CommonNavigationBar
+          leftButton={
+            <svg
+              className="w-6 h-6 text-black"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          }
+          onLeftClick={handleBackClick}
+          backgroundColor="white"
+          backgroundOpacity={1}
+          textColor="text-black"
+          sticky={true}
+          fixedHeight={true}
+        />
 
-      {/* 메인 컨텐츠 */}
-      <main className="w-full h-full flex flex-col px-4 py-4">
+        {/* 메인 컨텐츠 */}
+        <main className="w-full h-full flex flex-col px-4 py-4">
         <div className="w-full">
           {/* 로고/제목 섹션 */}
           <div className="text-center mb-4">
@@ -284,7 +285,8 @@ function SignContent() {
             </div>
           </div>
         </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

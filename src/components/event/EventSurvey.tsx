@@ -16,10 +16,10 @@ export default function EventSurvey({ eventId }: EventSurveyProps) {
   return (
     <div className="px-4 mb-12">
       <div className="relative overflow-hidden bg-white rounded-xl border border-gray-100 transition-all duration-300 group">
-        <div className="relative p-6">
+        <div className="relative px-4 py-12">
           <div className="text-center">
             <div className="mb-6">
-              <h3 className="text-black font-bold text-xl mb-4 leading-tight">
+              <h3 className="text-black font-bold text-lg mb-4 leading-tight">
                 횃불제 만족도 설문조사
               </h3>
               <div className="flex justify-center mb-6">

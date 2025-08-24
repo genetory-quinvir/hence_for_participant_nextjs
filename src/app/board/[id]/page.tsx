@@ -386,7 +386,7 @@ function BoardDetailContent() {
   }
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-white text-black overflow-hidden " style={{ paddingBottom: 'min(24px, env(safe-area-inset-bottom) + 24px)' }}>
+    <div className="fixed inset-0 w-full h-full bg-white text-black overflow-hidden">
       {/* 최대 너비 제한 컨테이너 */}
       <div className="w-full max-w-[700px] mx-auto h-full flex flex-col overflow-hidden">
       {/* 네비게이션바 */}
@@ -562,7 +562,7 @@ function BoardDetailContent() {
           </div>
 
           {/* 댓글 목록 */}
-          <div className="space-y-6 mb-4">
+          <div className="space-y-6 mb-24">
             {comments.length > 0 ? (
               comments.map((comment) => (
                 <div key={comment.id} className="flex items-start space-x-4">

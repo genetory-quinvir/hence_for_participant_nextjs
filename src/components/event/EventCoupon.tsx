@@ -23,6 +23,7 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
   const [selectedVendor, setSelectedVendor] = useState<VendorItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [usedCoupons, setUsedCoupons] = useState<Set<string>>(new Set());
+  const [cardRotations, setCardRotations] = useState<{ [key: string]: { x: number, y: number } }>({});
 
   const handleCouponUse = async (coupon: CouponItem) => {
     const accessToken = getAccessToken();
@@ -71,6 +72,34 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
     setUsedCoupons(prev => new Set(prev).add(couponId));
   };
 
+  // 3D 카드 효과 함수
+  const handleCardMove = (couponId: string, clientX: number, clientY: number) => {
+    const cardElement = document.querySelector(`[data-coupon-id="${couponId}"]`) as HTMLElement;
+    if (!cardElement) return;
+
+    const rect = cardElement.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    const moveX = clientX - centerX;
+    const moveY = clientY - centerY;
+    
+    const rotateX = (moveY / (rect.height / 2)) * -10;
+    const rotateY = (moveX / (rect.width / 2)) * 10;
+    
+    setCardRotations(prev => ({
+      ...prev,
+      [couponId]: { x: rotateX, y: rotateY }
+    }));
+  };
+
+  const handleCardLeave = (couponId: string) => {
+    setCardRotations(prev => ({
+      ...prev,
+      [couponId]: { x: 0, y: 0 }
+    }));
+  };
+
 
 
   const handleUseSelectedVendor = async () => {
@@ -114,29 +143,46 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
             msOverflowStyle: 'none'
           }}
         >
-          {coupons.map((coupon) => (
-            <div
-              key={coupon.id}
-              className="flex-shrink-0 w-80 rounded-xl p-5 transition-all duration-300 relative overflow-hidden"
-              style={{ 
-                scrollSnapAlign: 'start',
-                background: coupon.discountType === 'PERCENTAGE' 
-                  ? 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)' :
-                  coupon.discountType === 'FIXED_AMOUNT' 
-                  ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)' :
-                  coupon.discountType === 'EXCHANGE' 
-                  ? 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)' :
-                  'linear-gradient(135deg, #6b7280 0%, #9ca3af 100%)'
-              }}
-            >
+          {coupons.map((coupon) => {
+            const rotation = cardRotations[coupon.id!] || { x: 0, y: 0 };
+            
+            return (
+              <div
+                key={coupon.id}
+                data-coupon-id={coupon.id}
+                className="flex-shrink-0 w-80 rounded-xl p-5 transition-transform duration-200 ease-out cursor-pointer relative overflow-hidden"
+                style={{ 
+                  scrollSnapAlign: 'start',
+                  background: coupon.discountType === 'PERCENTAGE' 
+                    ? 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)' :
+                    coupon.discountType === 'FIXED_AMOUNT' 
+                    ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)' :
+                    coupon.discountType === 'EXCHANGE' 
+                    ? 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)' :
+                    'linear-gradient(135deg, #6b7280 0%, #9ca3af 100%)',
+                  transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+                  transformStyle: 'preserve-3d',
+                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                }}
+                onMouseMove={(e) => handleCardMove(coupon.id!, e.clientX, e.clientY)}
+                onMouseLeave={() => handleCardLeave(coupon.id!)}
+                onTouchMove={(e) => {
+                  e.preventDefault();
+                  if (e.touches.length > 0) {
+                    const touch = e.touches[0];
+                    handleCardMove(coupon.id!, touch.clientX, touch.clientY);
+                  }
+                }}
+                onTouchEnd={() => handleCardLeave(coupon.id!)}
+              >
               {/* 쿠폰 구멍 */}
-              <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0 pointer-events-none" style={{ transform: 'translateZ(10px)' }}>
                 <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gray-100 rounded-full -translate-x-3"></div>
                 <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gray-100 rounded-full translate-x-3"></div>
               </div>
               
               {/* 배경 패턴 */}
-              <div className="absolute inset-0 opacity-10">
+              <div className="absolute inset-0 opacity-10" style={{ transform: 'translateZ(5px)' }}>
                 <div className="absolute top-0 right-0 w-32 h-32 transform translate-x-8 -translate-y-8">
                   <svg viewBox="0 0 100 100" className="w-full h-full">
                     <circle cx="50" cy="50" r="40" fill="currentColor" className="text-white"/>
@@ -150,7 +196,7 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
               </div>
               
               {/* 카드 내용 */}
-              <div className="relative z-10">
+              <div className="relative z-10" style={{ transform: 'translateZ(20px)' }}>
               <div className="flex space-x-3">
                 <div className="w-20 h-20 bg-transparent rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
                   {coupon.iconImageUrl ? (
@@ -217,6 +263,7 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
                           : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
+                    style={{ transform: 'translateZ(30px)' }}
                     disabled={!canUse}
                     onClick={() => handleCouponUse(coupon)}
                   >
@@ -228,7 +275,8 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
               })()}
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
       </div>
 

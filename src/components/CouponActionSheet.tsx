@@ -79,7 +79,12 @@ export default function CouponActionSheet({
         style={{ 
           touchAction: 'none',
           pointerEvents: 'none',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0
         }}
       >
         <div 
@@ -91,7 +96,11 @@ export default function CouponActionSheet({
             maxHeight: 'calc(100vh - 100px)',
             paddingBottom: isPWA 
               ? 'max(16px, env(safe-area-inset-bottom) + 16px)'
-              : 'max(16px, env(safe-area-inset-bottom) + 16px)'
+              : 'max(16px, env(safe-area-inset-bottom) + 16px)',
+            position: 'absolute',
+            bottom: 0,
+            left: '50%',
+            transform: 'translateX(-50%)'
           }}
           onClick={(e) => e.stopPropagation()}
         >

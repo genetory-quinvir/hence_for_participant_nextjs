@@ -124,23 +124,6 @@ export default function HomePage() {
           <div className="text-left text-white text-3xl font-bold px-4 py-2 mb-4 leading-11"> 
             HENCE와 함께하는<br></br>서울과학기술대학교 횃불제
           </div>
-          
-          {/* 설문조사 섹션 */}
-          <div className="px-4 mb-6">
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-4 border border-white border-opacity-20">
-              <div className="text-center mb-3">
-                <h3 className="text-white text-lg font-bold mb-1">설문조사 참여하고</h3>
-                <p className="text-white text-sm opacity-90">커피 쿠폰 받아가세요! ☕</p>
-              </div>
-              <button 
-                className="w-full bg-white bg-opacity-20 text-white text-sm font-semibold py-3 rounded-xl border border-white border-opacity-30 hover:bg-opacity-30 transition-all duration-200"
-                onClick={() => navigate("/survey")}
-              >
-                설문조사 참여하기
-              </button>
-            </div>
-          </div>
-          
           <div className="w-full items-center justify-center px-12"> 
             <button 
               className="text-white text-md font-bold px-4 py-2 rounded-full w-full h-12"
