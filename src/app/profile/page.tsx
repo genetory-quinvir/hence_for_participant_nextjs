@@ -9,6 +9,7 @@ import { getUserProfile, getUserEvents, getUserPosts, getUserComments, getPostBy
 import PostHeader from "@/components/common/PostHeader";
 import Image from "next/image";
 import { useSimpleNavigation } from "@/utils/navigation";
+import { useToast } from "@/components/common/Toast";
 
 // 탭 타입 정의
 type TabType = 'events' | 'posts' | 'comments';
@@ -28,6 +29,7 @@ interface PostItem {
 function ProfilePageContent() {
   const { navigate, goBack } = useSimpleNavigation();
   const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { showToast } = useToast();
   const tabContainerRef = useRef<HTMLDivElement>(null);
   
   // 모든 useState 훅들을 최상단에 배치
@@ -349,16 +351,87 @@ function ProfilePageContent() {
     commentCount: finalUserData?.commentCount || 0
   };
 
-  // 로딩 상태
+  // 인증 로딩 상태
   if (authLoading || !isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-white text-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-sm" style={{ opacity: 0.7 }}>
-            {authLoading ? '인증 확인 중...' : '메인 페이지로 이동 중...'}
-          </p>
+      <div className="fixed inset-0 bg-white text-black flex flex-col overflow-hidden">
+        {/* 네비게이션바 스켈레톤 */}
+        <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4">
+          <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+          <div className="w-20 h-6 bg-gray-200 rounded animate-pulse"></div>
+          <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
         </div>
+
+        {/* 메인 컨텐츠 스켈레톤 */}
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 px-4 py-4 overflow-y-auto">
+            <div className="w-full flex flex-col">
+              {/* 프로필 아바타 섹션 스켈레톤 */}
+              <div className="flex items-center mb-6">
+                <div className="mr-3">
+                  <div className="w-16 h-16 bg-gray-200 rounded-full animate-pulse"></div>
+                </div>
+                <div className="flex-1 w-auto">
+                  <div className="w-32 h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  <div className="w-48 h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-16 h-8 bg-gray-200 rounded-lg animate-pulse"></div>
+                </div>
+              </div>
+
+              {/* 내 활동 섹션 스켈레톤 */}
+              <div className="mt-4">
+                <div className="w-24 h-6 bg-gray-200 rounded animate-pulse mb-4"></div>
+              </div>
+
+              {/* 탭 네비게이션 스켈레톤 */}
+              <div className="relative mb-4">
+                <div className="flex gap-2">
+                  <div className="w-32 h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                  <div className="w-32 h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                </div>
+              </div>
+
+              {/* 탭 컨텐츠 스켈레톤 */}
+              <div className="flex-1 min-h-0">
+                <div className="space-y-0">
+                  {[...Array(3)].map((_, index) => (
+                    <div key={index} className="rounded-xl overflow-hidden mb-4">
+                      <div className="px-2 py-4 h-full flex flex-col relative">
+                        <div className="absolute" style={{ bottom: '0px', left: '0px', right: '0px', borderBottom: '1px solid rgb(229, 231, 235)' }}></div>
+                        
+                        {/* 헤더 스켈레톤 */}
+                        <div className="flex items-center mb-3">
+                          <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse mr-3"></div>
+                          <div className="flex-1">
+                            <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mb-1"></div>
+                            <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+                          </div>
+                        </div>
+                        
+                        {/* 내용 스켈레톤 */}
+                        <div className="flex-1">
+                          <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                          <div className="w-3/4 h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                          <div className="w-1/2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                        
+                        {/* 액션 버튼 스켈레톤 */}
+                        <div className="mt-auto pt-3 mb-2">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+                            <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -496,9 +569,38 @@ function ProfilePageContent() {
         return (
           <div className="space-y-0">
             {postsLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-                <p className="text-black text-opacity-50">게시글 로딩 중...</p>
+              <div className="space-y-0">
+                {[...Array(3)].map((_, index) => (
+                  <div key={index} className="rounded-xl overflow-hidden mb-4">
+                    <div className="px-2 py-4 h-full flex flex-col relative">
+                      <div className="absolute" style={{ bottom: '0px', left: '0px', right: '0px', borderBottom: '1px solid rgb(229, 231, 235)' }}></div>
+                      
+                      {/* 헤더 스켈레톤 */}
+                      <div className="flex items-center mb-3">
+                        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse mr-3"></div>
+                        <div className="flex-1">
+                          <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mb-1"></div>
+                          <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+                      
+                      {/* 내용 스켈레톤 */}
+                      <div className="flex-1">
+                        <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="w-3/4 h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="w-1/2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                      
+                      {/* 액션 버튼 스켈레톤 */}
+                      <div className="mt-auto pt-3 mb-2">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : userPosts.length > 0 ? (
               userPosts.map((post) => (
@@ -639,11 +741,38 @@ function ProfilePageContent() {
             
             {/* 추가 로딩 인디케이터 */}
             {postsLoadingMore && (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
-                <p className="text-black text-sm" style={{ opacity: 0.6 }}>
-                  더 많은 게시글을 불러오는 중...
-                </p>
+              <div className="space-y-0">
+                {[...Array(2)].map((_, index) => (
+                  <div key={index} className="rounded-xl overflow-hidden mb-4">
+                    <div className="px-2 py-4 h-full flex flex-col relative">
+                      <div className="absolute" style={{ bottom: '0px', left: '0px', right: '0px', borderBottom: '1px solid rgb(229, 231, 235)' }}></div>
+                      
+                      {/* 헤더 스켈레톤 */}
+                      <div className="flex items-center mb-3">
+                        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse mr-3"></div>
+                        <div className="flex-1">
+                          <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mb-1"></div>
+                          <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+                      
+                      {/* 내용 스켈레톤 */}
+                      <div className="flex-1">
+                        <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="w-3/4 h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="w-1/2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                      
+                      {/* 액션 버튼 스켈레톤 */}
+                      <div className="mt-auto pt-3 mb-2">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
             
@@ -662,9 +791,34 @@ function ProfilePageContent() {
         return (
           <div className="space-y-0">
             {commentsLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-                <p className="text-black text-opacity-50">댓글 로딩 중...</p>
+              <div className="space-y-0">
+                {[...Array(3)].map((_, index) => (
+                  <div key={index} className="rounded-xl overflow-hidden mb-4">
+                    <div className="px-2 py-4 h-full flex flex-col relative">
+                      <div className="absolute" style={{ bottom: '0px', left: '0px', right: '0px', borderBottom: '1px solid rgb(229, 231, 235)' }}></div>
+                      
+                      {/* 헤더 스켈레톤 */}
+                      <div className="flex items-center mb-3">
+                        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse mr-3"></div>
+                        <div className="flex-1">
+                          <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mb-1"></div>
+                          <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+                      
+                      {/* 댓글 내용 스켈레톤 */}
+                      <div className="flex-1">
+                        <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="w-2/3 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                      
+                      {/* 원본 게시글 링크 스켈레톤 */}
+                      <div className="mt-auto pt-3 mb-2">
+                        <div className="w-24 h-3 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : userComments.length > 0 ? (
               userComments.map((comment) => (
@@ -726,11 +880,34 @@ function ProfilePageContent() {
             
             {/* 추가 로딩 인디케이터 */}
             {commentsLoadingMore && (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black mx-auto mb-2"></div>
-                <p className="text-black text-sm" style={{ opacity: 0.6 }}>
-                  더 많은 댓글을 불러오는 중...
-                </p>
+              <div className="space-y-0">
+                {[...Array(2)].map((_, index) => (
+                  <div key={index} className="rounded-xl overflow-hidden mb-4">
+                    <div className="px-2 py-4 h-full flex flex-col relative">
+                      <div className="absolute" style={{ bottom: '0px', left: '0px', right: '0px', borderBottom: '1px solid rgb(229, 231, 235)' }}></div>
+                      
+                      {/* 헤더 스켈레톤 */}
+                      <div className="flex items-center mb-3">
+                        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse mr-3"></div>
+                        <div className="flex-1">
+                          <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mb-1"></div>
+                          <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+                      
+                      {/* 댓글 내용 스켈레톤 */}
+                      <div className="flex-1">
+                        <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="w-2/3 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                      
+                      {/* 원본 게시글 링크 스켈레톤 */}
+                      <div className="mt-auto pt-3 mb-2">
+                        <div className="w-24 h-3 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
             
@@ -752,6 +929,8 @@ function ProfilePageContent() {
 
   return (
     <div className="fixed inset-0 bg-white text-black flex flex-col overflow-hidden">
+      {/* 최대 너비 제한 컨테이너 */}
+      <div className="w-full max-w-[700px] mx-auto h-full flex flex-col overflow-hidden">
       {/* 네비게이션바 */}
       <CommonNavigationBar
         title="프로필"
@@ -873,9 +1052,38 @@ function ProfilePageContent() {
           {/* 탭 컨텐츠 */}
           <div className="flex-1 min-h-0">
             {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-                <p className="text-white text-opacity-50">로딩 중...</p>
+              <div className="space-y-0">
+                {[...Array(3)].map((_, index) => (
+                  <div key={index} className="rounded-xl overflow-hidden mb-4">
+                    <div className="px-2 py-4 h-full flex flex-col relative">
+                      <div className="absolute" style={{ bottom: '0px', left: '0px', right: '0px', borderBottom: '1px solid rgb(229, 231, 235)' }}></div>
+                      
+                      {/* 헤더 스켈레톤 */}
+                      <div className="flex items-center mb-3">
+                        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse mr-3"></div>
+                        <div className="flex-1">
+                          <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mb-1"></div>
+                          <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+                      
+                      {/* 내용 스켈레톤 */}
+                      <div className="flex-1">
+                        <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="w-3/4 h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="w-1/2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                      
+                      {/* 액션 버튼 스켈레톤 */}
+                      <div className="mt-auto pt-3 mb-2">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               renderTabContent()
@@ -884,6 +1092,7 @@ function ProfilePageContent() {
         </div>
         </div>
       </main>
+      </div>
     </div>
   );
 }

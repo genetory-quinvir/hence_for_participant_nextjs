@@ -299,24 +299,25 @@ function VoteContent() {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white">
-        <CommonNavigationBar 
-          onLeftClick={handleBackClick}
-          leftButton={
-            <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          }
-          sticky={false}
-          fixedHeight={true}
-          backgroundColor="white"
-          textColor="text-black"
-        />
-      </div>
+      {/* 최대 너비 제한 컨테이너 */}
+      <div className="w-full max-w-[700px] mx-auto h-full flex flex-col overflow-hidden">
+      {/* 네비게이션바 */}
+      <CommonNavigationBar 
+        onLeftClick={handleBackClick}
+        leftButton={
+          <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        }
+        sticky={true}
+        fixedHeight={true}
+        backgroundColor="white"
+        textColor="text-black"
+      />
       
-      <div className="p-4 overflow-x-hidden pt-20">
+      <div className="p-4 overflow-x-hidden">
         {/* 투표 정보 헤더 섹션 */}
-        <div className="items-center justify-center flex flex-col px-4 py-4 mb-8">
+        <div className="items-center justify-center flex flex-col px-4 py-4">
           <h2 className="text-2xl font-bold text-black text-center leading-relaxed mb-6">
             간단하게 투표하고<br/>
             <span className="text-purple-700">우리 동아리</span>를 응원해보세요
@@ -738,6 +739,7 @@ function VoteContent() {
           </button>
         </div>
       )}
+      </div>
     </div>
   );
 }

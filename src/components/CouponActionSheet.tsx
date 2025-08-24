@@ -75,7 +75,7 @@ export default function CouponActionSheet({
       
       {/* 액션시트 컨테이너 */}
       <div 
-        className="fixed inset-0 z-50 flex items-end"
+        className="fixed inset-0 z-50 flex items-end justify-center"
         style={{ 
           touchAction: 'none',
           pointerEvents: 'none',
@@ -83,7 +83,7 @@ export default function CouponActionSheet({
         }}
       >
         <div 
-          className="w-full bg-white rounded-t-xl flex flex-col action-sheet-content"
+          className="w-full max-w-[700px] bg-white rounded-t-xl flex flex-col action-sheet-content"
           style={{ 
             pointerEvents: 'auto',
             userSelect: 'auto',

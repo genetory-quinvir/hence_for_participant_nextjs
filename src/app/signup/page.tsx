@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
-import { registerUser } from "@/lib/api";
+import { registerUser, saveTokens } from "@/lib/api";
 import { SocialProvider } from "@/types/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSimpleNavigation } from "@/utils/navigation";
@@ -18,7 +18,7 @@ function SignupContent() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+
 
   const handleBackClick = () => {
     goBack();
@@ -31,41 +31,45 @@ function SignupContent() {
 
     // 입력 검증
     if (!email || !password || !confirmPassword) {
-      setError("모든 필드를 입력해주세요.");
+      showToast("모든 필드를 입력해주세요.", "error");
       return;
     }
 
     // 이메일 형식 검증
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError("올바른 이메일 형식을 입력해주세요.");
+      showToast("올바른 이메일 형식을 입력해주세요.", "error");
       return;
     }
 
     // 비밀번호 확인
     if (password !== confirmPassword) {
-      setError("비밀번호가 일치하지 않습니다.");
+      showToast("비밀번호가 일치하지 않습니다.", "error");
       return;
     }
 
     // 비밀번호 길이 검증
     if (password.length < 6) {
-      setError("비밀번호는 6자 이상이어야 합니다.");
+      showToast("비밀번호는 6자 이상이어야 합니다.", "error");
       return;
     }
 
 
 
     setIsLoading(true);
-    setError("");
 
     try {
       console.log("회원가입 시도:", { email });
 
-      const response = await registerUser(email, password, "", confirmPassword);
+      // 이메일에서 닉네임 자동 생성 (이메일 앞부분 사용)
+      const nickname = email.split('@')[0];
+      const response = await registerUser(email, password, nickname, confirmPassword);
 
       if (response.success && response.access_token) {
         console.log("회원가입 성공:", response.data);
+
+        // 토큰들 저장
+        saveTokens(response.access_token, response.refresh_token);
 
         // 회원가입 성공 후 자동 로그인
         if (response.data) {
@@ -91,11 +95,11 @@ function SignupContent() {
           replace("/");
         }
       } else {
-        setError(response.error || "회원가입에 실패했습니다.");
+        showToast(response.error || "회원가입에 실패했습니다.", "error");
       }
     } catch (error) {
       console.error("회원가입 에러:", error);
-      setError("네트워크 오류가 발생했습니다. 다시 시도해주세요.");
+      showToast("네트워크 오류가 발생했습니다. 다시 시도해주세요.", "error");
     } finally {
       setIsLoading(false);
     }
@@ -224,12 +228,7 @@ function SignupContent() {
             </button>
           </form>
 
-          {/* 에러 메시지 */}
-          {error && (
-            <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
-              <p className="text-red-400 text-sm text-center">{error}</p>
-            </div>
-          )}
+
 
           {/* 로그인 링크 */}
           <div className="text-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>

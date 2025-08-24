@@ -32,6 +32,32 @@ export default function SettingsPage() {
     goBack();
   };
 
+  const handleChangePassword = () => {
+    navigate("/settings/change-password");
+  };
+
+  const handleDeleteAccount = () => {
+    if (confirm("정말로 회원탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) {
+      // TODO: 회원탈퇴 API 호출
+      alert("회원탈퇴 기능은 준비 중입니다.");
+    }
+  };
+
+  const handleContactDeveloper = () => {
+    // TODO: 개발자 연락처 페이지로 이동 또는 이메일 앱 실행
+    alert("개발자 연락 기능은 준비 중입니다.");
+  };
+
+  const handleTermsOfService = () => {
+    // TODO: 이용약관 페이지로 이동
+    alert("이용약관 페이지는 준비 중입니다.");
+  };
+
+  const handlePrivacyPolicy = () => {
+    // TODO: 개인정보 처리방침 페이지로 이동
+    alert("개인정보 처리방침 페이지는 준비 중입니다.");
+  };
+
   // 로딩 상태
   if (authLoading || !isAuthenticated || !user) {
     return (
@@ -48,6 +74,8 @@ export default function SettingsPage() {
 
   return (
     <div className="fixed inset-0 w-full h-full bg-white text-black overflow-hidden">
+      {/* 최대 너비 제한 컨테이너 */}
+      <div className="w-full max-w-[700px] mx-auto h-full flex flex-col overflow-hidden">
       {/* 네비게이션바 */}
       <CommonNavigationBar
         title="설정"
@@ -71,52 +99,74 @@ export default function SettingsPage() {
 
       {/* 메인 컨텐츠 */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 px-4 py-4 overflow-y-auto scrollbar-hide" style={{ 
-          paddingBottom: 'env(safe-area-inset-bottom)',
+        <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ 
           scrollbarWidth: 'none', 
           msOverflowStyle: 'none',
           WebkitOverflowScrolling: 'touch'
         }}>
-          <div className="w-full flex flex-col">
-          {/* 설정 메뉴 */}
-          <div className="space-y-4">
-            {/* 계정 정보 */}
-            <div className="p-4 bg-gray-100 rounded-xl">
-              <h3 className="text-lg font-bold text-black mb-2">계정 정보</h3>
-              <div className="space-y-2 text-sm text-gray-700">
-                <div className="flex justify-between">
-                  <span>이메일</span>
-                  <span>{user.email || '이메일 정보 없음'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>닉네임</span>
-                  <span>{user.nickname || '닉네임 정보 없음'}</span>
-                </div>
+          {/* 계정 정보 섹션 */}
+          <div className="px-4 py-6">
+            <h2 className="text-lg font-bold text-black mb-4">계정 정보</h2>
+            <div className="bg-white">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                <span className="text-sm text-gray-600">이메일</span>
+                <span className="text-sm text-black">{user.email || '이메일 정보 없음'}</span>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                <span className="text-sm text-gray-600">닉네임</span>
+                <span className="text-sm text-black">{user.nickname || '닉네임 정보 없음'}</span>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handleChangePassword}>
+                <span className="text-sm text-gray-600">비밀번호 변경</span>
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handleLogout}>
+                <span className="text-sm text-gray-600">로그아웃</span>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50" onClick={handleDeleteAccount}>
+                <span className="text-sm text-red-600">회원탈퇴</span>
               </div>
             </div>
-
-            {/* 앱 정보 */}
-            <div className="p-4 bg-gray-100 rounded-xl">
-              <h3 className="text-lg font-bold text-black mb-2">앱 정보</h3>
-              <div className="space-y-2 text-sm text-gray-700">
-                <div className="flex justify-between">
-                  <span>버전</span>
-                  <span>1.0.0</span>
-                </div>
-              </div>
-            </div>
-
-            {/* 로그아웃 버튼 */}
-            <button
-              onClick={handleLogout}
-              className="w-full p-3 bg-red-600 hover:bg-red-700 rounded-lg font-bold text-white transition-all"
-            >
-              로그아웃
-            </button>
           </div>
-        </div>
+
+          {/* 앱 정보 섹션 */}
+          <div className="px-4 py-6">
+            <h2 className="text-lg font-bold text-black mb-4">앱 정보</h2>
+            <div className="bg-white">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handleContactDeveloper}>
+                <span className="text-sm text-gray-600">개발자에게 연락하기</span>
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handleTermsOfService}>
+                <span className="text-sm text-gray-600">이용약관</span>
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handlePrivacyPolicy}>
+                <span className="text-sm text-gray-600">개인정보 처리방침</span>
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm text-gray-600">버전</span>
+                <span className="text-sm text-black">1.0.0</span>
+              </div>
+            </div>
+          </div>
+
+
+
+          {/* 하단 여백 */}
+          <div style={{ height: 'env(safe-area-inset-bottom)' }}></div>
         </div>
       </main>
+      </div>
     </div>
   );
 } 

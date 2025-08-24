@@ -346,6 +346,8 @@ export default function QRPage() {
       WebkitOverflowScrolling: 'auto',
       overscrollBehavior: 'none'
     }}>
+      {/* 최대 너비 제한 컨테이너 */}
+      <div className="w-full max-w-[700px] mx-auto h-full flex flex-col overflow-hidden">
       {/* 네비게이션바 */}
       <CommonNavigationBar
         title="QR 코드 확인"
@@ -487,6 +489,7 @@ export default function QRPage() {
         onSubmit={handleCodeSubmit}
         isChecking={isChecking}
       />
+      </div>
     </div>
   );
 } 

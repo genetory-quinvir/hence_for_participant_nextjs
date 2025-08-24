@@ -21,6 +21,7 @@ import EventHelp from "@/components/event/EventHelp";
 import EventAdvertisements from "@/components/event/EventAdvertisements";
 import EventChat from "@/components/event/EventChat";
 import EventClubs from "@/components/event/EventClubs";
+import EventSurvey from "@/components/event/EventSurvey";
 import { useSimpleNavigation } from "@/utils/navigation";
 import EventSection from "@/components/event/EventSection";
 
@@ -393,6 +394,14 @@ function EventPageContent() {
             }}
           />
         )} */}
+
+        {/* 설문조사 섹션 */}
+        <EventSection
+          title="설문조사"
+          subtitle="설문 참여하고 커피 쿠폰 받아가세요"
+        > 
+          <EventSurvey eventId={featuredData.event.id || 'default-event'} />
+        </EventSection>
 
         {/* 도움말 섹션 */}
         <EventSection

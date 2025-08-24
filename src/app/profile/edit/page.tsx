@@ -6,10 +6,12 @@ import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useSimpleNavigation } from "@/utils/navigation";
 import { updateProfile, updateProfileImage, deleteProfileImage, getUserProfile } from "@/lib/api";
 import { UserItem } from "@/types/api";
+import { useToast } from "@/components/common/Toast";
 
 function ProfileEditContent() {
   const { navigate, goBack, replace } = useSimpleNavigation();
   const { user, updateUser, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { showToast } = useToast();
   
   const [userProfile, setUserProfile] = useState<UserItem | null>(null);
   const [nickname, setNickname] = useState("");
@@ -84,13 +86,58 @@ function ProfileEditContent() {
     );
   }
 
-  // 프로필 로딩 중일 때 로딩 화면 표시
+  // 프로필 로딩 중일 때 스켈레톤 뷰 표시
   if (profileLoading) {
     return (
-      <div className="min-h-screen bg-white text-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-sm" style={{ opacity: 0.7 }}>프로필 정보를 불러오는 중...</p>
+      <div className="fixed inset-0 w-full h-full bg-white text-black overflow-hidden">
+        {/* 네비게이션바 */}
+        <CommonNavigationBar
+          title="프로필 편집"
+          leftButton={
+            <svg
+              className="w-6 h-6 text-black"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          }
+          onLeftClick={() => replace("/profile")}
+          backgroundColor="white"
+          backgroundOpacity={1}
+          textColor="text-black"
+          sticky={true}
+          fixedHeight={true}
+        />
+
+        {/* 메인 컨텐츠 */}
+        <main className="w-full h-full flex flex-col px-4 py-4 pb-24">
+          {/* 프로필 아바타 스켈레톤 */}
+          <div className="flex flex-col items-center mb-8">
+            <div className="relative mb-4">
+              <div className="w-24 h-24 bg-gray-200 rounded-full animate-pulse"></div>
+            </div>
+            
+            <div className="text-center space-y-2">
+              <div className="w-48 h-4 bg-gray-200 rounded animate-pulse"></div>
+              <div className="w-32 h-3 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* 폼 스켈레톤 */}
+          <div className="space-y-6">
+            <div>
+              <div className="w-16 h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+              <div className="w-full h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+              <div className="w-12 h-3 bg-gray-200 rounded animate-pulse mt-2"></div>
+            </div>
+          </div>
+        </main>
+
+        {/* 하단 버튼 스켈레톤 */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white">
+          <div className="w-full h-12 bg-gray-200 rounded-lg animate-pulse"></div>
         </div>
       </div>
     );
@@ -102,7 +149,7 @@ function ProfileEditContent() {
 
   const handleSave = async () => {
     if (!nickname.trim()) {
-      setError("닉네임을 입력해주세요.");
+      showToast("닉네임을 입력해주세요.", "error");
       return;
     }
 
@@ -117,7 +164,7 @@ function ProfileEditContent() {
       
       if (!nicknameResult.success) {
         console.error('닉네임 변경 실패:', nicknameResult.error);
-        setError(nicknameResult.error || "닉네임 변경에 실패했습니다. 다시 시도해주세요.");
+        showToast(nicknameResult.error || "닉네임 변경에 실패했습니다. 다시 시도해주세요.", "error");
         return;
       }
       
@@ -179,7 +226,7 @@ function ProfileEditContent() {
       updateUser(updatedUser);
       console.log('updateUser 호출 완료');
       
-      alert("프로필이 성공적으로 수정되었습니다.");
+      showToast("프로필이 성공적으로 수정되었습니다.", "success");
       replace("/profile");
       
     } catch (error) {
@@ -335,6 +382,8 @@ function ProfileEditContent() {
 
   return (
     <div className="fixed inset-0 w-full h-full bg-white text-black overflow-hidden">
+      {/* 최대 너비 제한 컨테이너 */}
+      <div className="w-full max-w-[700px] mx-auto h-full flex flex-col overflow-hidden">
       {/* 네비게이션바 */}
       <CommonNavigationBar
         title="프로필 편집"
@@ -446,7 +495,7 @@ function ProfileEditContent() {
       </main>
 
       {/* 하단 고정 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white">
+      <div className="p-4 bg-white">
         <button
           onClick={handleSave}
           disabled={isSubmitting || !nickname.trim()}
@@ -458,6 +507,7 @@ function ProfileEditContent() {
         >
           {isSubmitting ? '저장 중...' : '저장하기'}
         </button>
+      </div>
       </div>
     </div>
   );

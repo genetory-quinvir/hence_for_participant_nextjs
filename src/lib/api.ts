@@ -2290,3 +2290,77 @@ export async function voteForClub(eventId: string, inviteCode: string): Promise<
     };
   }
 }
+
+export const changePassword = async (
+  currentPassword: string,
+  newPassword: string,
+  confirmNewPassword: string
+): Promise<{ success: boolean; error?: string; data?: any }> => {
+  try {
+    const url = `${API_BASE_URL}/auth/change-password`;
+
+    console.log('🔄 changePassword API 호출:', url);
+
+    // 토큰 가져오기
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      console.error('❌ 액세스 토큰이 없습니다.');
+      return {
+        success: false,
+        error: '인증 토큰이 없습니다. 다시 로그인해주세요.',
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        currentPassword,
+        newPassword,
+        confirmNewPassword,
+      }),
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-cache'
+    });
+
+    console.log('🔍 changePassword 응답 상태:', response.status, response.statusText);
+
+    if (!response.ok) {
+      let errorMessage = `비밀번호 변경에 실패했습니다. (${response.status})`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+        console.log('🔍 changePassword 에러 응답:', errorData);
+      } catch (e) {
+        console.log('🔍 changePassword 에러 응답을 JSON으로 파싱할 수 없음');
+      }
+      
+      console.error('❌ changePassword 실패:', errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+
+    const data = await response.json();
+    console.log('✅ changePassword 성공:', data);
+    logger.info('✅ 비밀번호 변경 성공', data);
+    
+    return {
+      success: true,
+      data: data
+    };
+  } catch (error) {
+    console.error('💥 changePassword 예외 발생:', error);
+    apiDebugger.logError(`${API_BASE_URL}/auth/change-password`, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+};
