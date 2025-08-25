@@ -45,7 +45,7 @@ export default function EventFoodTrucks({
               router.push(url);
             }}
           >
-            <div className="w-full aspect-[5/3] overflow-hidden relative p-3 bg-gray-100 rounded-lg">
+            <div className="w-full aspect-[5/3] overflow-hidden relative p-3">
               {vendor.thumbImageUrl ? (
                 <img 
                   src={vendor.thumbImageUrl} 
