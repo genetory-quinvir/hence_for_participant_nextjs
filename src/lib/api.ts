@@ -1703,17 +1703,78 @@ export async function updateProfile(userId: string, data: {
     const formData = new URLSearchParams();
     formData.append('nickname', data.nickname.trim());
     
-    const result = await apiRequest<any>(`${API_BASE_URL}/users/${userId}/profile`, {
-      method: 'PATCH',
-      body: formData.toString(),
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    });
+    // 직접 fetch 사용 (apiRequest 래퍼 우회)
+    let accessToken = getAccessToken();
     
-    console.log('📥 updateProfile 응답:', result);
+    if (!accessToken) {
+      return { success: false, error: '인증 토큰이 없습니다.' };
+    }
+
+    const makeRequest = async (token: string) => {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'accept': 'application/json',
+        },
+        body: formData.toString(),
+      });
+
+      if (response.status === 401) {
+        return { status: 401 };
+      }
+
+      if (!response.ok) {
+        let errorMessage = `API 요청에 실패했습니다. (${response.status})`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // JSON 파싱 실패 시 기본 메시지 사용
+        }
+        return { status: response.status, error: errorMessage };
+      }
+
+      // 성공 응답 처리 - URL-encoded 형태일 수 있으므로 text로 먼저 읽기
+      const responseText = await response.text();
+      console.log('📥 updateProfile 원본 응답:', responseText);
+      
+      let data;
+      try {
+        // JSON으로 파싱 시도
+        data = JSON.parse(responseText);
+      } catch (e) {
+        // JSON이 아닌 경우 빈 객체로 처리
+        console.log('📥 updateProfile 응답이 JSON이 아님, 빈 객체로 처리');
+        data = {};
+      }
+
+      return { status: 200, data };
+    };
+
+    // 토큰 갱신 로직
+    let result = await makeRequest(accessToken);
     
-    if (result.success) {
+    if (result.status === 401) {
+      console.log('🔄 토큰 만료, 갱신 시도');
+      const refreshResult = await refreshAccessToken();
+      
+      if (refreshResult.success) {
+        accessToken = getAccessToken();
+        if (accessToken) {
+          result = await makeRequest(accessToken);
+        } else {
+          return { success: false, error: '토큰 갱신 후 액세스 토큰을 가져올 수 없습니다.' };
+        }
+      } else {
+        return { success: false, error: '토큰이 만료되었습니다. 다시 로그인해주세요.' };
+      }
+    }
+    
+    console.log('📥 updateProfile 최종 응답:', result);
+    
+    if (result.status === 200) {
       logger.info('✅ 프로필 변경 성공', { userId });
       return { success: true, data: result.data };
     } else {
