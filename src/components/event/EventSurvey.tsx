@@ -19,9 +19,12 @@ export default function EventSurvey({ eventId }: EventSurveyProps) {
         <div className="relative px-4 py-12">
           <div className="text-center">
             <div className="mb-6">
-              <h3 className="text-black font-bold text-lg mb-4 leading-tight">
+              <h3 className="text-black font-bold text-lg mb-2 leading-tight">
                 횃불제 만족도 설문조사
               </h3>
+              <p className="text-gray-600 text-base mb-4">
+                여러분의 의견이 궁금해요!
+              </p>
               <div className="flex justify-center mb-6">
                 <img 
                   src="/images/icon_survey.png" 

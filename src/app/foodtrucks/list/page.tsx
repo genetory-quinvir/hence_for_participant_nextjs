@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { VendorItem } from "@/types/api";
-import { getFeaturedEvent } from "@/lib/api";
+import { getVendors } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useSimpleNavigation } from "@/utils/navigation";
 
@@ -25,10 +25,13 @@ function FoodTrucksContent() {
       try {
         setLoading(true);
         setError(null);
-        const result = await getFeaturedEvent(eventId);
-        if (result.success && result.featured && result.featured.vendors) {
-          setVendors(result.featured.vendors);
+        const result = await getVendors(eventId, 'FOOD_TRUCK', 20);
+        console.log('푸드트럭 API 응답:', result);
+        if (result.success && result.data) {
+          console.log('푸드트럭 데이터:', result.data);
+          setVendors(result.data);
         } else {
+          console.log('푸드트럭 데이터 없음:', result.error);
           setVendors([]);
         }
       } catch (err) {
@@ -185,7 +188,7 @@ function FoodTrucksContent() {
                 }}
               >
                 {/* 썸네일 이미지 */}
-                <div className="w-full aspect-[5/3] overflow-hidden relative p-3" style={{ backgroundColor: "white" }}>
+                <div className="w-full aspect-[5/3] overflow-hidden relative p-3">
                   {vendor.thumbImageUrl ? (
                     <img 
                       src={vendor.thumbImageUrl} 
@@ -197,7 +200,7 @@ function FoodTrucksContent() {
                       }}
                     />
                   ) : null}
-                  <div className="w-full h-full flex items-center justify-center hidden">
+                  <div className="w-full h-full flex items-center justify-center">
                     <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>

@@ -100,7 +100,7 @@ function RaffleContent() {
   const handleBackClick = () => {
     const eventId = searchParams.get('eventId');
     if (eventId) {
-      router.push(`/event/${eventId}`);
+              router.push(`/event?id=${eventId}`);
     } else {
       router.back();
     }
@@ -145,7 +145,7 @@ function RaffleContent() {
         // 응모 완료 후 이벤트 페이지로 돌아가기
         const eventId = searchParams.get('eventId');
         if (eventId) {
-          router.replace(`/event/${eventId}`);
+          router.replace(`/event?id=${eventId}`);
         } else {
           router.back();
         }

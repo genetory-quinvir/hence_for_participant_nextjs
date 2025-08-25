@@ -767,7 +767,7 @@ export async function toggleLike(eventId: string, boardType: string, postId: str
 }
 
 // 타임라인 목록 조회 API
-export async function getTimelineList(eventId: string, page: number = 1, limit: number = 10): Promise<{ success: boolean; error?: string; data?: { items: TimelineItem[]; hasNext: boolean; total: number } }> {
+export async function getTimelineList(eventId: string, page: number = 1, limit: number = 20): Promise<{ success: boolean; error?: string; data?: { items: TimelineItem[]; hasNext: boolean; total: number } }> {
   try {
     const result = await apiRequest<any>(`${API_BASE_URL}/timelines/${eventId}?page=${page}&limit=${limit}`, {
       method: 'GET',
@@ -798,7 +798,7 @@ export async function getTimelineList(eventId: string, page: number = 1, limit: 
   }
 }
 
-export async function getBoardList(eventId: string, boardType: string, cursor?: string | null, limit: number = 10): Promise<{ success: boolean; error?: string; data?: { items: BoardItem[]; hasNext: boolean; total: number; nextCursor?: string | null } }> {
+export async function getBoardList(eventId: string, boardType: string, cursor?: string | null, limit: number = 20): Promise<{ success: boolean; error?: string; data?: { items: BoardItem[]; hasNext: boolean; total: number; nextCursor?: string | null } }> {
   try {
     const url = cursor 
       ? `${API_BASE_URL}/board/${eventId}/${boardType}?cursor=${cursor}&limit=${limit}`
@@ -1094,13 +1094,86 @@ export async function getRaffleInfo(eventId: string): Promise<{ success: boolean
 }
 
 
+// 푸드트럭 목록 조회
+export async function getVendors(eventId: string, vendorType?: string, limit: number = 20): Promise<{ success: boolean; error?: string; data?: VendorItem[] }> {
+  let url = `${API_BASE_URL}/vendors/${eventId}`;
+  
+  // 쿼리 파라미터 구성
+  const params = new URLSearchParams();
+  if (vendorType) {
+    params.append('vendor_type', vendorType);
+  }
+  params.append('limit', limit.toString());
+  
+  if (params.toString()) {
+    url += `?${params.toString()}`;
+  }
+  
+  try {
+    // 네트워크 상태 체크
+    if (!apiDebugger.checkNetworkStatus()) {
+      return {
+        success: false,
+        error: '네트워크 연결을 확인해주세요.',
+      };
+    }
+
+    const result = await apiRequest<any>(url, {
+      method: 'GET',
+    });
+
+    if (result.success && result.data) {
+      logger.info('✅ 푸드트럭 목록 조회 성공', result.data);
+      
+      // 응답 데이터 구조 확인 및 안전한 배열 반환
+      let vendorArray: VendorItem[] = [];
+      
+      if (result.data.data && result.data.data.vendors) {
+        // {"data": {"vendors": [...]}} 구조
+        vendorArray = Array.isArray(result.data.data.vendors) ? result.data.data.vendors : [];
+      } else if (result.data.data) {
+        // {"data": [...]} 구조
+        vendorArray = Array.isArray(result.data.data) ? result.data.data : [];
+      } else if (Array.isArray(result.data)) {
+        // [...] 구조
+        vendorArray = result.data;
+      } else if (result.data.items && Array.isArray(result.data.items)) {
+        // {"items": [...]} 구조
+        vendorArray = result.data.items;
+      }
+      
+      return {
+        success: true,
+        data: vendorArray,
+      };
+    } else {
+      return {
+        success: false,
+        error: result.error || '푸드트럭 목록을 불러오는데 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
+
 // 쿠폰 가능한 벤더 목록 조회 (간단한 정보)
-export async function getVendorsSimple(eventId: string, vendorType?: string): Promise<{ success: boolean; error?: string; data?: VendorItem[] }> {
+export async function getVendorsSimple(eventId: string, vendorType?: string, limit: number = 20): Promise<{ success: boolean; error?: string; data?: VendorItem[] }> {
   let url = `${API_BASE_URL}/vendors/${eventId}/simple`;
   
-  // vendor_type이 제공된 경우에만 쿼리 파라미터 추가
+  // 쿼리 파라미터 구성
+  const params = new URLSearchParams();
   if (vendorType) {
-    url += `?vendor_type=${vendorType}`;
+    params.append('vendor_type', vendorType);
+  }
+  params.append('limit', limit.toString());
+  
+  if (params.toString()) {
+    url += `?${params.toString()}`;
   }
   
   try {
@@ -1666,7 +1739,7 @@ export const getShouts = async (eventId: string): Promise<{ success: boolean; da
 };
 
 // 사용자 이벤트 목록 가져오기
-export const getUserEvents = async (userId: string, cursor?: string | null, limit: number = 10): Promise<{ success: boolean; data?: EventItem[]; error?: string; hasNext?: boolean; total?: number; nextCursor?: string | null }> => {
+export const getUserEvents = async (userId: string, cursor?: string | null, limit: number = 20): Promise<{ success: boolean; data?: EventItem[]; error?: string; hasNext?: boolean; total?: number; nextCursor?: string | null }> => {
   try {
     const url = cursor 
       ? `${API_BASE_URL}/events/user/${userId}?cursor=${cursor}&limit=${limit}`
@@ -1709,7 +1782,7 @@ export const getUserEvents = async (userId: string, cursor?: string | null, limi
 };
 
 // 사용자 게시글 목록 가져오기
-export const getUserPosts = async (userId: string, cursor?: string | null, limit: number = 10): Promise<{ success: boolean; data?: BoardItem[]; error?: string; hasNext?: boolean; total?: number; nextCursor?: string | null }> => {
+export const getUserPosts = async (userId: string, cursor?: string | null, limit: number = 20): Promise<{ success: boolean; data?: BoardItem[]; error?: string; hasNext?: boolean; total?: number; nextCursor?: string | null }> => {
   try {
     const url = cursor 
       ? `${API_BASE_URL}/board/user/${userId}?cursor=${cursor}&limit=${limit}`
@@ -1752,7 +1825,7 @@ export const getUserPosts = async (userId: string, cursor?: string | null, limit
 };
 
 // 사용자 댓글 목록 가져오기
-export const getUserComments = async (userId: string, cursor?: string | null, limit: number = 10): Promise<{ success: boolean; data?: CommentItem[]; error?: string; hasNext?: boolean; total?: number; nextCursor?: string | null }> => {
+export const getUserComments = async (userId: string, cursor?: string | null, limit: number = 20): Promise<{ success: boolean; data?: CommentItem[]; error?: string; hasNext?: boolean; total?: number; nextCursor?: string | null }> => {
   try {
     const url = cursor 
       ? `${API_BASE_URL}/board/comments/user/${userId}?cursor=${cursor}&limit=${limit}`

@@ -49,13 +49,11 @@ export default function SettingsPage() {
   };
 
   const handleTermsOfService = () => {
-    // TODO: 이용약관 페이지로 이동
-    alert("이용약관 페이지는 준비 중입니다.");
+    window.open('https://nettle-animal-431.notion.site/hence-b2c-terms?pvs=73', '_blank');
   };
 
   const handlePrivacyPolicy = () => {
-    // TODO: 개인정보 처리방침 페이지로 이동
-    alert("개인정보 처리방침 페이지는 준비 중입니다.");
+    window.open('https://nettle-animal-431.notion.site/hence-b2c-privacypolicy?pvs=73', '_blank');
   };
 
   // 로딩 상태

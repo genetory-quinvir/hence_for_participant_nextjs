@@ -292,9 +292,9 @@ export default function QRPage() {
           }
           
           // 이벤트 화면으로 이동
-          console.log('이벤트 페이지로 이동:', `/event/${eventId}`);
+          console.log('이벤트 페이지로 이동:', `/event?id=${eventId}`);
           sessionStorage.setItem('previousPage', '/qr');
-          replace(`/event/${eventId}`);
+          replace(`/event?id=${eventId}`);
         } else {
           console.log('이벤트 코드로 페이지 이동:', `/event?code=${qrCode.trim()}`);
           sessionStorage.setItem('previousPage', '/qr');

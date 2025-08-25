@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense, useRef } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import CommonProfileView from "@/components/common/CommonProfileView";
@@ -25,9 +25,8 @@ import EventSurvey from "@/components/event/EventSurvey";
 import { useSimpleNavigation } from "@/utils/navigation";
 import EventSection from "@/components/event/EventSection";
 
-function EventPageContent() {
+export default function EventPageContent() {
   const { navigate, goBack } = useSimpleNavigation();
-  const params = useParams();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [featuredData, setFeaturedData] = useState<FeaturedItem | null>(null);
@@ -35,6 +34,9 @@ function EventPageContent() {
   const [error, setError] = useState<string | null>(null);
   const hasCalledApi = useRef(false);
   const isMounted = useRef(false);
+
+  // eventId를 쿼리 파라미터에서 가져오기
+  const eventId = searchParams.get('id');
 
   // 컴포넌트 마운트 상태 추적
   useEffect(() => {
@@ -53,19 +55,10 @@ function EventPageContent() {
     }
   }, [isAuthenticated, user, authLoading, navigate]);
 
-  // 이벤트 상세 페이지 진입 시 히스토리에 추가
-  useEffect(() => {
-    // 브라우저 히스토리만 사용하므로 별도 관리 불필요
-  }, [params.eventId]);
-
   // 이벤트 데이터 가져오기 (단순화)
   useEffect(() => {
-    // params.eventId가 배열일 수 있으므로 안전하게 추출
-    const eventId = Array.isArray(params.eventId) ? params.eventId[0] : params.eventId;
-    
     console.log('🔄 이벤트 데이터 useEffect 실행:', { 
       eventId, 
-      paramsEventId: params.eventId,
       hasCalledApi: hasCalledApi.current,
       isMounted: isMounted.current,
       authLoading,
@@ -145,7 +138,7 @@ function EventPageContent() {
         abortController.abort();
       };
     }
-  }, [params.eventId, authLoading, isAuthenticated, user]); // 인증 상태를 의존성에 추가
+  }, [eventId, authLoading, isAuthenticated, user]); // 인증 상태를 의존성에 추가
 
   const handleProfileClick = () => {
     if (user) {
@@ -430,24 +423,3 @@ function EventPageContent() {
     </div>
   );
 }
-
-// 로딩 컴포넌트
-function EventPageLoading() {
-  return (
-    <div className="min-h-screen bg-white text-black flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-        <p className="text-sm" style={{ opacity: 0.7 }}>이벤트 페이지를 불러오는 중...</p>
-      </div>
-    </div>
-  );
-}
-
-// 직접 내보내기 (ProtectedRoute 제거)
-export default function EventPage() {
-  return (
-    <Suspense fallback={<EventPageLoading />}>
-      <EventPageContent />
-    </Suspense>
-  );
-} 

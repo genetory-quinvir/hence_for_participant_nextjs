@@ -4,15 +4,16 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, Suspense } from "react";
 import { checkEventCode, registerParticipant } from "@/lib/api";
 import { useSimpleNavigation } from "@/utils/navigation";
+import EventPageContent from "@/components/event/EventPageContent";
 
-function EventPageContent() {
+function EventPageWrapper() {
   const { navigate } = useSimpleNavigation();
   const searchParams = useSearchParams();
 
   // 이벤트 코드나 ID로 리다이렉트 처리
   useEffect(() => {
     const eventCode = searchParams.get('code');
-    const eventId = searchParams.get('eventId');
+    const eventId = searchParams.get('id');
     
     if (eventId) {
       // eventId가 있으면 참여자 등록 후 동적 라우팅으로 이동
@@ -28,11 +29,9 @@ function EventPageContent() {
               console.log('⚠️ 참여자 등록 실패:', result.error);
             }
           }
-          navigate(`/event/${eventId}`);
         })
         .catch((error) => {
           console.error('❌ 참여자 등록 중 오류:', error);
-          navigate(`/event/${eventId}`);
         });
     } else if (eventCode) {
       // eventCode가 있으면 이벤트 코드로 이벤트 ID를 찾아서 이동
@@ -55,11 +54,11 @@ function EventPageContent() {
                     console.log('⚠️ 참여자 등록 실패:', registerResult.error);
                   }
                 }
-                navigate(`/event/${eventId}`);
+                navigate(`/event?id=${eventId}`);
               })
               .catch((error) => {
                 console.error('❌ 참여자 등록 중 오류:', error);
-                navigate(`/event/${eventId}`);
+                navigate(`/event?id=${eventId}`);
               });
           } else {
             console.error('이벤트 코드 확인 실패:', result.error);
@@ -76,34 +75,45 @@ function EventPageContent() {
     }
   }, [searchParams, navigate]);
 
+  // eventId가 있으면 이벤트 페이지 컴포넌트 렌더링
+  const eventId = searchParams.get('id');
+  if (eventId) {
+    return <EventPageContent />;
+  }
+
   // 로딩 상태 표시
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+    <div
+      className="min-h-screen bg-white text-black flex items-center justify-center"
+      style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      }}
+    >
       <div className="text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-        <p className="text-sm" style={{ opacity: 0.7 }}>이벤트 페이지로 이동 중...</p>
+        <p className="text-white text-sm" style={{ opacity: 0.7 }}>이벤트를 불러오는 중...</p>
       </div>
     </div>
   );
 }
 
 // 로딩 컴포넌트
-function EventPageLoading() {
+function EventLoading() {
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+    <div className="min-h-screen bg-white text-black flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
         <p className="text-sm" style={{ opacity: 0.7 }}>이벤트 페이지를 불러오는 중...</p>
       </div>
     </div>
   );
 }
 
-// 직접 내보내기
+// 메인 컴포넌트 (Suspense로 감싸기)
 export default function EventPage() {
   return (
-    <Suspense fallback={<EventPageLoading />}>
-      <EventPageContent />
+    <Suspense fallback={<EventLoading />}>
+      <EventPageWrapper />
     </Suspense>
   );
 } 

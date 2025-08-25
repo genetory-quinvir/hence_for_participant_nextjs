@@ -104,7 +104,7 @@ export default function SurveyPage() {
                 횃불제 만족도 설문조사
               </h1>
               <p className="text-gray-600 text-base">
-                설문 완료 시 커피 쿠폰을 이메일로 발송해드립니다! ☕
+                설문 완료 시 커피 쿠폰을 이메일로 발송해드립니다!
               </p>
             </div>
 
