@@ -42,30 +42,50 @@ function AuthCallbackContent() {
         });
 
         const result = await response.json();
+        console.log('🔍 API 응답 전체:', result);
 
-        if (result.success && result.data) {
-          // 토큰 저장
-          saveTokens(result.access_token, result.refresh_token);
+        if (result.success) {
+          console.log('✅ 로그인 성공:', result);
+          
+          // 토큰 확인
+          const accessToken = result.access_token || result.data?.accessToken;
+          const refreshToken = result.refresh_token || result.data?.refreshToken;
+          
+          console.log('🔑 토큰 정보:', { 
+            accessToken: !!accessToken, 
+            refreshToken: !!refreshToken,
+            accessTokenValue: accessToken ? accessToken.substring(0, 20) + '...' : null,
+            refreshTokenValue: refreshToken ? refreshToken.substring(0, 20) + '...' : null
+          });
+          
+          if (accessToken && refreshToken) {
+            // 토큰 저장
+            saveTokens(accessToken, refreshToken);
 
-          // AuthContext에 로그인 상태 업데이트
-          login(
-            {
-              id: result.data.id || '1',
-              name: result.data.nickname || '사용자',
-              nickname: result.data.nickname || '사용자',
-              email: result.data.email || '',
-            },
-            result.access_token,
-            result.refresh_token
-          );
+            // AuthContext에 로그인 상태 업데이트
+            const userData = result.data || {};
+            login(
+              {
+                id: userData.id || '1',
+                name: userData.nickname || userData.name || '사용자',
+                nickname: userData.nickname || userData.name || '사용자',
+                email: userData.email || '',
+              },
+              accessToken,
+              refreshToken
+            );
 
-          showToast(
-            isNewUser ? '회원가입이 완료되었습니다!' : '로그인이 완료되었습니다!',
-            'success'
-          );
+            showToast(
+              isNewUser ? '회원가입이 완료되었습니다!' : '로그인이 완료되었습니다!',
+              'success'
+            );
 
-          // 메인 페이지로 이동
-          router.replace('/');
+            // 메인 페이지로 이동
+            router.replace('/');
+          } else {
+            console.error('❌ 토큰 누락:', { accessToken, refreshToken, result });
+            setError('토큰 정보를 받지 못했습니다. 응답: ' + JSON.stringify(result, null, 2));
+          }
         } else {
           console.error('로그인 실패 상세:', result);
           const errorMessage = result.error || result.message || '로그인에 실패했습니다.';
