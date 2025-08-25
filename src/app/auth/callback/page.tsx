@@ -29,16 +29,11 @@ function AuthCallbackContent() {
         }
 
         // 직접 외부 API 호출
-        const response = await fetch('https://api-participant.hence.events/auth/social-callback', {
-          method: 'POST',
+        const response = await fetch(`https://api-participant.hence.events/auth/callback?code=${code}&provider=${provider.toUpperCase()}&isNewUser=${isNewUser}`, {
+          method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            code,
-            provider: provider.toUpperCase(),
-            isNewUser
-          }),
         });
 
         const result = await response.json();
