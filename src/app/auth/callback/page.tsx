@@ -48,49 +48,37 @@ function AuthCallbackContent() {
         const result = await response.json();
         console.log('API 응답:', result);
 
-        if (result.success) {
-          console.log('로그인 성공:', result);
-          
-          // 토큰 확인
-          const accessToken = result.access_token || result.data?.accessToken || result.token?.access_token;
-          const refreshToken = result.refresh_token || result.data?.refreshToken || result.token?.refresh_token;
-          
-          if (accessToken && refreshToken) {
-            console.log("소셜 로그인 성공:", result.data);
+        if (result.success && result.access_token) {
+          console.log("소셜 로그인 성공:", result.data);
 
-            // 토큰들 저장
-            saveTokens(accessToken, refreshToken);
+          // 토큰들 저장
+          saveTokens(result.access_token, result.refresh_token);
 
-            // AuthContext에 로그인 상태 업데이트
-            const userData = result.data || result.user;
-            if (userData) {
-              login(
-                {
-                  id: userData.id || '1',
-                  name: userData.nickname || userData.name || '사용자',
-                  nickname: userData.nickname || userData.name || '사용자',
-                  email: userData.email || '',
-                },
-                accessToken,
-                refreshToken
-              );
-            }
-
-            showToast(
-              isNewUser ? '회원가입이 완료되었습니다!' : '로그인이 완료되었습니다!',
-              'success'
+          // AuthContext에 로그인 상태 업데이트
+          if (result.data) {
+            login(
+              {
+                id: result.data.id || '1',
+                name: result.data.nickname || '사용자',
+                nickname: result.data.nickname || '사용자',
+                email: result.data.email || '',
+              },
+              result.access_token,
+              result.refresh_token
             );
+          }
 
-            // redirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
-            const redirectUrl = searchParams.get('redirect');
-            if (redirectUrl) {
-              replace(decodeURIComponent(redirectUrl));
-            } else {
-              replace("/");
-            }
+          showToast(
+            isNewUser ? '회원가입이 완료되었습니다!' : '로그인이 완료되었습니다!',
+            'success'
+          );
+
+          // redirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
+          const redirectUrl = searchParams.get('redirect');
+          if (redirectUrl) {
+            replace(decodeURIComponent(redirectUrl));
           } else {
-            console.error('토큰 누락:', { accessToken, refreshToken, result });
-            setError('토큰 정보를 받지 못했습니다.');
+            replace("/");
           }
         } else {
           console.error('로그인 실패 상세:', result);
