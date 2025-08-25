@@ -52,8 +52,8 @@ function AuthCallbackContent() {
           console.log('로그인 성공:', result);
           
           // 토큰 확인
-          const accessToken = result.access_token || result.data?.accessToken;
-          const refreshToken = result.refresh_token || result.data?.refreshToken;
+          const accessToken = result.access_token || result.data?.accessToken || result.token?.access_token;
+          const refreshToken = result.refresh_token || result.data?.refreshToken || result.token?.refresh_token;
           
           if (accessToken && refreshToken) {
             console.log("소셜 로그인 성공:", result.data);
@@ -62,13 +62,14 @@ function AuthCallbackContent() {
             saveTokens(accessToken, refreshToken);
 
             // AuthContext에 로그인 상태 업데이트
-            if (result.data) {
+            const userData = result.data || result.user;
+            if (userData) {
               login(
                 {
-                  id: result.data.id || '1',
-                  name: result.data.nickname || result.data.name || '사용자',
-                  nickname: result.data.nickname || result.data.name || '사용자',
-                  email: result.data.email || '',
+                  id: userData.id || '1',
+                  name: userData.nickname || userData.name || '사용자',
+                  nickname: userData.nickname || userData.name || '사용자',
+                  email: userData.email || '',
                 },
                 accessToken,
                 refreshToken
