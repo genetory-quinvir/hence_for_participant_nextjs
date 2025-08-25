@@ -378,7 +378,7 @@ export default function EventPageContent() {
 
 
         {/* 커뮤니티 섹션 */}
-        {/* {featuredData.freeBoard && (
+        {featuredData.freeBoard && (
           <EventCommunity 
             freeBoard={featuredData.freeBoard} 
             showViewAllButton={true}
@@ -386,7 +386,7 @@ export default function EventPageContent() {
               navigate(`/board/list?eventId=${featuredData.event.id || 'default-event'}`);
             }}
           />
-        )} */}
+        )}
 
         {/* 설문조사 섹션 */}
         <EventSection

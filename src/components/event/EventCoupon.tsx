@@ -137,10 +137,11 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
       <div className="relative">
         <div
           ref={scrollContainerRef}
-          className="flex space-x-4 overflow-x-auto scrollbar-hide px-4"
+          className="flex space-x-4 overflow-x-auto scrollbar-hide px-4 py-4"
           style={{ 
             scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
+            msOverflowStyle: 'none',
+            overflow: 'visible'
           }}
         >
           {coupons.map((coupon) => {

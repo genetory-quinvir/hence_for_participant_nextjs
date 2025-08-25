@@ -52,14 +52,21 @@ function BoardEditContent() {
           return;
         }
         
+        console.log('🔄 게시글 상세 정보 요청:', { eventId, postType, postId });
+        
         // API 호출
         const result = await getBoardDetail(eventId, postType, postId);
+        
+        console.log('📥 게시글 상세 정보 결과:', result);
         
         if (result.success && result.data) {
           const postData = result.data;
           
+          console.log('📋 게시글 데이터:', postData);
+          
           // 본인이 작성한 글인지 확인
           if (user && postData.user?.id !== user.id) {
+            console.log('❌ 권한 없음:', { userId: user.id, postUserId: postData.user?.id });
             showToast('본인이 작성한 글만 수정할 수 있습니다.', 'error');
             goBack();
             return;
@@ -69,7 +76,13 @@ function BoardEditContent() {
           setContent(postData.content || "");
           setExistingImages(postData.images || []);
           setImageUrls(postData.images || []);
+          
+          console.log('✅ 게시글 데이터 설정 완료:', {
+            content: postData.content,
+            images: postData.images
+          });
         } else {
+          console.error('❌ 게시글 로드 실패:', result.error);
           setError(result.error || "게시글을 불러오는데 실패했습니다.");
         }
       } catch (err) {
@@ -95,7 +108,7 @@ function BoardEditContent() {
       
       // 이미지 URL 생성
       const newUrls = newImages.map(file => URL.createObjectURL(file));
-      setImageUrls(prev => [...prev, ...newUrls]);
+      setImageUrls(prev => [...existingImages.filter(img => !removedImages.includes(img)), ...newUrls]);
     }
   };
 
@@ -132,8 +145,16 @@ function BoardEditContent() {
   // 이미지 제거
   const handleImageRemove = (index: number) => {
     const newImages = images.filter((_, i) => i !== index);
-    const newUrls = imageUrls.filter((_, i) => i !== index);
     setImages(newImages);
+    
+    // URL 정리
+    const removedUrl = imageUrls[existingImages.length - removedImages.length + index];
+    if (removedUrl && removedUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(removedUrl);
+    }
+    
+    // 이미지 URL 업데이트
+    const newUrls = [...existingImages.filter(img => !removedImages.includes(img)), ...newImages.map(file => URL.createObjectURL(file))];
     setImageUrls(newUrls);
   };
 
@@ -171,20 +192,56 @@ function BoardEditContent() {
     try {
       setIsSubmitting(true);
       
-      // TODO: 이미지 업로드 API 호출
-      const finalImages = [...existingImages.filter(img => !removedImages.includes(img))];
+      console.log('🔄 게시글 수정 시작:', {
+        eventId,
+        postType,
+        postId,
+        content: content.trim(),
+        existingImages,
+        removedImages,
+        newImages: images.length
+      });
+      
+      // 최종 이미지 목록 구성 (기존 이미지 - 제거된 이미지)
+      const finalImages = existingImages.filter(img => !removedImages.includes(img));
+      
+      console.log('🖼️ 최종 이미지 목록:', finalImages);
       
       const updateData = {
         content: content.trim(),
-        images: finalImages
+        images: finalImages,
+        newImages: images // 새로 추가된 이미지 파일들
       };
+      
+      console.log('📤 수정 데이터:', updateData);
       
       const result = await updateBoard(eventId, postType, postId, updateData);
       
+      console.log('📥 수정 결과:', result);
+      
       if (result.success) {
+        console.log('✅ 수정 성공! 수정된 데이터 확인:', result.data);
         showToast('게시글이 수정되었습니다.', 'success');
+        
+        // 수정된 데이터로 로컬 상태 업데이트
+        if (result.data) {
+          setPost(prev => prev ? { ...prev, ...result.data } : null);
+        }
+        
+        // 수정 후 게시글 상세 정보를 다시 불러와서 확인
+        console.log('🔄 수정 후 게시글 상세 정보 재확인...');
+        const verifyResult = await getBoardDetail(eventId, postType, postId);
+        console.log('📥 수정 후 게시글 상세 정보:', verifyResult);
+        
+        if (verifyResult.success && verifyResult.data) {
+          console.log('✅ 수정 확인됨:', verifyResult.data.content);
+        } else {
+          console.log('⚠️ 수정 확인 실패:', verifyResult.error);
+        }
+        
         replace(`/board/${postId}?type=${postType}&eventId=${eventId}`);
       } else {
+        console.error('❌ 수정 실패:', result.error);
         if (result.error?.includes('로그인이 만료')) {
           showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
@@ -206,8 +263,10 @@ function BoardEditContent() {
       if (confirm('수정 중인 내용이 있습니다. 정말 나가시겠습니까?')) {
         // 이미지 URL 정리
         images.forEach((_, index) => {
-          const url = imageUrls[existingImages.length + index];
-          if (url) URL.revokeObjectURL(url);
+          const url = imageUrls[existingImages.length - removedImages.length + index];
+          if (url && url.startsWith('blob:')) {
+            URL.revokeObjectURL(url);
+          }
         });
         goBack();
       }
@@ -218,21 +277,21 @@ function BoardEditContent() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 w-full h-full bg-black text-white flex flex-col overflow-hidden">
+      <div className="fixed inset-0 w-full h-full bg-white text-black flex flex-col overflow-hidden">
         <CommonNavigationBar 
           title="게시글 수정"
           leftButton={
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           }
           onLeftClick={handleCancel}
-          backgroundColor="black"
+          backgroundColor="white"
           backgroundOpacity={1}
-          textColor="text-white"
+          textColor="text-black"
         />
         <div className="flex items-center justify-center flex-1">
-          <div className="text-lg">로딩 중...</div>
+          <div className="text-lg text-black">로딩 중...</div>
         </div>
       </div>
     );
@@ -240,52 +299,52 @@ function BoardEditContent() {
 
   if (error || !post) {
     return (
-      <div className="fixed inset-0 w-full h-full bg-black text-white flex flex-col overflow-hidden">
+      <div className="fixed inset-0 w-full h-full bg-white text-black flex flex-col overflow-hidden">
         <CommonNavigationBar 
           title="게시글 수정"
           leftButton={
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           }
           onLeftClick={handleCancel}
-          backgroundColor="black"
+          backgroundColor="white"
           backgroundOpacity={1}
-          textColor="text-white"
+          textColor="text-black"
         />
         <div className="flex items-center justify-center flex-1">
-          <div className="text-lg text-red-400">{error || "게시글을 찾을 수 없습니다."}</div>
+          <div className="text-lg text-red-600">{error || "게시글을 찾을 수 없습니다."}</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-black text-white flex flex-col overflow-hidden">
+    <div className="fixed inset-0 w-full h-full bg-white text-black flex flex-col overflow-hidden">
       <CommonNavigationBar 
         title="게시글 수정"
         leftButton={
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         }
         rightButton={null}
         onLeftClick={handleCancel}
-        backgroundColor="black"
+        backgroundColor="white"
         backgroundOpacity={1}
-        textColor="text-white"
+        textColor="text-black"
       />
       
       <div className="flex flex-col flex-1 px-4 min-h-0">
-        {/* 텍스트 입력 영역 - 남은 공간 채움 */}
+                {/* 텍스트 입력 영역 - 남은 공간 채움 */}
         <div className="flex-1 min-h-0">
           <textarea
             placeholder="무슨 소식을 올리실건가요?"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full bg-transparent border-none outline-none resize-none text-white text-lg board-write-textarea h-full"
+            className="w-full bg-transparent border-none outline-none resize-none text-black text-lg board-write-textarea h-full"
             style={{ 
-              color: 'white'
+              color: 'black'
             }}
           />
         </div>
@@ -298,7 +357,7 @@ function BoardEditContent() {
               <div className="flex flex-wrap gap-2">
                 {imageUrls.map((url, index) => (
                   <div key={index} className="relative">
-                    <div className="w-20 h-20 rounded-lg overflow-hidden" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                    <div className="w-20 h-20 rounded-lg overflow-hidden" style={{ backgroundColor: "rgba(0, 0, 0, 0.05)" }}>
                       <img
                         src={url}
                         alt={`이미지 ${index + 1}`}
@@ -316,21 +375,20 @@ function BoardEditContent() {
                     </div>
                     <button
                       onClick={() => {
-                        if (index < existingImages.length) {
-                          handleRemoveExistingImage(url);
+                        if (index < existingImages.length - removedImages.length) {
+                          // 기존 이미지 제거
+                          const originalIndex = existingImages.findIndex(img => img === url);
+                          if (originalIndex !== -1) {
+                            handleRemoveExistingImage(existingImages[originalIndex]);
+                          }
                         } else {
-                          handleImageRemove(index - existingImages.length);
+                          // 새 이미지 제거
+                          handleImageRemove(index - (existingImages.length - removedImages.length));
                         }
                       }}
                       className="absolute -top-1 -right-1 w-6 h-6 text-white rounded-full flex items-center justify-center text-sm transition-colors"
                       style={{
                         backgroundColor: 'rgba(0, 0, 0, 0.8)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
                       }}
                     >
                       ×
@@ -342,7 +400,7 @@ function BoardEditContent() {
           )}
 
           {/* 이미지 업로드 */}
-          <div className="bg-black bg-opacity-20 rounded-lg">
+          <div className="bg-gray-100 rounded-lg">
             <div className="flex items-center justify-between">
               <button
                 onClick={async () => {
@@ -353,11 +411,11 @@ function BoardEditContent() {
                     handleImageLibrary();
                   }
                 }}
-                className="relative text-white text-opacity-60 hover:text-opacity-80 transition-colors cursor-pointer"
+                className="relative text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
               >
                 <div 
                   className="w-12 h-12 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                  style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -365,14 +423,14 @@ function BoardEditContent() {
                 </div>
               </button>
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-white text-opacity-60">
+                <span className="text-sm text-gray-600">
                   {content.length}/1000
                 </span>
                 <button
                   onClick={handleSubmit}
                   className={`text-md font-semibold transition-all duration-200 px-6 py-3 rounded-lg ${
                     isSubmitting || !content.trim()
-                      ? 'text-gray-400 cursor-not-allowed bg-gray-600'
+                      ? 'text-gray-400 cursor-not-allowed bg-gray-300'
                       : 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
                   }`}
                 >
@@ -408,6 +466,8 @@ function BoardEditContent() {
               }
             ]}
           />
+
+
         </div>
       </div>
     </div>
@@ -417,10 +477,10 @@ function BoardEditContent() {
 // 로딩 컴포넌트
 function BoardEditLoading() {
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+    <div className="min-h-screen bg-white text-black flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-        <p className="text-sm" style={{ opacity: 0.7 }}>게시글을 불러오는 중...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+        <p className="text-sm text-gray-600">게시글을 불러오는 중...</p>
       </div>
     </div>
   );

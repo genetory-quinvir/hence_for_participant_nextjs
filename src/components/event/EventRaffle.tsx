@@ -89,7 +89,7 @@ export default function EventRaffle({ raffle, eventId }: EventRaffleProps) {
           }}
         >
           {/* 래플 제목과 아이콘 */}
-          <div className="flex items-start justify-center space-x-3 mb-1">
+          <div className="flex items-start justify-center space-x-3 mb-1 mt-4">
             <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
               <img 
                 src="/images/img_giftbox.png" 
@@ -115,7 +115,7 @@ export default function EventRaffle({ raffle, eventId }: EventRaffleProps) {
               `}</style>
             </div>
             <div className="flex-1">
-              <h4 className="text-white font-bold text-xl mb-2">
+              <h4 className="text-white font-bold text-xl mb-1 mt-2">
                 {raffle.title || '경품 이벤트'}
               </h4>
               

@@ -58,14 +58,14 @@ export default function EventNotice({ notices }: EventNoticeProps) {
         {displayNotices.map((notice) => (
           <div
             key={notice.id}
-            className="flex-shrink-0 w-80 rounded-xl p-4 cursor-pointer bg-white"
+            className="flex-shrink-0 w-80 h-48 rounded-xl p-4 cursor-pointer bg-white"
             style={{ 
               scrollSnapAlign: 'start',
             }}
             onClick={() => router.push(`/board/${notice.id}?type=notice&eventId=${notice.eventId || 'default-event'}`)}
           >
             {/* 공지사항 정보 */}
-            <div className="flex-1 flex flex-col">
+            <div className="h-full flex flex-col">
               <div className="flex items-center mb-3">
                 <img 
                   src="/images/icon_notice.png" 
@@ -82,11 +82,11 @@ export default function EventNotice({ notices }: EventNoticeProps) {
                 {notice.title || '제목 없음'}
               </h3>
               
-              <p className="text-sm text-gray-700 mb-3 leading-relaxed whitespace-pre-wrap line-clamp-3">
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap line-clamp-3">
                 {notice.content || '내용 없음'}
               </p>
               
-              {/* 액션 버튼 - 고정 높이 */}
+              {/* 액션 버튼 - 아래 고정 */}
               <div className="mt-auto pt-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">

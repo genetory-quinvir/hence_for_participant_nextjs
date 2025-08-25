@@ -398,6 +398,28 @@ function BoardDetailContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
+        rightButton={
+          (postType === 'free' || (postType === 'notice' && user && (user.role === 'admin' || user.role === 'host'))) ? (
+            <button
+              onClick={handleMoreClick}
+              className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <svg 
+                className="w-5 h-5 text-black" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" 
+                />
+              </svg>
+            </button>
+          ) : undefined
+        }
         backgroundColor="white"
         backgroundOpacity={1}
         textColor="text-black"
@@ -414,32 +436,43 @@ function BoardDetailContent() {
         <div className="px-4 py-6 pb-8">
           {/* 게시글 헤더 */}
           <div className="flex items-center space-x-2 mb-8">
-            <CommonProfileView
-              profileImageUrl={post.user?.profileImageUrl}
-              nickname={post.user?.nickname || '익명'}
-              size="md"
-              showBorder={true}
-            />
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-col">
-                <div className="flex items-center space-x-2">
-                  {postType === 'notice' ? (
-                    <span className="text-black font-semibold text-md">운영위원회</span>
-                  ) : (
-                    <span className="text-black font-semibold text-md">
-                      {post.user?.nickname || '익명'}
-                    </span>
-                  )}
+            {postType === 'notice' ? (
+              // 공지사항인 경우 아이콘만 표시
+              <img 
+                src="/images/icon_notice.png" 
+                alt="공지사항 아이콘" 
+                className="w-8 h-8 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : (
+              // 커뮤니티인 경우 프로필 표시
+              <>
+                <CommonProfileView
+                  profileImageUrl={post.user?.profileImageUrl}
+                  nickname={post.user?.nickname || '익명'}
+                  size="md"
+                  showBorder={true}
+                />
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-black font-semibold text-md">
+                        {post.user?.nickname || '익명'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
           
           {/* 제목 */}
           {post.title && (
-            <div className="mb-8">
-              <h1 className="text-black font-bold text-md leading-tight">
+            <div className="mb-4">
+              <h1 className="text-black font-bold text-lg leading-tight">
                 {post.title}
               </h1>
             </div>
@@ -603,23 +636,45 @@ function BoardDetailContent() {
       <CommonActionSheet
         isOpen={showActionSheet}
         onClose={handleCloseActionSheet}
-        items={[
-          { 
-            label: '수정', 
-            onClick: () => handleActionClick('edit'),
-            variant: 'default'
-          },
-          { 
-            label: '삭제', 
-            onClick: () => handleActionClick('delete'),
-            variant: 'destructive'
-          },
-          { 
-            label: '신고', 
-            onClick: () => handleActionClick('report'),
-            variant: 'default'
-          }
-        ]}
+        items={
+          post && user && (
+            postType === 'free' && post.user?.id === user.id
+              ? [
+                  {
+                    label: "수정하기",
+                    onClick: () => handleActionClick('edit')
+                  },
+                  {
+                    label: "삭제하기",
+                    onClick: () => handleActionClick('delete'),
+                    variant: 'destructive'
+                  }
+                ]
+              : postType === 'notice' && (user.role === 'admin' || user.role === 'host')
+              ? [
+                  {
+                    label: "수정하기",
+                    onClick: () => handleActionClick('edit')
+                  },
+                  {
+                    label: "삭제하기",
+                    onClick: () => handleActionClick('delete'),
+                    variant: 'destructive'
+                  }
+                ]
+              : [
+                  {
+                    label: "신고하기",
+                    onClick: () => handleActionClick('report')
+                  }
+                ]
+          ) || [
+            {
+              label: "신고하기",
+              onClick: () => handleActionClick('report')
+            }
+          ]
+        }
       />
 
       {/* 이미지 갤러리 */}

@@ -88,94 +88,105 @@ export default function CommonActionSheet({
   }
 
   return (
-    <>
-      {/* 완전히 차단하는 오버레이 */}
-      <div 
-        className="fixed inset-0 z-40"
-        style={{ 
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          touchAction: 'none',
-          pointerEvents: 'auto',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          MozUserSelect: 'none',
-          msUserSelect: 'none',
-          WebkitTouchCallout: 'none',
-          WebkitTapHighlightColor: 'transparent',
-          overflow: 'hidden'
-        }}
-      />
-      
-      {/* 액션시트 컨테이너 */}
-      <div 
-        className="fixed inset-0 z-50 flex items-end"
-        style={{ 
-          touchAction: 'none',
-          pointerEvents: 'none',
-          overflow: 'hidden'
-        }}
-      >
-        <div 
-          className="w-full bg-black rounded-t-xl p-4"
-          style={{ 
-            pointerEvents: 'auto',
-            userSelect: 'auto',
-            WebkitUserSelect: 'auto'
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* 드래그 핸들 */}
-          <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mb-4"></div>
-          
-          {/* 제목 (선택사항) */}
-          {title && (
-            <div className="text-center mb-4">
-              <h3 className="text-white text-lg font-medium">{title}</h3>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      zIndex: 9999,
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'center'
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '700px',
+        backgroundColor: 'white',
+        borderTopLeftRadius: '12px',
+        borderTopRightRadius: '12px',
+        padding: '16px',
+        maxHeight: '80vh'
+      }}>
+        {/* 드래그 핸들 */}
+        <div style={{
+          width: '48px',
+          height: '4px',
+          backgroundColor: '#d1d5db',
+          borderRadius: '2px',
+          margin: '0 auto 16px auto'
+        }}></div>
+        
+        {/* 제목 (선택사항) */}
+        {title && (
+          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <h3 style={{ color: 'black', fontSize: '18px', fontWeight: '500' }}>{title}</h3>
+          </div>
+        )}
+        
+        {/* 액션 아이템들 */}
+        <div style={{ marginBottom: '16px' }}>
+          {items && items.length > 0 ? (
+            items.map((item, index) => {
+              return (
+                <button
+                  key={index}
+                  onClick={item.onClick}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: item.variant === 'destructive' ? '#dc2626' : 'black',
+                    cursor: 'pointer',
+                    marginBottom: '8px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = item.variant === 'destructive' ? '#fef2f2' : '#f3f4f6';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
+                </button>
+              );
+            })
+          ) : (
+            <div style={{ textAlign: 'center', color: '#6b7280', padding: '16px 0' }}>
+              <p>표시할 항목이 없습니다.</p>
             </div>
           )}
-          
-          {/* 액션 아이템들 */}
-          <div className="space-y-2">
-            {items && items.length > 0 ? (
-              items.map((item, index) => {
-                return (
-                  <button
-                    key={index}
-                    onClick={item.onClick}
-                    className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                      item.variant === 'destructive'
-                        ? 'text-red-400 hover:bg-red-900 hover:bg-opacity-20'
-                        : 'text-white hover:bg-gray-800'
-                    }`}
-                  >
-                    {item.icon && (
-                      <div className="flex-shrink-0">
-                        {item.icon}
-                      </div>
-                    )}
-                    <span className="flex-1 text-left">{item.label}</span>
-                  </button>
-                );
-              })
-            ) : (
-              <div className="text-center text-gray-400 py-4">
-                <p>표시할 항목이 없습니다.</p>
-                <p className="text-sm">items: {JSON.stringify(items)}</p>
-              </div>
-            )}
-          </div>
-          
-          {/* 취소 버튼 */}
-          <div className="mt-4 pt-4 border-t border-gray-800">
-            <button
-              onClick={onClose}
-              className="w-full p-3 text-gray-400 hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              취소
-            </button>
-          </div>
+        </div>
+        
+        {/* 취소 버튼 */}
+        <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
+          <button
+            onClick={onClose}
+            style={{
+              width: '100%',
+              padding: '12px',
+              color: '#4b5563',
+              border: 'none',
+              backgroundColor: 'transparent',
+              borderRadius: '8px',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#f3f4f6';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            취소
+          </button>
         </div>
       </div>
-    </>
+    </div>
   );
 } 

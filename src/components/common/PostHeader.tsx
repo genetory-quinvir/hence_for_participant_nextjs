@@ -122,7 +122,7 @@ export default function PostHeader({
           }}
           className="flex-shrink-0 p-1 rounded-full transition-colors"
         >
-          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24" style={{ cursor: 'pointer' }}>
+          <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24" style={{ cursor: 'pointer' }}>
             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
           </svg>
         </button>

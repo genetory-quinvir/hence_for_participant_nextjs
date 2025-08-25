@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BoardItem } from "@/types/api";
-import { getBoardList, getAccessToken, deleteBoard } from "@/lib/api";
+import { getBoardList, getAccessToken, deleteBoard, toggleLike } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import PostHeader from "@/components/common/PostHeader";
 import { useSimpleNavigation } from "@/utils/navigation";
@@ -51,6 +51,7 @@ function BoardListContent() {
   const [sortBy, setSortBy] = useState<'latest' | 'popular'>('latest');
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedPost, setSelectedPost] = useState<BoardItem | null>(null);
+  const [isLiking, setIsLiking] = useState(false);
   const isMounted = useRef(true);
   const hasCalledApi = useRef(false);
 
@@ -74,14 +75,37 @@ function BoardListContent() {
         setCursor(null);
         setHasNext(true);
         
+        // 인증 상태 확인
+        const accessToken = getAccessToken();
+        if (!accessToken) {
+          showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+          const currentUrl = window.location.pathname + window.location.search;
+          router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+          return;
+        }
+        
         const result = await getBoardList(eventId, type, null, 20);
+        
+        console.log('📥 게시글 목록 응답:', result);
+        console.log('📋 게시글 데이터 샘플:', result.data?.items?.[0]);
+        console.log('❤️ 좋아요 상태 확인:', result.data?.items?.map(post => ({
+          id: post.id,
+          isLiked: post.isLiked,
+          likeCount: post.likeCount
+        })));
         
         if (result.success && result.data) {
           setPosts(result.data.items);
           setHasNext(result.data.hasNext);
           setCursor(result.data.nextCursor || null);
         } else {
-          setError(result.error || '게시글을 불러오는데 실패했습니다.');
+          if (result.error?.includes('로그인이 만료')) {
+            showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+            const currentUrl = window.location.pathname + window.location.search;
+            router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+          } else {
+            setError(result.error || '게시글을 불러오는데 실패했습니다.');
+          }
         }
       } catch (err) {
         console.error("게시글 로드 오류:", err);
@@ -92,7 +116,7 @@ function BoardListContent() {
     };
 
     fetchInitialData();
-  }, [eventId, type]);
+  }, [eventId, type, router, showToast]);
 
   // 추가 데이터 로딩
   const loadMore = useCallback(async () => {
@@ -100,6 +124,15 @@ function BoardListContent() {
 
     try {
       setLoadingMore(true);
+      
+      // 인증 상태 확인
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+        const currentUrl = window.location.pathname + window.location.search;
+        router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+        return;
+      }
       
       const result = await getBoardList(eventId, type, cursor, 20);
       
@@ -113,14 +146,20 @@ function BoardListContent() {
         setHasNext(result.data.hasNext);
         setCursor(result.data.nextCursor || null);
       } else {
-        console.error("추가 데이터 로드 실패:", result.error);
+        if (result.error?.includes('로그인이 만료')) {
+          showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+          const currentUrl = window.location.pathname + window.location.search;
+          router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+        } else {
+          console.error("추가 데이터 로드 실패:", result.error);
+        }
       }
     } catch (err) {
       console.error("추가 데이터 로드 오류:", err);
     } finally {
       setLoadingMore(false);
     }
-  }, [eventId, type, hasNext, loadingMore, cursor]);
+  }, [eventId, type, hasNext, loadingMore, cursor, router, showToast]);
 
   // 스크롤 감지
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -210,13 +249,53 @@ function BoardListContent() {
     setSelectedPost(null);
   };
 
-  const handleWriteClick = () => {
-    // 공지사항은 글쓰기 불가
-    if (type === 'notice') {
-      showToast('공지사항은 관리자만 작성할 수 있습니다.', 'warning');
-      return;
+  // 좋아요 토글 핸들러
+  const handleLikeToggle = async (post: BoardItem) => {
+    try {
+      // 인증 상태 확인
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+        const currentUrl = window.location.pathname + window.location.search;
+        router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+        return;
+      }
+
+      setIsLiking(true);
+      const postId = post.id;
+      
+      const result = await toggleLike(eventId, type, postId, post.isLiked || false);
+      
+      if (result.success) {
+        // 로컬 상태 업데이트
+        setPosts(prev => prev.map(p => {
+          if (p.id === postId) {
+            return {
+              ...p,
+              isLiked: result.updatedIsLiked !== undefined ? result.updatedIsLiked : !p.isLiked,
+              likeCount: result.updatedLikeCount !== undefined ? result.updatedLikeCount : (p.isLiked ? (p.likeCount || 0) - 1 : (p.likeCount || 0) + 1)
+            };
+          }
+          return p;
+        }));
+      } else {
+        if (result.error?.includes('로그인이 만료')) {
+          showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+          const currentUrl = window.location.pathname + window.location.search;
+          router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+        } else {
+          showToast(result.error || '좋아요 처리에 실패했습니다.', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('좋아요 토글 오류:', error);
+      showToast('좋아요 처리 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setIsLiking(false);
     }
-    
+  };
+
+  const handleWriteClick = () => {
     // 로그인 상태 확인
     const accessToken = getAccessToken();
     if (!accessToken) {
@@ -225,8 +304,16 @@ function BoardListContent() {
       router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
       return;
     }
+
+    // 공지사항은 admin, host 역할만 작성 가능
+    if (type === 'notice') {
+      if (!user || (user.role !== 'admin' && user.role !== 'host')) {
+        showToast('공지사항은 관리자만 작성할 수 있습니다.', 'warning');
+        return;
+      }
+    }
     
-    router.push(`/board/write?eventId=${eventId}&from=boardList`);
+    router.push(`/board/write?eventId=${eventId}&type=${type}&from=boardList`);
   };
 
   const handleBackClick = () => {
@@ -465,7 +552,7 @@ function BoardListContent() {
               }}
               onClick={() => handlePostClick(post)}
             >
-              <div className="px-6 py-2 h-full flex flex-col relative">
+              <div className="px-6 py-4 h-full flex flex-col relative">
                 {/* 보더 - 양쪽 인셋 적용 */}
                 <div className="absolute" style={{ bottom: '0px', left: '24px', right: '24px', borderBottom: '1px solid rgb(229, 231, 235)' }}></div>
                 {/* 게시글 헤더 (커뮤니티에서만 표시) */}
@@ -474,7 +561,7 @@ function BoardListContent() {
                     nickname={post.user?.nickname}
                     profileImageUrl={post.user?.profileImageUrl || undefined}
                     createdAt={post.createdAt}
-                    className="mb-4"
+                    className="mb-6"
                     showMoreButton={true}
                     isNotice={type === 'notice'}
                     onMoreClick={() => handleMoreClick(post)}
@@ -484,18 +571,45 @@ function BoardListContent() {
                 {/* 공지사항인 경우 EventNotice 스타일 적용 */}
                 {type === 'notice' ? (
                   <div className="flex-1">
-                    <div className="flex items-center mb-3 mt-2">
-                      <img 
-                        src="/images/icon_notice.png" 
-                        alt="공지사항 아이콘" 
-                        className="w-8 h-8 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
+                    <div className="flex items-center justify-between mb-4 mt-2">
+                      <div className="flex items-center">
+                        <img 
+                          src="/images/icon_notice.png" 
+                          alt="공지사항 아이콘" 
+                          className="w-8 h-8 object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                      
+                      {/* 공지사항 더보기 버튼 (admin/host만 표시) */}
+                      {user && (user.role === 'admin' || user.role === 'host') && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMoreClick(post);
+                          }}
+                          className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                        >
+                          <svg 
+                            className="w-5 h-5 text-black" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" 
+                            />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                     
-                    <h3 className="text-black font-bold text-md mb-1 line-clamp-2">
+                    <h3 className="text-black font-bold text-md mb-3 line-clamp-2">
                       {post.title || '제목 없음'}
                     </h3>
                     
@@ -505,11 +619,19 @@ function BoardListContent() {
                   </div>
                 ) : (
                   /* 커뮤니티인 경우 내용과 이미지 표시 */
-                  <div className="flex-1 flex space-x-3">
+                  <div className="flex-1 flex space-x-4">
                     <div className="flex-1 min-w-0">
-                      {post.content && (
-                        <div className="text-md text-black font-regular line-clamp-3 whitespace-pre-wrap mt-2">
+                      {(() => {
+                        console.log('🔍 게시글 내용:', { id: post.id, content: post.content, hasContent: !!post.content });
+                        return null;
+                      })()}
+                      {post.content ? (
+                        <div className="text-md text-black font-regular line-clamp-3 whitespace-pre-wrap mt-3">
                           {post.content}
+                        </div>
+                      ) : (
+                        <div className="text-md text-gray-500 font-regular line-clamp-3 whitespace-pre-wrap mt-3">
+                          내용이 없습니다
                         </div>
                       )}
                     </div>
@@ -545,10 +667,19 @@ function BoardListContent() {
                 )}
                 
                 {/* 액션 버튼 - 고정 높이 */}
-                <div className="mt-auto pt-3 mb-2">
+                <div className="mt-auto pt-4 mb-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center">
+                    <div className="flex items-center space-x-6">
+                      <button 
+                        className={`flex items-center transition-colors ${
+                          isLiking ? 'opacity-50 cursor-not-allowed' : post.isLiked ? 'hover:text-purple-800' : 'hover:text-purple-600'
+                        } ${post.isLiked ? 'text-purple-700' : 'text-black'}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLikeToggle(post);
+                        }}
+                        disabled={isLiking}
+                      >
                         {post.isLiked ? (
                           <svg 
                             className="w-4 h-4 mr-1 text-purple-700" 
@@ -572,7 +703,7 @@ function BoardListContent() {
                         <span className={`text-xs font-regular ${post.isLiked ? 'text-purple-700' : 'text-black'}`} style={{ opacity: post.isLiked ? 1 : 0.8 }}>
                           {post.likeCount || 0}
                         </span>
-                      </div>
+                      </button>
                       
                       <div className="flex items-center">
                         <svg 
@@ -680,8 +811,8 @@ function BoardListContent() {
         }
       />
 
-      {/* 플로팅 글쓰기 버튼 (커뮤니티에서만 표시) */}
-      {type === 'free' && (
+      {/* 플로팅 글쓰기 버튼 */}
+      {(type === 'free' || (type === 'notice' && user && (user.role === 'admin' || user.role === 'host'))) && (
         <button
           onClick={handleWriteClick}
           className="fixed bottom-6 right-6 w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 z-50"

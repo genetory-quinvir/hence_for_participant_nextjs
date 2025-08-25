@@ -12,6 +12,7 @@ function BoardWriteContent() {
   const { navigate, goBack, replace } = useSimpleNavigation();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -19,15 +20,21 @@ function BoardWriteContent() {
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [hasCamera, setHasCamera] = useState<boolean | null>(null);
 
-  // 이벤트 ID와 출처 가져오기
+  // 이벤트 ID와 출처, 게시판 타입 가져오기
   const eventId = searchParams.get('eventId') || 'default-event';
   const from = searchParams.get('from');
+  const boardType = searchParams.get('type') || 'free'; // 'free' 또는 'notice'
 
   const handleBackClick = () => {
     goBack();
   };
 
   const handleSubmit = async () => {
+    if (boardType === 'notice' && !title.trim()) {
+      showToast('제목을 입력해주세요.', 'warning');
+      return;
+    }
+    
     if (!content.trim()) {
       showToast('내용을 입력해주세요.', 'warning');
       return;
@@ -39,26 +46,26 @@ function BoardWriteContent() {
       // 글쓰기 API 호출
       const result = await createPost(
         eventId,
-        'free', // board_type은 free로 고정
-        null,   // title은 null (자유게시판은 제목 없음)
+        boardType, // board_type을 동적으로 설정
+        boardType === 'notice' ? title.trim() : null, // 공지사항은 별도 제목 사용
         content.trim(),
         images
       );
 
       if (result.success) {
         // 글 리스트 페이지로 이동 (히스토리에서 글쓰기 페이지 제거)
-        replace(`/board/list?type=free&eventId=${eventId}`);
-      } else {
-        // 인증 오류인 경우 로그인 페이지로 리다이렉트
-        if (result.error?.includes('인증') || result.error?.includes('토큰') || result.error?.includes('로그인')) {
-          showToast('로그인이 필요합니다.', 'warning');
-          // 로그인 후 글 리스트 페이지로 돌아가도록 redirect 설정
-          const redirectUrl = `/board/list?type=free&eventId=${eventId}`;
-          navigate(`/sign?redirect=${encodeURIComponent(redirectUrl)}`);
-        } else {
-          showToast(result.error || '글쓰기에 실패했습니다. 다시 시도해주세요.', 'error');
+        replace(`/board/list?type=${boardType}&eventId=${eventId}`);
+              } else {
+          // 인증 오류인 경우 로그인 페이지로 리다이렉트
+          if (result.error?.includes('인증') || result.error?.includes('토큰') || result.error?.includes('로그인')) {
+            showToast('로그인이 필요합니다.', 'warning');
+            // 로그인 후 글 리스트 페이지로 돌아가도록 redirect 설정
+            const redirectUrl = `/board/list?type=${boardType}&eventId=${eventId}`;
+            navigate(`/sign?redirect=${encodeURIComponent(redirectUrl)}`);
+          } else {
+            showToast(result.error || '글쓰기에 실패했습니다. 다시 시도해주세요.', 'error');
+          }
         }
-      }
       
     } catch (error) {
       console.error('글쓰기 오류:', error);
@@ -137,7 +144,7 @@ function BoardWriteContent() {
   };
 
   const handleCancel = () => {
-    if (content.trim() || images.length > 0) {
+    if (content.trim() || title.trim() || images.length > 0) {
       if (confirm('작성 중인 내용이 있습니다. 정말 나가시겠습니까?')) {
         // 이미지 URL 정리
         imageUrls.forEach(url => URL.revokeObjectURL(url));
@@ -151,12 +158,12 @@ function BoardWriteContent() {
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-black text-white flex flex-col overflow-hidden">
+    <div className="fixed inset-0 w-full h-full bg-white text-black flex flex-col overflow-hidden">
       <CommonNavigationBar 
         title="글쓰기"
         leftButton={
           <svg
-            className="w-6 h-6 text-white"
+            className="w-6 h-6 text-black"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -166,21 +173,38 @@ function BoardWriteContent() {
         }
         rightButton={null}
         onLeftClick={handleCancel}
-        backgroundColor="black"
+        backgroundColor="white"
         backgroundOpacity={1}
-        textColor="text-white"
+        textColor="text-black"
       />
       
       <div className="flex flex-col flex-1 px-4 min-h-0">
+          {/* 제목 입력 영역 (공지사항일 때만) */}
+          {boardType === 'notice' && (
+            <div className="flex-shrink-0 pt-4 pb-6">
+              <input
+                type="text"
+                placeholder="공지사항 제목을 입력하세요"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full bg-transparent border-none outline-none text-black text-xl font-bold"
+                style={{ 
+                  color: 'black'
+                }}
+                maxLength={100}
+              />
+            </div>
+          )}
+          
           {/* 텍스트 입력 영역 - 남은 공간 채움 */}
           <div className="flex-1 min-h-0">
             <textarea
-              placeholder="무슨 소식을 올리실건가요?"
+              placeholder={boardType === 'notice' ? "공지사항 내용을 입력하세요..." : "무슨 소식을 올리실건가요?"}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="w-full bg-transparent border-none outline-none resize-none text-white text-lg board-write-textarea h-full"
+              className="w-full bg-transparent border-none outline-none resize-none text-black text-lg board-write-textarea h-full"
               style={{ 
-                color: 'white'
+                color: 'black'
               }}
             />
           </div>
@@ -193,7 +217,7 @@ function BoardWriteContent() {
                 <div className="flex flex-wrap gap-2">
                   {imageUrls.map((url, index) => (
                     <div key={index} className="relative">
-                      <div className="w-20 h-20 rounded-lg overflow-hidden" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                      <div className="w-20 h-20 rounded-lg overflow-hidden" style={{ backgroundColor: "rgba(0, 0, 0, 0.05)" }}>
                         <img
                           src={url}
                           alt={`이미지 ${index + 1}`}
@@ -215,12 +239,6 @@ function BoardWriteContent() {
                         style={{
                           backgroundColor: 'rgba(0, 0, 0, 0.8)'
                         }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-                        }}
                       >
                         ×
                       </button>
@@ -231,7 +249,7 @@ function BoardWriteContent() {
             )}
 
             {/* 이미지 업로드 */}
-            <div className="bg-black bg-opacity-20 rounded-lg">
+            <div className="bg-gray-100 rounded-lg">
               <div className="flex items-center justify-between">
                 <button
                   onClick={async () => {
@@ -242,11 +260,11 @@ function BoardWriteContent() {
                       handleImageLibrary();
                     }
                   }}
-                  className="relative text-white text-opacity-60 hover:text-opacity-80 transition-colors cursor-pointer"
+                  className="relative text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
                 >
                   <div 
                     className="w-12 h-12 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -254,18 +272,18 @@ function BoardWriteContent() {
                   </div>
                 </button>
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm text-white text-opacity-60">
+                  <span className="text-sm text-gray-600">
                     {content.length}/1000
                   </span>
                   <button
                     onClick={handleSubmit}
                     className={`text-md font-semibold transition-all duration-200 px-6 py-3 rounded-lg ${
                       isSubmitting || !content.trim()
-                        ? 'text-gray-400 cursor-not-allowed bg-gray-600'
+                        ? 'text-gray-400 cursor-not-allowed bg-gray-300'
                         : 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
                     }`}
                   >
-                    {isSubmitting ? '작성 중...' : '올리기'}
+                    {isSubmitting ? '작성 중...' : (boardType === 'notice' ? '공지 등록' : '올리기')}
                   </button>
                 </div>
               </div>
@@ -306,10 +324,10 @@ function BoardWriteContent() {
 // 로딩 컴포넌트
 function BoardWriteLoading() {
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+    <div className="min-h-screen bg-white text-black flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-        <p className="text-sm" style={{ opacity: 0.7 }}>글쓰기 페이지를 불러오는 중...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+        <p className="text-sm text-gray-600">글쓰기 페이지를 불러오는 중...</p>
       </div>
     </div>
   );

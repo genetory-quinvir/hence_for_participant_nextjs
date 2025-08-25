@@ -364,25 +364,32 @@ export async function apiRequest<T>(
     return { success: false, error: 'AUTH_REQUIRED' };
   }
 
-  const makeRequest = async (token: string) => {
-    const headers: Record<string, string> = {
-      'Authorization': `Bearer ${token}`,
-      'accept': 'application/json',
-    };
+      const makeRequest = async (token: string) => {
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${token}`,
+        'accept': 'application/json',
+      };
 
-    // Content-Type이 설정되지 않은 경우에만 추가
-    if (!options.headers || !Object.keys(options.headers).some(key => 
-      key.toLowerCase() === 'content-type'
-    )) {
-      headers['Content-Type'] = 'application/json';
-    }
+      // Content-Type이 설정되지 않은 경우에만 추가
+      if (!options.headers || !Object.keys(options.headers).some(key => 
+        key.toLowerCase() === 'content-type'
+      )) {
+        headers['Content-Type'] = 'application/json';
+      }
 
-    // 기존 헤더와 병합
-    if (options.headers) {
-      Object.entries(options.headers).forEach(([key, value]) => {
-        headers[key.toLowerCase()] = String(value);
+      // 기존 헤더와 병합
+      if (options.headers) {
+        Object.entries(options.headers).forEach(([key, value]) => {
+          headers[key.toLowerCase()] = String(value);
+        });
+      }
+
+      console.log('🔍 API 요청 상세:', {
+        url,
+        method: options.method || 'GET',
+        headers,
+        body: options.body instanceof FormData ? '[FormData]' : (options.body ? JSON.parse(options.body as string) : undefined)
       });
-    }
 
     // 안드로이드 크롬을 위한 타임아웃 설정
     const timeoutDuration = isAndroidChrome ? 10000 : 5000; // 안드로이드는 10초, 다른 기기는 5초
@@ -442,6 +449,9 @@ export async function apiRequest<T>(
 
       const data = await response.json();
       console.log('🔍 성공 응답 데이터:', data);
+      console.log('🔍 응답 데이터 타입:', typeof data);
+      console.log('🔍 응답 데이터 키:', Object.keys(data || {}));
+      console.log('🔍 응답 데이터 상세:', JSON.stringify(data, null, 2));
       return { status: 200, data };
     } catch (error) {
       // 안드로이드 크롬 특별 에러 처리
@@ -803,14 +813,28 @@ export async function getBoardList(eventId: string, boardType: string, cursor?: 
     const url = cursor 
       ? `${API_BASE_URL}/board/${eventId}/${boardType}?cursor=${cursor}&limit=${limit}`
       : `${API_BASE_URL}/board/${eventId}/${boardType}?limit=${limit}`;
-      
+
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      return { success: false, error: 'AUTH_REQUIRED' };
+    }
+  
     const result = await apiRequest<any>(url, {
       method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
     });
 
     if (result.success && result.data) {
       logger.info('✅ 게시글 목록 조회 성공', result.data);
+      console.log('🔍 getBoardList 응답:', result.data);
+      
       const responseData = result.data.data || result.data;
+      console.log('🔍 responseData:', responseData);
+      console.log('🔍 items:', responseData.items);
+      console.log('🔍 첫 번째 게시글:', responseData.items?.[0]);
+      
       return {
         success: true,
         data: {
@@ -954,29 +978,136 @@ export async function createComment(eventId: string, boardType: string, postId: 
   }
 }
 
+
+
 // 게시글 수정 API
 export async function updateBoard(eventId: string, boardType: string, postId: string, data: {
   title?: string;
   content?: string;
   images?: string[];
-}): Promise<{ success: boolean; error?: string }> {
+  newImages?: File[];
+}): Promise<{ success: boolean; error?: string; data?: any }> {
   try {
-    const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
+    console.log('🔄 updateBoard API 호출:', {
+      url: `${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`,
       method: 'PUT',
-      body: JSON.stringify(data),
+      data: data
     });
+    
+    // 새 이미지가 있는 경우 FormData 사용, 없는 경우 JSON 사용
+    if (data.newImages && data.newImages.length > 0) {
+      const formData = new FormData();
+      
+      // 제목 추가 (null이 아닌 경우에만)
+      if (data.title) {
+        formData.append('title', data.title);
+      }
+      
+      // 내용 추가
+      formData.append('content', data.content || '');
+      
+      // 기존 이미지 URL들 추가
+      if (data.images) {
+        data.images.forEach((imageUrl, index) => {
+          formData.append('images', imageUrl);
+        });
+      }
+      
+      // 새 이미지 파일들 추가
+      data.newImages.forEach((image, index) => {
+        formData.append('newImages', image);
+      });
 
-    if (result.success) {
-      logger.info('✅ 게시글 수정 성공', { eventId, boardType, postId });
-      return {
-        success: true,
-      };
+      // FormData를 사용하는 경우 직접 fetch 호출
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        return { success: false, error: 'AUTH_REQUIRED' };
+      }
+
+      const response = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          // Content-Type 헤더를 설정하지 않음 (브라우저가 자동으로 multipart/form-data 설정)
+        },
+        body: formData,
+      });
+
+      if (response.status === 401) {
+        // 토큰 갱신 시도
+        const refreshResult = await refreshAccessToken();
+        if (refreshResult.success && refreshResult.accessToken) {
+          // 갱신된 토큰으로 재요청
+          const retryResponse = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${refreshResult.accessToken}`,
+            },
+            body: formData,
+          });
+
+          if (retryResponse.ok) {
+            const responseData = await retryResponse.json();
+            console.log('✅ 게시글 수정 성공 (토큰 갱신 후):', responseData);
+            return {
+              success: true,
+              data: responseData.data || responseData
+            };
+          } else {
+            const errorData = await retryResponse.json();
+            return {
+              success: false,
+              error: errorData.message || '게시글 수정에 실패했습니다.'
+            };
+          }
+        } else {
+          return { success: false, error: 'AUTH_REQUIRED' };
+        }
+      }
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('✅ 게시글 수정 성공:', responseData);
+        return {
+          success: true,
+          data: responseData.data || responseData
+        };
+      } else {
+        const errorData = await response.json();
+        console.log('❌ 게시글 수정 실패:', errorData);
+        return {
+          success: false,
+          error: errorData.message || '게시글 수정에 실패했습니다.'
+        };
+      }
     } else {
-      logger.error('❌ 게시글 수정 실패', { eventId, boardType, postId, error: result.error });
-      return {
-        success: false,
-        error: result.error || '게시글 수정에 실패했습니다.',
-      };
+      // 새 이미지가 없는 경우 기존 방식 (JSON)
+      const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          title: data.title,
+          content: data.content,
+          images: data.images
+        }),
+      });
+
+      if (result.success) {
+        logger.info('✅ 게시글 수정 성공', { eventId, boardType, postId });
+        console.log('✅ 수정 결과 데이터:', result.data);
+        console.log('✅ 수정 결과 상세:', JSON.stringify(result.data, null, 2));
+        return {
+          success: true,
+          data: result.data
+        };
+      } else {
+        logger.error('❌ 게시글 수정 실패', { eventId, boardType, postId, error: result.error });
+        console.log('❌ 실패 응답:', result);
+        console.log('❌ 실패 응답 상세:', JSON.stringify(result, null, 2));
+        return {
+          success: false,
+          error: result.error || '게시글 수정에 실패했습니다.',
+        };
+      }
     }
   } catch (error) {
     apiDebugger.logError(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, error);
