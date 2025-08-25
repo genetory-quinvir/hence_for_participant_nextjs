@@ -987,9 +987,28 @@ function ProfilePageContent() {
               <h1 className="text-xl font-bold text-black text-md">
                 {finalUserData?.nickname || '사용자'}
               </h1>
-              <p className="text-black font-normal text-sm" style={{ opacity: 0.6 }}>
-                {finalUserData?.email || '이메일 정보 없음'}
-              </p>
+              {finalUserData?.provider === 'email' ? (
+                <p className="text-black font-normal text-sm" style={{ opacity: 0.6 }}>
+                  {finalUserData?.email || '이메일 정보 없음'}
+                </p>
+              ) : (
+                <div className="flex items-center">
+                  <img 
+                    src={`/images/icon_${finalUserData?.provider?.toLowerCase()}.png`}
+                    alt={`${finalUserData?.provider} 아이콘`}
+                    className="w-4 h-4 mr-2"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                  <span className="text-black font-normal text-sm" style={{ opacity: 0.6 }}>
+                    {finalUserData?.provider === 'naver' ? '네이버' : 
+                     finalUserData?.provider === 'google' ? '구글' : 
+                     finalUserData?.provider === 'kakao' ? '카카오' : 
+                     finalUserData?.provider}로 연결되어 있음
+                  </span>
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-2">
               <button
