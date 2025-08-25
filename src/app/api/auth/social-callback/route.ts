@@ -36,6 +36,9 @@ export async function POST(request: NextRequest) {
 
     const result = await response.json();
     console.log('서버 응답 데이터:', result);
+    console.log('서버 응답 데이터 타입:', typeof result);
+    console.log('서버 응답 데이터 키들:', Object.keys(result));
+    console.log('서버 응답 데이터 상세:', JSON.stringify(result, null, 2));
 
     if (response.ok && result.success) {
       return NextResponse.json({
