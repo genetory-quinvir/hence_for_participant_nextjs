@@ -43,7 +43,12 @@ function EventPageWrapper() {
             console.error('❌ 참여자 등록 중 오류:', error);
           });
       } else {
-        console.log('ℹ️ 로그인되지 않은 사용자 - 참여자 등록 건너뜀');
+        console.log('⚠️ 로그인되지 않은 사용자 - 메인 페이지로 이동');
+        // 이벤트 정보를 sessionStorage에 저장
+        sessionStorage.setItem('pendingEventId', eventId);
+        sessionStorage.setItem('pendingEventUrl', window.location.pathname + window.location.search);
+        navigate('/');
+        return;
       }
     } else if (eventCode) {
       // eventCode가 있으면 이벤트 코드로 이벤트 ID를 찾아서 이동
@@ -78,8 +83,12 @@ function EventPageWrapper() {
                   navigate(`/event?id=${eventId}`);
                 });
             } else {
-              console.log('ℹ️ 로그인되지 않은 사용자 - 참여자 등록 건너뜀');
-              navigate(`/event?id=${eventId}`);
+              console.log('⚠️ 로그인되지 않은 사용자 - 메인 페이지로 이동');
+              // 이벤트 정보를 sessionStorage에 저장
+              sessionStorage.setItem('pendingEventId', eventId);
+              sessionStorage.setItem('pendingEventUrl', `/event?id=${eventId}`);
+              navigate('/');
+              return;
             }
           } else {
             console.error('이벤트 코드 확인 실패:', result.error);

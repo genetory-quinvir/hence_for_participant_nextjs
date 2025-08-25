@@ -99,8 +99,14 @@ function SignContent() {
     console.log(`${provider} 로그인 클릭`);
     setError("");
 
-    // 향후 소셜 로그인 SDK 연동
-    showToast(`${provider} 로그인 기능은 준비 중입니다.`);
+    if (provider === 'naver') {
+      // 네이버 로그인 URL로 리다이렉트
+      const naverLoginUrl = 'http://api.hence.events/api/v1/auth/naver?redirect=participant';
+      window.location.href = naverLoginUrl;
+    } else {
+      // 다른 소셜 로그인은 아직 준비 중
+      showToast(`${provider} 로그인 기능은 준비 중입니다.`);
+    }
   };
 
   return (

@@ -12,6 +12,8 @@ export default function HomePage() {
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const [userProfile, setUserProfile] = useState<UserItem | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [showLoginAlert, setShowLoginAlert] = useState(false);
+  const [pendingEventUrl, setPendingEventUrl] = useState<string | null>(null);
 
   // 사용자 프로필 정보 가져오기
   useEffect(() => {
@@ -33,6 +35,20 @@ export default function HomePage() {
 
     fetchUserProfile();
   }, [isAuthenticated, userProfile, profileLoading]);
+
+  // 대기 중인 이벤트 확인
+  useEffect(() => {
+    const pendingEventId = sessionStorage.getItem('pendingEventId');
+    const pendingUrl = sessionStorage.getItem('pendingEventUrl');
+    
+    if (pendingEventId && pendingUrl && !isAuthenticated) {
+      setPendingEventUrl(pendingUrl);
+      setShowLoginAlert(true);
+      // sessionStorage에서 제거
+      sessionStorage.removeItem('pendingEventId');
+      sessionStorage.removeItem('pendingEventUrl');
+    }
+  }, [isAuthenticated]);
 
   // 인증 로딩 중일 때 로딩 화면 표시
   if (authLoading) {
@@ -137,6 +153,82 @@ export default function HomePage() {
           </div>
         </div>
       </main>
+
+      {/* 로그인 알림 */}
+      {showLoginAlert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm mx-4" style={{ 
+            border: '1px solid rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1)'
+          }}>
+            {/* 헤더 */}
+            <div className="mb-6">
+              <div className="flex items-center justify-center">
+                <img 
+                  src="/images/icon_profile.png" 
+                  alt="로그인 아이콘" 
+                  className="w-12 h-12 object-contain mr-3 mt-1 flex-shrink-0"
+                  style={{ 
+                    animationDuration: '1.5s', 
+                    animationIterationCount: 'infinite', 
+                    animationTimingFunction: 'ease-in-out',
+                    animation: 'gentleBounce 1.5s ease-in-out infinite'
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <style jsx>{`
+                  @keyframes gentleBounce {
+                    0%, 100% {
+                      transform: translateY(0);
+                    }
+                    50% {
+                      transform: translateY(-4px);
+                    }
+                  }
+                `}</style>
+                <div className="flex-1">
+                  <h2 className="text-black text-xl font-bold mb-1">로그인이 필요합니다</h2>
+                  <p className="text-black font-regular text-sm" style={{ opacity: 0.7 }}>
+                    이벤트에 참여하려면 로그인이 필요합니다
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 메시지 */}
+            <div className="mb-6">
+                <p className="text-black font-regular text-md text-center" style={{ opacity: 0.8 }}>
+                  로그인하시면 이벤트에 참여할 수 있습니다
+                </p>
+            </div>
+
+            {/* 버튼 */}
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowLoginAlert(false);
+                  setPendingEventUrl(null);
+                }}
+                className="flex-1 py-3 px-4 rounded-lg text-black font-normal transition-colors"
+                style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+              >
+                나중에
+              </button>
+              <button
+                onClick={() => {
+                  setShowLoginAlert(false);
+                  navigate(`/sign?redirect=${encodeURIComponent(pendingEventUrl || '/')}`);
+                }}
+                className="flex-1 py-3 px-4 rounded-lg font-bold transition-colors bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                로그인하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
