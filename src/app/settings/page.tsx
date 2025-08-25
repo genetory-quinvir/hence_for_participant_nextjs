@@ -107,8 +107,29 @@ export default function SettingsPage() {
             <h2 className="text-lg font-bold text-black mb-4">계정 정보</h2>
             <div className="bg-white">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-                <span className="text-sm text-gray-600">이메일</span>
-                <span className="text-sm text-black">{user.email || '이메일 정보 없음'}</span>
+                <span className="text-sm text-gray-600">
+                  {user.provider === 'email' ? '이메일' : '연결된 서비스'}
+                </span>
+                {user.provider === 'email' ? (
+                  <span className="text-sm text-black">{user.email || '이메일 정보 없음'}</span>
+                ) : (
+                  <div className="flex items-center">
+                    <img 
+                      src={`/images/icon_${user.provider?.toLowerCase()}.png`}
+                      alt={`${user.provider} 아이콘`}
+                      className="w-5 h-5 mr-2"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                    <span className="text-sm text-black capitalize">
+                      {user.provider === 'naver' ? '네이버' : 
+                       user.provider === 'google' ? '구글' : 
+                       user.provider === 'kakao' ? '카카오' : 
+                       user.provider}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
                 <span className="text-sm text-gray-600">닉네임</span>
