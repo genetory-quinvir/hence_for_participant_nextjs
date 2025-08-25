@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/common/Toast";
 
-export default function SurveyPage() {
+function SurveyPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated } = useAuth();
@@ -250,5 +250,26 @@ export default function SurveyPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+// 로딩 컴포넌트
+function SurveyPageLoading() {
+  return (
+    <div className="fixed inset-0 w-full h-full bg-white text-black flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+        <p className="text-sm text-gray-600">설문 페이지를 불러오는 중...</p>
+      </div>
+    </div>
+  );
+}
+
+// 메인 컴포넌트 (Suspense로 감싸기)
+export default function SurveyPage() {
+  return (
+    <Suspense fallback={<SurveyPageLoading />}>
+      <SurveyPageContent />
+    </Suspense>
   );
 }
