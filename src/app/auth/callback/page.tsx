@@ -5,10 +5,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/common/Toast";
 import { saveTokens } from "@/lib/api";
+import { useSimpleNavigation } from "@/utils/navigation";
 
 function AuthCallbackContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const { replace } = useSimpleNavigation();
   const { login } = useAuth();
   const { showToast } = useToast();
   const [isProcessing, setIsProcessing] = useState(true);
@@ -55,29 +56,37 @@ function AuthCallbackContent() {
           const refreshToken = result.refresh_token || result.data?.refreshToken;
           
           if (accessToken && refreshToken) {
-            // 토큰 저장
+            console.log("소셜 로그인 성공:", result.data);
+
+            // 토큰들 저장
             saveTokens(accessToken, refreshToken);
 
             // AuthContext에 로그인 상태 업데이트
-            const userData = result.data || {};
-            login(
-              {
-                id: userData.id || '1',
-                name: userData.nickname || userData.name || '사용자',
-                nickname: userData.nickname || userData.name || '사용자',
-                email: userData.email || '',
-              },
-              accessToken,
-              refreshToken
-            );
+            if (result.data) {
+              login(
+                {
+                  id: result.data.id || '1',
+                  name: result.data.nickname || result.data.name || '사용자',
+                  nickname: result.data.nickname || result.data.name || '사용자',
+                  email: result.data.email || '',
+                },
+                accessToken,
+                refreshToken
+              );
+            }
 
             showToast(
               isNewUser ? '회원가입이 완료되었습니다!' : '로그인이 완료되었습니다!',
               'success'
             );
 
-            // 메인 페이지로 이동
-            router.replace('/');
+            // redirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
+            const redirectUrl = searchParams.get('redirect');
+            if (redirectUrl) {
+              replace(decodeURIComponent(redirectUrl));
+            } else {
+              replace("/");
+            }
           } else {
             console.error('토큰 누락:', { accessToken, refreshToken, result });
             setError('토큰 정보를 받지 못했습니다.');
@@ -102,7 +111,7 @@ function AuthCallbackContent() {
     };
 
     processCallback();
-  }, [searchParams, login, router, showToast]);
+  }, [searchParams, login, replace, showToast]);
 
   if (isProcessing) {
     return (
@@ -122,7 +131,7 @@ function AuthCallbackContent() {
           <div className="text-red-500 text-lg mb-4">로그인 실패</div>
           <p className="text-sm mb-4" style={{ opacity: 0.7 }}>{error}</p>
           <button
-            onClick={() => router.push('/sign')}
+            onClick={() => replace('/sign')}
             className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             로그인 페이지로 돌아가기
