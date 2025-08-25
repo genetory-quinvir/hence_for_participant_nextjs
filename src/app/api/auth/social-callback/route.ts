@@ -7,6 +7,14 @@ export async function POST(request: NextRequest) {
 
     console.log('소셜 로그인 콜백 API 호출:', { code, provider, isNewUser });
 
+    // 요청 데이터 로깅
+    const requestBody = {
+      code,
+      provider: provider.toUpperCase(),
+      isNewUser
+    };
+    console.log('서버로 전송할 데이터:', requestBody);
+
     if (!code || !provider) {
       return NextResponse.json(
         { success: false, error: '인증 코드가 필요합니다.' },
@@ -20,14 +28,14 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        code,
-        provider: provider.toUpperCase(),
-        isNewUser
-      }),
+      body: JSON.stringify(requestBody),
     });
 
+    console.log('서버 응답 상태:', response.status);
+    console.log('서버 응답 헤더:', Object.fromEntries(response.headers.entries()));
+
     const result = await response.json();
+    console.log('서버 응답 데이터:', result);
 
     if (response.ok && result.success) {
       return NextResponse.json({
@@ -38,9 +46,19 @@ export async function POST(request: NextRequest) {
       });
     } else {
       console.error('소셜 로그인 토큰 교환 실패:', result);
+      console.error('응답 상태:', response.status);
+      console.error('응답 헤더:', Object.fromEntries(response.headers.entries()));
+      
+      // 서버에서 반환한 오류 메시지가 있으면 사용, 없으면 기본 메시지
+      const errorMessage = result.error || result.message || '로그인에 실패했습니다.';
       return NextResponse.json(
-        { success: false, error: result.error || '로그인에 실패했습니다.' },
-        { status: 400 }
+        { 
+          success: false, 
+          error: errorMessage,
+          details: result,
+          status: response.status
+        },
+        { status: response.status }
       );
     }
   } catch (error) {

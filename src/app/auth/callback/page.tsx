@@ -28,7 +28,7 @@ function AuthCallbackContent() {
           return;
         }
 
-        // 소셜 로그인 토큰 교환 API 호출
+        // Next.js API 라우트를 통해 요청
         const response = await fetch('/api/auth/social-callback', {
           method: 'POST',
           headers: {
@@ -67,7 +67,9 @@ function AuthCallbackContent() {
           // 메인 페이지로 이동
           router.replace('/');
         } else {
-          setError(result.error || '로그인에 실패했습니다.');
+          console.error('로그인 실패 상세:', result);
+          const errorMessage = result.error || result.message || '로그인에 실패했습니다.';
+          setError(`${errorMessage} (상태: ${result.status || 'unknown'})`);
         }
       } catch (error) {
         console.error('소셜 로그인 콜백 처리 오류:', error);
