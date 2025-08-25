@@ -86,8 +86,8 @@ function FoodTrucksContent() {
                 className="rounded-xl overflow-hidden flex flex-col"
                 style={{ backgroundColor: 'white' }}
               >
-                {/* 썸네일 이미지 스켈레톤 */}
-                <div className="w-full aspect-[5/3] overflow-hidden relative p-3" style={{ backgroundColor: "white" }}>
+                              {/* 썸네일 이미지 스켈레톤 */}
+              <div className="w-full aspect-[4/3] overflow-hidden relative p-3" style={{ backgroundColor: "white" }}>
                   <div className="w-full h-full bg-gray-200 rounded-lg animate-pulse"></div>
                 </div>
                 
@@ -188,7 +188,7 @@ function FoodTrucksContent() {
                 }}
               >
                 {/* 썸네일 이미지 */}
-                <div className="w-full aspect-[5/3] overflow-hidden relative p-3">
+                <div className="w-full aspect-[4/3] overflow-hidden relative p-3">
                   {vendor.thumbImageUrl ? (
                     <img 
                       src={vendor.thumbImageUrl} 
@@ -214,7 +214,7 @@ function FoodTrucksContent() {
                   </h3>
                   
                   {vendor.description && (
-                    <p className="text-sm text-black text-left mb-4" style={{ opacity: 0.8 }}>
+                    <p className="text-sm text-black text-left mb-4 line-clamp-2" style={{ opacity: 0.8 }}>
                       {vendor.description}
                     </p>
                   )}
@@ -292,7 +292,7 @@ function FoodTrucksLoading() {
               style={{ backgroundColor: 'white' }}
             >
               {/* 썸네일 이미지 스켈레톤 */}
-              <div className="w-full aspect-[5/3] overflow-hidden relative p-3" style={{ backgroundColor: "white" }}>
+              <div className="w-full aspect-[4/3] overflow-hidden relative p-3" style={{ backgroundColor: "white" }}>
                 <div className="w-full h-full bg-gray-200 rounded-lg animate-pulse"></div>
               </div>
               

@@ -73,33 +73,36 @@ export default function CouponActionSheet({
         backgroundColor: 'white',
         borderTopLeftRadius: '12px',
         borderTopRightRadius: '12px',
-        padding: '16px',
-        maxHeight: '80vh'
+        maxHeight: '80vh',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
-                  {/* 드래그 핸들 */}
-        <div style={{
-          width: '48px',
-          height: '4px',
-          backgroundColor: '#7c3aed',
-          borderRadius: '2px',
-          margin: '0 auto 16px auto'
-        }}></div>
-        
-        {/* 제목 (선택사항) */}
-        {title && (
-          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-            <h3 style={{ color: 'black', fontSize: '18px', fontWeight: '500' }}>{title}</h3>
-          </div>
-        )}
-        
-        {/* 선택된 쿠폰 안내 메시지 */}
-        {selectedItem && (
+                  {/* 고정 헤더 영역 */}
+        <div style={{ padding: '16px', flexShrink: 0 }}>
+          {/* 드래그 핸들 */}
           <div style={{
-            marginBottom: '16px',
-            padding: '16px',
-            borderRadius: '8px',
-            backgroundColor: 'rgba(124, 58, 237, 0.1)'
-          }}>
+            width: '48px',
+            height: '4px',
+            backgroundColor: '#7c3aed',
+            borderRadius: '2px',
+            margin: '0 auto 16px auto'
+          }}></div>
+          
+          {/* 제목 (선택사항) */}
+          {title && (
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <h3 style={{ color: 'black', fontSize: '18px', fontWeight: '500' }}>{title}</h3>
+            </div>
+          )}
+          
+          {/* 선택된 쿠폰 안내 메시지 */}
+          {selectedItem && (
+            <div style={{
+              marginBottom: '16px',
+              padding: '16px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(124, 58, 237, 0.1)'
+            }}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
               <img 
                 src="/images/icon_coupon.png" 
@@ -128,6 +131,7 @@ export default function CouponActionSheet({
             </div>
           </div>
         )}
+        </div>
         
         {/* 스크롤 가능한 액션 아이템 영역 - 교환권이 아닐 때만 표시 */}
         {items && items.length > 0 && (
@@ -207,7 +211,7 @@ export default function CouponActionSheet({
         )}
         
         {/* 고정된 버튼 영역 */}
-        <div style={{ paddingLeft: '16px', paddingRight: '16px', marginTop: '8px' }}>
+        <div style={{ padding: '16px', flexShrink: 0 }}>
           {selectedItem ? (
             // 선택된 아이템이 있을 때: 취소 + 사용하기 버튼
             <div style={{ display: 'flex', gap: '12px' }}>

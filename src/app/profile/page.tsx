@@ -987,7 +987,7 @@ function ProfilePageContent() {
               <h1 className="text-xl font-bold text-black text-md">
                 {finalUserData?.nickname || '사용자'}
               </h1>
-              {finalUserData?.provider === 'email' ? (
+              {finalUserData?.provider?.toLowerCase() === 'email' ? (
                 <p className="text-black font-normal text-sm" style={{ opacity: 0.6 }}>
                   {finalUserData?.email || '이메일 정보 없음'}
                 </p>
