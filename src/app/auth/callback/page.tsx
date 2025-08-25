@@ -29,14 +29,19 @@ function AuthCallbackContent() {
         }
 
         // Next.js API 라우트를 통해 요청
-        const apiUrl = `/api/auth/callback?code=${code}&provider=${provider.toUpperCase()}&isNewUser=${isNewUser}`;
+        const apiUrl = `/api/auth/callback`;
         console.log('API 요청 URL:', apiUrl);
         
         const response = await fetch(apiUrl, {
-          method: 'GET',
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({
+            code,
+            provider: provider.toUpperCase(),
+            isNewUser
+          }),
         });
 
         const result = await response.json();

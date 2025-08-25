@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     console.log('API 라우트 호출됨');
-    console.log('요청 URL:', request.url);
     
-    const { searchParams } = new URL(request.url);
-    const code = searchParams.get('code');
-    const provider = searchParams.get('provider');
-    const isNewUser = searchParams.get('isNewUser');
+    const body = await request.json();
+    const { code, provider, isNewUser } = body;
 
     console.log('소셜 로그인 콜백 API 호출:', { code, provider, isNewUser });
 
@@ -20,14 +17,19 @@ export async function GET(request: NextRequest) {
     }
 
     // 외부 API 호출
-    const externalUrl = `https://api-participant.hence.events/auth/callback?code=${code}&provider=${provider}&isNewUser=${isNewUser}`;
+    const externalUrl = `https://api-participant.hence.events/auth/callback`;
     console.log('외부 API URL:', externalUrl);
     
     const response = await fetch(externalUrl, {
-      method: 'GET',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        code,
+        provider,
+        isNewUser
+      }),
     });
 
     const result = await response.json();
