@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         code,
-        provider,
+        provider: provider.toUpperCase(),
         isNewUser
       }),
     });

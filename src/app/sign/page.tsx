@@ -103,6 +103,14 @@ function SignContent() {
       // 네이버 로그인 URL로 리다이렉트
       const naverLoginUrl = 'http://api.hence.events/api/v1/auth/naver?redirect=participant';
       window.location.href = naverLoginUrl;
+    } else if (provider === 'google') {
+      // 구글 로그인 URL로 리다이렉트
+      const googleLoginUrl = 'http://api.hence.events/api/v1/auth/google?redirect=participant';
+      window.location.href = googleLoginUrl;
+    } else if (provider === 'kakao') {
+      // 카카오 로그인 URL로 리다이렉트
+      const kakaoLoginUrl = 'http://api.hence.events/api/v1/auth/kakao?redirect=participant';
+      window.location.href = kakaoLoginUrl;
     } else {
       // 다른 소셜 로그인은 아직 준비 중
       showToast(`${provider} 로그인 기능은 준비 중입니다.`);

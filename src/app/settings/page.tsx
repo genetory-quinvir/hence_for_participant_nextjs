@@ -114,12 +114,14 @@ export default function SettingsPage() {
                 <span className="text-sm text-gray-600">닉네임</span>
                 <span className="text-sm text-black">{user.nickname || '닉네임 정보 없음'}</span>
               </div>
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handleChangePassword}>
-                <span className="text-sm text-gray-600">비밀번호 변경</span>
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
+              {user.provider === 'email' && (
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handleChangePassword}>
+                  <span className="text-sm text-gray-600">비밀번호 변경</span>
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              )}
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handleLogout}>
                 <span className="text-sm text-gray-600">로그아웃</span>
               </div>

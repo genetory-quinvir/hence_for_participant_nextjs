@@ -68,10 +68,7 @@ function AuthCallbackContent() {
             );
           }
 
-          showToast(
-            isNewUser ? '회원가입이 완료되었습니다!' : '로그인이 완료되었습니다!',
-            'success'
-          );
+          // 소셜 로그인에서는 토스트 메시지 제거
 
           // redirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
           const redirectUrl = searchParams.get('redirect');
