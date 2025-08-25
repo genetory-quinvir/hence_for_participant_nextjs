@@ -29,7 +29,10 @@ function AuthCallbackContent() {
         }
 
         // Next.js API 라우트를 통해 요청
-        const response = await fetch(`/api/auth/callback?code=${code}&provider=${provider.toUpperCase()}&isNewUser=${isNewUser}`, {
+        const apiUrl = `/api/auth/callback?code=${code}&provider=${provider.toUpperCase()}&isNewUser=${isNewUser}`;
+        console.log('API 요청 URL:', apiUrl);
+        
+        const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -81,7 +84,13 @@ function AuthCallbackContent() {
         }
               } catch (error) {
           console.error('로그인 콜백 처리 오류:', error);
-          setError('로그인 처리 중 오류가 발생했습니다.');
+          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+          console.error('오류 상세:', {
+            message: errorMessage,
+            name: error instanceof Error ? error.name : 'Unknown',
+            stack: error instanceof Error ? error.stack : undefined
+          });
+          setError(`로그인 처리 중 오류가 발생했습니다: ${errorMessage}`);
       } finally {
         setIsProcessing(false);
       }
