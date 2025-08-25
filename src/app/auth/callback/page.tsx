@@ -28,8 +28,8 @@ function AuthCallbackContent() {
           return;
         }
 
-        // 직접 외부 API 호출
-        const response = await fetch(`https://api-participant.hence.events/auth/callback?code=${code}&provider=${provider.toUpperCase()}&isNewUser=${isNewUser}`, {
+        // Next.js API 라우트를 통해 요청
+        const response = await fetch(`/api/auth/callback?code=${code}&provider=${provider.toUpperCase()}&isNewUser=${isNewUser}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
