@@ -35,8 +35,28 @@ export async function POST(request: NextRequest) {
     const result = await response.json();
     console.log('외부 API 응답:', result);
 
-    if (response.ok && result.success) {
-      return NextResponse.json(result);
+    if (response.ok) {
+      // 외부 API 응답 구조에 따라 처리
+      if (result.success) {
+        return NextResponse.json(result);
+      } else if (result.data && result.code === 200) {
+        // 성공 응답이지만 success 필드가 없는 경우
+        return NextResponse.json({
+          success: true,
+          data: result.data.user || result.data,
+          access_token: result.data.token?.accessToken || result.data.accessToken,
+          refresh_token: result.data.token?.refreshToken || result.data.refreshToken,
+        });
+      } else {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: result.error || result.message || '로그인에 실패했습니다.',
+            details: result
+          },
+          { status: response.status }
+        );
+      }
     } else {
       return NextResponse.json(
         { 
