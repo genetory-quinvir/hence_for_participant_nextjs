@@ -21,42 +21,35 @@ function AuthCallbackContent() {
         const provider = searchParams.get('provider');
         const isNewUser = searchParams.get('isNewUser') === 'true';
 
-        console.log('소셜 로그인 콜백 처리:', { code, provider, isNewUser });
+        console.log('로그인 콜백 처리:', { code, provider, isNewUser });
 
         if (!code || !provider) {
           setError('인증 정보가 올바르지 않습니다.');
           return;
         }
 
-        // Next.js API 라우트를 통해 요청
-        const response = await fetch('/api/auth/social-callback', {
+        // 직접 외부 API 호출
+        const response = await fetch('https://api-participant.hence.events/auth/social-callback', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             code,
-            provider: provider.toLowerCase(),
+            provider: provider.toUpperCase(),
             isNewUser
           }),
         });
 
         const result = await response.json();
-        console.log('🔍 API 응답 전체:', result);
+        console.log('API 응답:', result);
 
         if (result.success) {
-          console.log('✅ 로그인 성공:', result);
+          console.log('로그인 성공:', result);
           
           // 토큰 확인
           const accessToken = result.access_token || result.data?.accessToken;
           const refreshToken = result.refresh_token || result.data?.refreshToken;
-          
-          console.log('🔑 토큰 정보:', { 
-            accessToken: !!accessToken, 
-            refreshToken: !!refreshToken,
-            accessTokenValue: accessToken ? accessToken.substring(0, 20) + '...' : null,
-            refreshTokenValue: refreshToken ? refreshToken.substring(0, 20) + '...' : null
-          });
           
           if (accessToken && refreshToken) {
             // 토큰 저장
@@ -83,17 +76,17 @@ function AuthCallbackContent() {
             // 메인 페이지로 이동
             router.replace('/');
           } else {
-            console.error('❌ 토큰 누락:', { accessToken, refreshToken, result });
-            setError('토큰 정보를 받지 못했습니다. 응답: ' + JSON.stringify(result, null, 2));
+            console.error('토큰 누락:', { accessToken, refreshToken, result });
+            setError('토큰 정보를 받지 못했습니다.');
           }
         } else {
           console.error('로그인 실패 상세:', result);
           const errorMessage = result.error || result.message || '로그인에 실패했습니다.';
           setError(`${errorMessage} (상태: ${result.status || 'unknown'})`);
         }
-      } catch (error) {
-        console.error('소셜 로그인 콜백 처리 오류:', error);
-        setError('로그인 처리 중 오류가 발생했습니다.');
+              } catch (error) {
+          console.error('로그인 콜백 처리 오류:', error);
+          setError('로그인 처리 중 오류가 발생했습니다.');
       } finally {
         setIsProcessing(false);
       }
