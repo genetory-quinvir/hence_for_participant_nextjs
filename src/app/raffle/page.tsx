@@ -430,7 +430,17 @@ function RaffleContent() {
               <h2 className="text-xl font-bold text-black mb-4">참여 안내</h2>
               <div className="rounded-xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
                 <ul className="space-y-2 text-black text-sm">
-                  <li>• 응모 기간: {raffleData?.startDate ? new Date(raffleData.startDate).toLocaleDateString('ko-KR') : '축제 기간 중'} ~ {raffleData?.endDate ? new Date(raffleData.endDate).toLocaleDateString('ko-KR') : '축제 종료'}</li>
+                  <li>• 응모 기간: {raffleData?.startDate ? new Date(raffleData.startDate).toLocaleDateString('ko-KR', {
+                  timeZone: 'Asia/Seoul',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                }) : '축제 기간 중'} ~ {raffleData?.endDate ? new Date(raffleData.endDate).toLocaleDateString('ko-KR', {
+                  timeZone: 'Asia/Seoul',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                }) : '축제 종료'}</li>
                   <li>• 당첨자 발표: 개별 연락 및 공지사항</li>
                   <li>• 중복 당첨 불가</li>
                   <li>• 허위 정보 입력 시 당첨 무효</li>

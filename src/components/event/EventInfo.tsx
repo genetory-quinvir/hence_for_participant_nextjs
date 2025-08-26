@@ -42,17 +42,20 @@ export default function EventInfo({ event }: EventInfoProps) {
               </svg>
               <p className="text-black text-sm">
                 {new Date(event.startDate).toLocaleDateString('ko-KR', {
+                  timeZone: 'Asia/Seoul',
                   year: 'numeric',
                   month: 'long',
-                  day: 'numeric',
-                  weekday: 'long'
+                  day: 'numeric'
                 })}
                 {event.endDate && event.endDate !== event.startDate && (
-                  <span> ~ {new Date(event.endDate).toLocaleDateString('ko-KR', {
-                    month: 'long',
-                    day: 'numeric',
-                    weekday: 'long'
-                  })}</span>
+                  <span>
+                    {new Date(event.startDate).toLocaleDateString('ko-KR', {
+                      timeZone: 'Asia/Seoul',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
                 )}
               </p>
             </div>

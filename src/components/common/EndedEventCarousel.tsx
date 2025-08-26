@@ -94,14 +94,15 @@ export default function EndedEventCarousel({ onEventClick }: EndedEventCarouselP
     }
   };
 
-  // 날짜 포맷팅
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
+  // 날짜 포맷 함수 - 한국 시간 기준
+  const formatDate = (dateString: string) => {
+    const koreaTimeZone = 'Asia/Seoul';
     const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR', {
-      month: 'short',
-      day: 'numeric',
-      weekday: 'short'
+      timeZone: koreaTimeZone,
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
 

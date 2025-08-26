@@ -404,21 +404,32 @@ function ProfilePageContent() {
     );
   }
 
-  // 날짜 포맷팅 함수
+  // 날짜 포맷팅 함수 - 한국 시간 기준
   const formatDate = (dateString: string) => {
+    const koreaTimeZone = 'Asia/Seoul';
     const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR', {
+      timeZone: koreaTimeZone,
       year: 'numeric',
-      month: 'short',
+      month: 'long',
       day: 'numeric'
     });
   };
 
-  // 상대적 시간 표시 함수
+  // 상대적 시간 표시 함수 - 한국 시간 기준
   const getRelativeTime = (dateString: string): string => {
-    const now = new Date();
-    const date = new Date(dateString);
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    // 한국 시간대 설정 (KST: UTC+9)
+    const koreaTimeZone = 'Asia/Seoul';
+    
+    // 현재 시간을 한국 시간으로 변환
+    const now = new Date().toLocaleString('en-US', { timeZone: koreaTimeZone });
+    const nowDate = new Date(now);
+    
+    // 입력된 날짜를 한국 시간으로 변환
+    const inputDate = new Date(dateString).toLocaleString('en-US', { timeZone: koreaTimeZone });
+    const date = new Date(inputDate);
+    
+    const diffInSeconds = Math.floor((nowDate.getTime() - date.getTime()) / 1000);
 
     if (diffInSeconds < 60) {
       return `${diffInSeconds}초 전`;
@@ -434,8 +445,8 @@ function ProfilePageContent() {
       return `${diffInHours}시간 전`;
     }
 
-    // 24시간 이상 지난 경우 날짜로 표시
-    return date.toLocaleDateString('ko-KR');
+    // 24시간 이상 지난 경우 한국 시간 기준으로 날짜 표시
+    return date.toLocaleDateString('ko-KR', { timeZone: koreaTimeZone });
   };
 
   // 탭 컨텐츠 렌더링

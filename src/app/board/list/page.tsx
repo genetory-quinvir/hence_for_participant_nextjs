@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, Suspense, Fragment } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BoardItem } from "@/types/api";
 import { getBoardList, getAccessToken, deleteBoard, toggleLike } from "@/lib/api";
@@ -14,11 +14,20 @@ import CommonActionSheet from "@/components/CommonActionSheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/common/Toast";
 
-// 상대적 시간 표시 함수
+// 상대적 시간 표시 함수 - 한국 시간 기준
 const getRelativeTime = (dateString: string): string => {
-  const now = new Date();
-  const date = new Date(dateString);
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  // 한국 시간대 설정 (KST: UTC+9)
+  const koreaTimeZone = 'Asia/Seoul';
+  
+  // 현재 시간을 한국 시간으로 변환
+  const now = new Date().toLocaleString('en-US', { timeZone: koreaTimeZone });
+  const nowDate = new Date(now);
+  
+  // 입력된 날짜를 한국 시간으로 변환
+  const inputDate = new Date(dateString).toLocaleString('en-US', { timeZone: koreaTimeZone });
+  const date = new Date(inputDate);
+  
+  const diffInSeconds = Math.floor((nowDate.getTime() - date.getTime()) / 1000);
 
   if (diffInSeconds < 60) {
     return `${diffInSeconds}초 전`;
@@ -34,8 +43,8 @@ const getRelativeTime = (dateString: string): string => {
     return `${diffInHours}시간 전`;
   }
 
-  // 24시간 이상 지난 경우 날짜로 표시
-  return date.toLocaleDateString('ko-KR');
+  // 24시간 이상 지난 경우 한국 시간 기준으로 날짜 표시
+  return date.toLocaleDateString('ko-KR', { timeZone: koreaTimeZone });
 };
 
 function BoardListContent() {
@@ -65,6 +74,35 @@ function BoardListContent() {
   // 이벤트 ID와 타입 가져오기
   const eventId = searchParams.get('eventId') || 'default-event';
   const type = searchParams.get('type') || 'free'; // 'free' 또는 'notice'
+
+  // 플로팅 버튼 컴포넌트 - 완전히 독립적
+  const FloatingWriteButton = () => {
+    if (!(type === 'free' || (type === 'notice' && user && (user.role === 'admin' || user.role === 'host')))) {
+      return null;
+    }
+
+    return (
+      <button
+        onClick={handleWriteClick}
+        className="fixed w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110"
+        style={{ 
+          bottom: '24px',
+          right: '24px',
+          position: 'fixed',
+          zIndex: 9999,
+          transform: 'translateZ(0)'
+        }}
+      >
+        <svg
+          className="w-6 h-6"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      </button>
+    );
+  };
 
   // 초기 데이터 로딩
   useEffect(() => {
@@ -499,337 +537,318 @@ function BoardListContent() {
         textColor="text-black"
         sticky={true}
       />
-      
-      {/* 정렬 드롭다운 (커뮤니티에서만 표시) */}
-      {type === 'free' && (
-        <div className="px-4">
-          <div className="flex justify-end mb-2">
-            <div className="relative mt-2">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'latest' | 'popular')}
-                className="py-2 text-sm font-regular text-gray-400 appearance-none cursor-pointer focus:outline-none rounded-lg pr-8"
-                style={{ 
-                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23000000' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
-                  backgroundPosition: 'right 0.5rem center',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundSize: '1.5em 1.5em',
-                  color: 'gray-400'
-                }}
-              >
-                <option value="latest">최신순</option>
-                <option value="popular">인기순</option>
-              </select>
-            </div>
+    
+    {/* 정렬 드롭다운 (커뮤니티에서만 표시) */}
+    {type === 'free' && (
+      <div className="px-4">
+        <div className="flex justify-end mb-2">
+          <div className="relative mt-2">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'latest' | 'popular')}
+              className="py-2 text-sm font-regular text-gray-400 appearance-none cursor-pointer focus:outline-none rounded-lg pr-8"
+              style={{ 
+                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23000000' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                backgroundPosition: 'right 0.5rem center',
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: '1.5em 1.5em',
+                color: 'gray-400'
+              }}
+            >
+              <option value="latest">최신순</option>
+              <option value="popular">인기순</option>
+            </select>
           </div>
         </div>
-      )}
-        
-      {/* 게시글 세로 리스트 */}
-      <div 
-        ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto scrollbar-hide" 
-        style={{ 
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
-        }}
-      >
-        <div className="space-y-0" style={{ paddingBottom: 'min(24px, env(safe-area-inset-bottom) + 24px)' }}>
-        {sortedPosts.length > 0 ? (
-          sortedPosts.map((post) => (
-            <div
-              key={post.id}
-              data-post-id={post.id}
-              className={`rounded-xl overflow-hidden transition-all duration-300 cursor-pointer ${
-                type === 'notice' 
-                  ? 'bg-white hover:bg-gray-50' 
-                  : 'hover:bg-white hover:bg-opacity-5'
-              }`}
-              style={{ 
-                backgroundColor: type === 'notice' 
-                  ? 'white' 
-                  : 'rgba(255, 255, 255, 0.05)' 
-              }}
-              onClick={() => handlePostClick(post)}
-            >
-              <div className="px-6 py-4 h-full flex flex-col relative">
-                {/* 보더 - 양쪽 인셋 적용 */}
-                <div className="absolute" style={{ bottom: '0px', left: '24px', right: '24px', borderBottom: '1px solid rgb(229, 231, 235)' }}></div>
-                {/* 게시글 헤더 (커뮤니티에서만 표시) */}
-                {type !== 'notice' && (
-                  <PostHeader 
-                    nickname={post.user?.nickname}
-                    profileImageUrl={post.user?.profileImageUrl || undefined}
-                    createdAt={post.createdAt}
-                    className="mb-6"
-                    showMoreButton={true}
-                    isNotice={type === 'notice'}
-                    onMoreClick={() => handleMoreClick(post)}
-                  />
-                )}
-                
-                {/* 공지사항인 경우 EventNotice 스타일 적용 */}
-                {type === 'notice' ? (
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-4 mt-2">
-                      <div className="flex items-center">
-                        <img 
-                          src="/images/icon_notice.png" 
-                          alt="공지사항 아이콘" 
-                          className="w-8 h-8 object-contain"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      </div>
-                      
-                      {/* 공지사항 더보기 버튼 (admin/host만 표시) */}
-                      {user && (user.role === 'admin' || user.role === 'host') && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMoreClick(post);
-                          }}
-                          className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+      </div>
+    )}
+      
+    {/* 게시글 세로 리스트 */}
+    <div 
+      ref={scrollContainerRef}
+      className="flex-1 overflow-y-auto scrollbar-hide" 
+      style={{ 
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none'
+      }}
+    >
+      <div className="space-y-0" style={{ paddingBottom: 'min(24px, env(safe-area-inset-bottom) + 24px)' }}>
+      {sortedPosts.length > 0 ? (
+        sortedPosts.map((post) => (
+          <div
+            key={post.id}
+            data-post-id={post.id}
+            className={`rounded-xl overflow-hidden transition-all duration-300 cursor-pointer ${
+              type === 'notice' 
+                ? 'bg-white hover:bg-gray-50' 
+                : 'hover:bg-white hover:bg-opacity-5'
+            }`}
+            style={{ 
+              backgroundColor: type === 'notice' 
+                ? 'white' 
+                : 'rgba(255, 255, 255, 0.05)' 
+            }}
+            onClick={() => handlePostClick(post)}
+          >
+            <div className="px-6 py-4 h-full flex flex-col relative">
+              {/* 보더 - 양쪽 인셋 적용 */}
+              <div className="absolute" style={{ bottom: '0px', left: '24px', right: '24px', borderBottom: '1px solid rgb(229, 231, 235)' }}></div>
+              {/* 게시글 헤더 (커뮤니티에서만 표시) */}
+              {type !== 'notice' && (
+                <PostHeader 
+                  nickname={post.user?.nickname}
+                  profileImageUrl={post.user?.profileImageUrl || undefined}
+                  createdAt={post.createdAt}
+                  className="mb-6"
+                  showMoreButton={true}
+                  isNotice={type === 'notice'}
+                  onMoreClick={() => handleMoreClick(post)}
+                />
+              )}
+              
+              {/* 공지사항인 경우 EventNotice 스타일 적용 */}
+              {type === 'notice' ? (
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-4 mt-2">
+                    <div className="flex items-center">
+                      <img 
+                        src="/images/icon_notice.png" 
+                        alt="공지사항 아이콘" 
+                        className="w-8 h-8 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                    
+                    {/* 공지사항 더보기 버튼 (admin/host만 표시) */}
+                    {user && (user.role === 'admin' || user.role === 'host') && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoreClick(post);
+                        }}
+                        className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                      >
+                        <svg 
+                          className="w-5 h-5 text-black" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
                         >
-                          <svg 
-                            className="w-5 h-5 text-black" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path 
-                              strokeLinecap="round" 
-                              strokeLinejoin="round" 
-                              strokeWidth={2} 
-                              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" 
-                            />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                    
-                    <h3 className="text-black font-bold text-md mb-3 line-clamp-2">
-                      {post.title || '제목 없음'}
-                    </h3>
-                    
-                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap line-clamp-3">
-                      {post.content || '내용 없음'}
-                    </p>
-                  </div>
-                ) : (
-                  /* 커뮤니티인 경우 내용과 이미지 표시 */
-                  <div className="flex-1 flex space-x-4">
-                    <div className="flex-1 min-w-0">
-                      {(() => {
-                        console.log('🔍 게시글 내용:', { id: post.id, content: post.content, hasContent: !!post.content });
-                        return null;
-                      })()}
-                      {post.content ? (
-                        <div className="text-md text-black font-regular line-clamp-3 whitespace-pre-wrap mt-3">
-                          {post.content}
-                        </div>
-                      ) : (
-                        <div className="text-md text-gray-500 font-regular line-clamp-3 whitespace-pre-wrap mt-3">
-                          내용이 없습니다
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* 이미지가 있는 경우 */}
-                    {post.images && post.images.length > 0 && (
-                      <div className="flex-shrink-0">
-                        <div className="w-20 h-20 rounded-lg overflow-hidden cursor-pointer" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
-                          <Image 
-                            src={post.images[0]} 
-                            alt="게시글 이미지"
-                            width={80}
-                            height={80}
-                            className="w-full h-full object-cover"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleImageClick(post, 0);
-                            }}
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                            }}
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" 
                           />
-                          <div className="w-full h-full flex items-center justify-center hidden">
-                            <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                        </div>
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  
+                  <h3 className="text-black font-bold text-md mb-3 line-clamp-2">
+                    {post.title || '제목 없음'}
+                  </h3>
+                  
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap line-clamp-3">
+                    {post.content || '내용 없음'}
+                  </p>
+                </div>
+              ) : (
+                /* 커뮤니티인 경우 내용과 이미지 표시 */
+                <div className="flex-1 flex space-x-4">
+                  <div className="flex-1 min-w-0">
+                    {(() => {
+                      console.log('🔍 게시글 내용:', { id: post.id, content: post.content, hasContent: !!post.content });
+                      return null;
+                    })()}
+                    {post.content ? (
+                      <div className="text-md text-black font-regular line-clamp-3 whitespace-pre-wrap mt-3">
+                        {post.content}
+                      </div>
+                    ) : (
+                      <div className="text-md text-gray-500 font-regular line-clamp-3 whitespace-pre-wrap mt-3">
+                        내용이 없습니다
                       </div>
                     )}
                   </div>
-                )}
-                
-                {/* 액션 버튼 - 고정 높이 */}
-                <div className="mt-auto pt-4 mb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-6">
-                      <button 
-                        className={`flex items-center transition-colors ${
-                          isLiking ? 'opacity-50 cursor-not-allowed' : post.isLiked ? 'hover:text-purple-800' : 'hover:text-purple-600'
-                        } ${post.isLiked ? 'text-purple-700' : 'text-black'}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLikeToggle(post);
-                        }}
-                        disabled={isLiking}
-                      >
-                        {post.isLiked ? (
-                          <svg 
-                            className="w-4 h-4 mr-1 text-purple-700" 
-                            fill="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  
+                  {/* 이미지가 있는 경우 */}
+                  {post.images && post.images.length > 0 && (
+                    <div className="flex-shrink-0">
+                      <div className="w-20 h-20 rounded-lg overflow-hidden cursor-pointer" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                        <Image 
+                          src={post.images[0]} 
+                          alt="게시글 이미지"
+                          width={80}
+                          height={80}
+                          className="w-full h-full object-cover"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleImageClick(post, 0);
+                          }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                        <div className="w-full h-full flex items-center justify-center hidden">
+                          <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                        ) : (
-                          <svg 
-                            className="w-4 h-4 mr-1 text-black" 
-                            style={{ opacity: 0.6 }}
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                          </svg>
-                        )}
-                        <span className={`text-xs font-regular ${post.isLiked ? 'text-purple-700' : 'text-black'}`} style={{ opacity: post.isLiked ? 1 : 0.8 }}>
-                          {post.likeCount || 0}
-                        </span>
-                      </button>
-                      
-                      <div className="flex items-center">
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* 액션 버튼 - 고정 높이 */}
+              <div className="mt-auto pt-4 mb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-6">
+                    <button 
+                      className={`flex items-center transition-colors ${
+                        isLiking ? 'opacity-50 cursor-not-allowed' : post.isLiked ? 'hover:text-purple-800' : 'hover:text-purple-600'
+                      } ${post.isLiked ? 'text-purple-700' : 'text-black'}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLikeToggle(post);
+                      }}
+                      disabled={isLiking}
+                    >
+                      {post.isLiked ? (
                         <svg 
-                          className="w-4 h-4 text-black mr-1" 
+                          className="w-4 h-4 mr-1 text-purple-700" 
+                          fill="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                      ) : (
+                        <svg 
+                          className="w-4 h-4 mr-1 text-black" 
                           style={{ opacity: 0.6 }}
                           fill="none"
                           stroke="currentColor"
                           strokeWidth="2"
                           viewBox="0 0 24 24"
                         >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                         </svg>
-                        <span className="text-xs font-regular text-black" style={{ opacity: 0.8 }}>
-                          {post.commentCount || 0}
-                        </span>
-                      </div>
-                    </div>
+                      )}
+                      <span className={`text-xs font-regular ${post.isLiked ? 'text-purple-700' : 'text-black'}`} style={{ opacity: post.isLiked ? 1 : 0.8 }}>
+                        {post.likeCount || 0}
+                      </span>
+                    </button>
                     
-                    {/* 날짜 - 오른쪽 정렬 */}
-                    <span className="text-xs text-gray-500 font-regular">
-                      {post.createdAt ? getRelativeTime(post.createdAt) : ''}
-                    </span>
+                    <div className="flex items-center">
+                      <svg 
+                        className="w-4 h-4 text-black mr-1" 
+                        style={{ opacity: 0.6 }}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span className="text-xs font-regular text-black" style={{ opacity: 0.8 }}>
+                        {post.commentCount || 0}
+                      </span>
+                    </div>
                   </div>
+                  
+                  {/* 날짜 - 오른쪽 정렬 */}
+                  <span className="text-xs text-gray-500 font-regular">
+                    {post.createdAt ? getRelativeTime(post.createdAt) : ''}
+                  </span>
                 </div>
               </div>
             </div>
-          ))
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-white text-lg mb-2">{emptyMessage.title}</p>
-            <p className="text-white text-sm" style={{ opacity: 0.6 }}>
-              {emptyMessage.subtitle}
-            </p>
           </div>
-        )}
-        
-        {/* 추가 로딩 인디케이터 */}
-        {loadingMore && (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
-            <p className="text-black text-sm" style={{ opacity: 0.6 }}>
-              더 많은 게시글을 불러오는 중...
-            </p>
-          </div>
-        )}
-        
-        {/* 더 이상 데이터가 없을 때 */}
-        {!hasNext && posts.length > 0 && (
-          <div className="text-center py-8">
-            <p className="text-black text-sm" style={{ opacity: 0.6 }}>
-              모든 게시글을 불러왔습니다
-            </p>
-          </div>
-        )}
+        ))
+      ) : (
+        <div className="text-center py-12">
+          <p className="text-white text-lg mb-2">{emptyMessage.title}</p>
+          <p className="text-white text-sm" style={{ opacity: 0.6 }}>
+            {emptyMessage.subtitle}
+          </p>
         </div>
-      </div>
-
-      {/* 이미지 갤러리 */}
-      <ImageGallery
-        images={images}
-        initialIndex={initialIndex}
-        isOpen={isOpen}
-        onClose={closeGallery}
-      />
-
-      {/* 액션시트 */}
-      <CommonActionSheet
-        isOpen={showActionSheet}
-        onClose={handleCloseActionSheet}
-        items={
-          selectedPost && user && selectedPost.user?.id === user.id
-            ? [
-                {
-                  label: "수정하기",
-                  icon: (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  ),
-                  onClick: () => handleActionClick('edit')
-                },
-                {
-                  label: "삭제하기",
-                  icon: (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  ),
-                  onClick: () => handleActionClick('delete'),
-                  variant: 'destructive'
-                }
-              ]
-            : [
-                {
-                  label: "신고하기",
-                  icon: (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                  ),
-                  onClick: () => handleActionClick('report'),
-                  variant: 'destructive'
-                }
-              ]
-        }
-      />
-
-      {/* 플로팅 글쓰기 버튼 */}
-      {(type === 'free' || (type === 'notice' && user && (user.role === 'admin' || user.role === 'host'))) && (
-        <button
-          onClick={handleWriteClick}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 z-50"
-          style={{ 
-            bottom: 'max(24px, env(safe-area-inset-bottom) + 24px)',
-            right: 'max(24px, env(safe-area-inset-right) + 24px)'
-          }}
-        >
-          <svg
-            className="w-6 h-6"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-          </svg>
-        </button>
       )}
+      
+      {/* 추가 로딩 인디케이터 */}
+      {loadingMore && (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
+          <p className="text-black text-sm" style={{ opacity: 0.6 }}>
+            더 많은 게시글을 불러오는 중...
+          </p>
+        </div>
+      )}
+      
+      {/* 더 이상 데이터가 없을 때 */}
+      {!hasNext && posts.length > 0 && (
+        <div className="text-center py-8">
+          <p className="text-black text-sm" style={{ opacity: 0.6 }}>
+            모든 게시글을 불러왔습니다
+          </p>
+        </div>
+      )}
+      </div>
+    </div>
+
+    {/* 이미지 갤러리 */}
+    <ImageGallery
+      images={images}
+      initialIndex={initialIndex}
+      isOpen={isOpen}
+      onClose={closeGallery}
+    />
+
+    {/* 액션시트 */}
+    <CommonActionSheet
+      isOpen={showActionSheet}
+      onClose={handleCloseActionSheet}
+      items={
+        selectedPost && user && selectedPost.user?.id === user.id
+          ? [
+              {
+                label: "수정하기",
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                ),
+                onClick: () => handleActionClick('edit')
+              },
+              {
+                label: "삭제하기",
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                ),
+                onClick: () => handleActionClick('delete'),
+                variant: 'destructive'
+              }
+            ]
+          : [
+              {
+                label: "신고하기",
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                ),
+                onClick: () => handleActionClick('report'),
+                variant: 'destructive'
+              }
+            ]
+      }
+    />
+    <FloatingWriteButton />
     </div>
   );
 }

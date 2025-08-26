@@ -23,8 +23,23 @@ import {
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
-// API 기본 설정 - 통일된 API 주소
-const API_BASE_URL = 'https://api-participant.hence.events';
+// API 기본 설정 - 환경별 설정
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    // 클라이언트 사이드
+    if (process.env.NODE_ENV === 'development') {
+      // 개발 환경에서는 프록시 사용
+      return '/api/proxy';
+    } else {
+      // 프로덕션 환경에서는 직접 API 호출 (CORS 설정 완료 후)
+      return 'https://api-participant.hence.events';
+    }
+  }
+  // 서버 사이드에서는 직접 API 호출
+  return 'https://api-participant.hence.events';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // 네트워크 요청 재시도 설정
 const RETRY_CONFIG = {

@@ -144,12 +144,13 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
       <div className="relative">
         <div
           ref={scrollContainerRef}
-          className="flex space-x-4 overflow-x-auto scrollbar-hide px-4 py-4"
+          className="flex space-x-4 overflow-x-auto scrollbar-hide py-4"
           style={{ 
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
-            scrollSnapType: 'x mandatory'
+            paddingLeft: '6px',
+            paddingRight: '6px'
           }}
           onScroll={handleScroll}
         >
@@ -162,7 +163,6 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
                 data-coupon-id={coupon.id}
                 className="flex-shrink-0 w-80 rounded-xl p-5 transition-transform duration-200 ease-out cursor-pointer relative overflow-hidden"
                 style={{ 
-                  scrollSnapAlign: 'start',
                   background: coupon.discountType === 'PERCENTAGE' 
                     ? 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)' :
                     coupon.discountType === 'FIXED_AMOUNT' 
