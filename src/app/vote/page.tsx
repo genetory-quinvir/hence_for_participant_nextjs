@@ -140,11 +140,13 @@ function VoteContent() {
   // 스크롤 감지하여 플로팅 버튼 표시/숨김
   useEffect(() => {
     const handleScroll = () => {
-      if (voteSectionRef.current) {
-        const rect = voteSectionRef.current.getBoundingClientRect();
-        const isVisible = rect.top <= window.innerHeight;
-        setShowFloatingButton(!isVisible);
-      }
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // 페이지 하단에 가까워지면 플로팅 버튼 숨김
+      const isNearBottom = scrollTop + windowHeight >= documentHeight - 100;
+      setShowFloatingButton(!isNearBottom);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -709,7 +711,10 @@ function VoteContent() {
 
       {/* 플로팅 투표하기 버튼 */}
       {showFloatingButton && !isVoted && (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed bottom-6 right-6 z-50" style={{ 
+          bottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
+          right: 'calc(1.5rem + env(safe-area-inset-right))'
+        }}>
           <button
             onClick={() => {
               voteSectionRef.current?.scrollIntoView({ 

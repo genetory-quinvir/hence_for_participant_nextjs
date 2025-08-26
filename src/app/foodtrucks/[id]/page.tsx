@@ -531,30 +531,29 @@ function FoodTruckDetailContent() {
             <div className="space-y-2">
               {vendor.menus.map((menu, index) => (
                 <div key={menu.id || index} className="w-full bg-white h-16">
-                  <div className="flex h-full">
+                  <div className="flex h-full items-center">
                     {/* 메뉴 정보 */}
-                    <div className="flex-1 flex flex-col justify-center">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-black font-semibold text-base truncate">
-                            {menu.name || '메뉴명'}
-                          </h3>
-                          {menu.description && (
-                            <p className="text-xs text-gray-500 truncate mt-0.5">
-                              {menu.description}
-                            </p>
-                          )}
-                        </div>
-                        {menu.price && (
-                          <span className="text-base font-bold text-black ml-2 flex-shrink-0">
-                            {typeof menu.price === 'number' 
-                              ? `${menu.price.toLocaleString()}원`
-                              : menu.price
-                            }
-                          </span>
-                        )}
-                      </div>
+                    <div className="flex-1 min-w-0 pr-2">
+                      <h3 className="text-black font-semibold text-base truncate">
+                        {menu.name || '메뉴명'}
+                      </h3>
+                      {menu.description && (
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                          {menu.description}
+                        </p>
+                      )}
                     </div>
+                    {/* 가격 */}
+                    {menu.price && (
+                      <div className="flex-shrink-0">
+                        <span className="text-base font-bold text-black">
+                          {typeof menu.price === 'number' 
+                            ? `${menu.price.toLocaleString()}원`
+                            : menu.price
+                          }
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

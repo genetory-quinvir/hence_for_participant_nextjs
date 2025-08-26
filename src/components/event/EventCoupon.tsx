@@ -24,6 +24,7 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
   const [loading, setLoading] = useState(false);
   const [usedCoupons, setUsedCoupons] = useState<Set<string>>(new Set());
   const [cardRotations, setCardRotations] = useState<{ [key: string]: { x: number, y: number } }>({});
+  const [isScrolling, setIsScrolling] = useState(false);
 
   const handleCouponUse = async (coupon: CouponItem) => {
     const accessToken = getAccessToken();
@@ -100,6 +101,12 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
     }));
   };
 
+  // 스크롤 이벤트 핸들러
+  const handleScroll = () => {
+    setIsScrolling(true);
+    setTimeout(() => setIsScrolling(false), 150);
+  };
+
 
 
   const handleUseSelectedVendor = async () => {
@@ -141,8 +148,10 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
           style={{ 
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
-            overflow: 'visible'
+            WebkitOverflowScrolling: 'touch',
+            scrollSnapType: 'x mandatory'
           }}
+          onScroll={handleScroll}
         >
           {coupons.map((coupon) => {
             const rotation = cardRotations[coupon.id!] || { x: 0, y: 0 };
@@ -163,13 +172,13 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
                     'linear-gradient(135deg, #6b7280 0%, #9ca3af 100%)',
                   transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
                   transformStyle: 'preserve-3d',
-                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+                  margin: '0 10px'
                 }}
-                onMouseMove={(e) => handleCardMove(coupon.id!, e.clientX, e.clientY)}
+                onMouseMove={(e) => !isScrolling && handleCardMove(coupon.id!, e.clientX, e.clientY)}
                 onMouseLeave={() => handleCardLeave(coupon.id!)}
                 onTouchMove={(e) => {
-                  e.preventDefault();
-                  if (e.touches.length > 0) {
+                  if (!isScrolling && e.touches.length > 0) {
                     const touch = e.touches[0];
                     handleCardMove(coupon.id!, touch.clientX, touch.clientY);
                   }
