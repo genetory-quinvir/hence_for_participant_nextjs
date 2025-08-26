@@ -565,9 +565,8 @@ function VoteContent() {
                 <div className="flex-1">
                   <div className="flex items-center mb-1">
                     <span className="text-gray-900 font-semibold text-md">1등 동아리</span>
-                    <span className="text-gray-400 font-normal text-md ml-1">(회식비 지원)</span>
                   </div>
-                  <h3 className="text-gray-900 font-medium text-base">100만원 회식비</h3>
+                  <h3 className="text-gray-900 font-medium text-base">40만원</h3>
                   <p className="text-gray-600 text-sm">가장 많은 투표를 받은 동아리에게 제공</p>
                 </div>
               </div>
@@ -588,9 +587,8 @@ function VoteContent() {
                 <div className="flex-1">
                   <div className="flex items-center mb-1">
                     <span className="text-gray-900 font-semibold text-md">2등 동아리</span>
-                    <span className="text-gray-400 font-normal text-md ml-1">(회식비 지원)</span>
                   </div>
-                  <h3 className="text-gray-900 font-medium text-base">50만원 회식비</h3>
+                  <h3 className="text-gray-900 font-medium text-base">30만원</h3>
                   <p className="text-gray-600 text-sm">두 번째로 많은 투표를 받은 동아리에게 제공</p>
                 </div>
               </div>
@@ -611,9 +609,8 @@ function VoteContent() {
                 <div className="flex-1">
                   <div className="flex items-center mb-1">
                     <span className="text-gray-900 font-semibold text-md">3등 동아리</span>
-                    <span className="text-gray-400 font-normal text-md ml-1">(회식비 지원)</span>
                   </div>
-                  <h3 className="text-gray-900 font-medium text-base">30만원 회식비</h3>
+                  <h3 className="text-gray-900 font-medium text-base">15만원</h3>
                   <p className="text-gray-600 text-sm">세 번째로 많은 투표를 받은 동아리에게 제공</p>
                 </div>
               </div>
