@@ -64,7 +64,7 @@ export default function EventFoodTrucks({
               </h3>
               
               {vendor.description && (
-                <p className="text-sm text-black text-left mb-4" style={{ opacity: 0.8 }}>
+                <p className="text-sm text-black text-left mb-4 line-clamp-2" style={{ opacity: 0.8 }}>
                   {vendor.description}
                 </p>
               )}

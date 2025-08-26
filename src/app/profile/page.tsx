@@ -57,7 +57,7 @@ function ProfilePageContent() {
   // 사용자 프로필 정보 가져오기
   useEffect(() => {
     const loadUserProfile = async () => {
-      if (!isAuthenticated || !user) return;
+      if (!isAuthenticated || !user || profileData) return; // 이미 로드된 경우 중복 호출 방지
       
       try {
         setIsLoading(true);
@@ -76,7 +76,7 @@ function ProfilePageContent() {
     };
 
     loadUserProfile();
-  }, [isAuthenticated, user, logout]);
+  }, [isAuthenticated, user, logout, profileData]);
 
   // 사용자 활동 데이터 가져오기 (초기 로드)
   useEffect(() => {
@@ -84,24 +84,10 @@ function ProfilePageContent() {
       // profileData가 로드된 후에만 실행
       if (!profileData?.id) return;
 
-      console.log('🔄 사용자 활동 데이터 로드 시작:', profileData.id);
+      // 이미 로드된 데이터가 있는 경우 중복 호출 방지
+      if (userPosts.length > 0 || userComments.length > 0) return;
 
-      // 이벤트 데이터 로드 (주석처리)
-      // setEventsLoading(true);
-      // setEventsCursor(null);
-      // setEventsHasNext(true);
-      // try {
-      //   const eventsResult = await getUserEvents(profileData.id, null, 20);
-      //   if (eventsResult.success && eventsResult.data) {
-      //     setUserEvents(eventsResult.data);
-      //     setEventsHasNext(eventsResult.hasNext || false);
-      //     setEventsCursor(eventsResult.nextCursor || null);
-      //   }
-      // } catch (error) {
-      //   console.error('이벤트 로드 실패:', error);
-      // } finally {
-      //   setEventsLoading(false);
-      // }
+  
 
       // 게시글 데이터 로드
       setPostsLoading(true);
@@ -139,7 +125,7 @@ function ProfilePageContent() {
     };
 
     loadUserActivity();
-  }, [profileData?.id]); // profileData.id만 의존
+  }, [profileData?.id, userPosts.length, userComments.length]); // 의존성 배열에 기존 데이터 길이 추가
 
   // 무한 스크롤 함수들
   // const loadMoreEvents = useCallback(async () => {
@@ -221,34 +207,18 @@ function ProfilePageContent() {
   const handleScroll = useCallback(() => {
     const scrollContainer = document.querySelector('.scrollbar-hide');
     if (!scrollContainer) {
-      console.log('❌ 스크롤 컨테이너를 찾을 수 없습니다');
+  
       return;
     }
 
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer as HTMLElement;
     const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
     
-    console.log('📜 스크롤 상태:', {
-      scrollTop,
-      scrollHeight,
-      clientHeight,
-      scrollPercentage,
-      activeTab,
-      hasNext: {
-        // events: eventsHasNext,
-        posts: postsHasNext,
-        comments: commentsHasNext
-      },
-      loading: {
-        // events: eventsLoadingMore,
-        posts: postsLoadingMore,
-        comments: commentsLoadingMore
-      }
-    });
+
     
     // 스크롤이 80% 이상일 때 추가 로드
     if (scrollPercentage >= 0.8) {
-      console.log('🔄 무한 스크롤 트리거:', activeTab);
+
       
       switch (activeTab) {
         // case 'events':
@@ -259,13 +229,13 @@ function ProfilePageContent() {
         //   break;
         case 'posts':
           if (postsHasNext && !postsLoadingMore) {
-            console.log('📥 게시글 추가 로드 시작');
+
             loadMorePosts();
           }
           break;
         case 'comments':
           if (commentsHasNext && !commentsLoadingMore) {
-            console.log('📥 댓글 추가 로드 시작');
+
             loadMoreComments();
           }
           break;
@@ -277,14 +247,12 @@ function ProfilePageContent() {
   useEffect(() => {
     const scrollContainer = document.querySelector('.scrollbar-hide');
     if (scrollContainer) {
-      console.log('📜 스크롤 이벤트 리스너 등록:', activeTab);
       scrollContainer.addEventListener('scroll', handleScroll);
       return () => {
-        console.log('📜 스크롤 이벤트 리스너 제거:', activeTab);
         scrollContainer.removeEventListener('scroll', handleScroll);
       };
     } else {
-      console.log('❌ 스크롤 컨테이너를 찾을 수 없어 이벤트 리스너를 등록하지 않습니다');
+      
     }
   }, [activeTab, handleScroll]); // activeTab만 의존
 
@@ -636,7 +604,7 @@ function ProfilePageContent() {
                         isNotice={post.type === 'NOTICE'}
                         onMoreClick={() => {
                           // TODO: 더보기 메뉴 표시
-                          console.log('더보기 클릭');
+                      
                         }}
                       />
                     )}
@@ -847,7 +815,7 @@ function ProfilePageContent() {
                       showMoreButton={true}
                       onMoreClick={() => {
                         // TODO: 댓글 더보기 메뉴 표시
-                        console.log('댓글 더보기 클릭');
+                    
                       }}
                     />
                     

@@ -193,7 +193,7 @@ function BoardDetailContent() {
         break;
       case 'report':
         if (confirm('이 글을 신고하시겠습니까?')) {
-          console.log('게시글 신고:', post.id);
+      
         }
         break;
     }

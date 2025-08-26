@@ -5,7 +5,8 @@ import { useState, useEffect, Suspense, useRef } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import CommonProfileView from "@/components/common/CommonProfileView";
 import { useAuth } from "@/contexts/AuthContext";
-import { getFeaturedEvent } from "@/lib/api";
+import { getFeaturedEvent, checkEventTopicSubscription } from "@/lib/api";
+import { subscribeToTopic } from "@/lib/firebase";
 import { FeaturedItem } from "@/types/api";
 import EventHero from "@/components/event/EventHero";
 import EventInfo from "@/components/event/EventInfo";
@@ -25,18 +26,41 @@ import EventSurvey from "@/components/event/EventSurvey";
 import { useSimpleNavigation } from "@/utils/navigation";
 import EventSection from "@/components/event/EventSection";
 
-export default function EventPageContent() {
+interface EventPageContentProps {
+  onRequestNotificationPermission?: (eventId: string) => Promise<void>;
+}
+
+export default function EventPageContent({ onRequestNotificationPermission }: EventPageContentProps) {
   const { navigate, goBack } = useSimpleNavigation();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [featuredData, setFeaturedData] = useState<FeaturedItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const hasCalledApi = useRef(false);
   const isMounted = useRef(false);
+  const lastAuthState = useRef<{ isAuthenticated: boolean; userId?: string }>({ isAuthenticated: false });
 
   // eventId를 쿼리 파라미터에서 가져오기
   const eventId = searchParams.get('id');
+
+  // 디버그: localStorage 상태 확인
+  useEffect(() => {
+    if (eventId) {
+      const globalPermissionGranted = localStorage.getItem('notificationPermissionGranted');
+      const globalPermissionDenied = localStorage.getItem('notificationPermissionDenied');
+      const eventPermission = localStorage.getItem(`notificationPermissionRequested_${eventId}`);
+      
+      console.log('🔔 현재 localStorage 상태:', {
+        globalPermissionGranted,
+        globalPermissionDenied,
+        eventPermission,
+        eventId
+      });
+    }
+  }, [eventId]);
 
   // 컴포넌트 마운트 상태 추적
   useEffect(() => {
@@ -46,6 +70,54 @@ export default function EventPageContent() {
       hasCalledApi.current = false;
     };
   }, []);
+
+  // 로그인 상태 변경 감지 및 토픽 재구독 - 임시 비활성화
+  // useEffect(() => {
+  //   const currentAuthState = {
+  //     isAuthenticated: isAuthenticated,
+  //     userId: user?.id
+  //   };
+
+  //   // 로그인 상태가 변경되었고, 이전에 로그아웃 상태였다가 로그인된 경우
+  //   if (currentAuthState.isAuthenticated && 
+  //       !lastAuthState.current.isAuthenticated && 
+  //       eventId && 
+  //       onRequestNotificationPermission) {
+  //     
+  //     // 전역 알림 권한 상태 확인
+  //     const globalPermissionGranted = localStorage.getItem('notificationPermissionGranted');
+  //     const globalPermissionDenied = localStorage.getItem('notificationPermissionDenied');
+  //     
+  //     console.log('🔔 로그인 상태 변경 - 알림 권한 상태 확인:', {
+  //       globalPermissionGranted,
+  //       globalPermissionDenied,
+  //       eventId
+  //     });
+  //     
+  //     // 이미 전역적으로 권한을 허용했거나 거부한 경우 모달 표시하지 않음
+  //     if (globalPermissionGranted === 'true') {
+  //       // 이미 권한을 허용한 경우, 해당 이벤트에 대한 구독 상태만 확인
+  //       const hasRequestedBefore = localStorage.getItem(`notificationPermissionRequested_${eventId}`);
+  //       if (hasRequestedBefore === 'requested') {
+  //         setIsSubscribed(true);
+  //       }
+  //       console.log('🔔 로그인 상태 변경 - 이미 권한을 허용했으므로 모달을 표시하지 않습니다.');
+  //     } else if (globalPermissionDenied === 'true') {
+  //       // 이미 권한을 거부한 경우 모달 표시하지 않음
+  //       console.log('🔔 로그인 상태 변경 - 알림 권한이 이미 거부되어 모달을 표시하지 않습니다.');
+  //     } else {
+  //       // 새로운 사용자로 로그인한 경우 토픽 재구독 시도
+  //       console.log('🔔 로그인 상태 변경 - 처음 방문하므로 모달을 표시합니다.');
+  //       setTimeout(() => {
+  //         if (isMounted.current) {
+  //           setShowNotificationModal(true);
+  //         }
+  //       }, 1000);
+  //     }
+  //   }
+
+  //   lastAuthState.current = currentAuthState;
+  // }, [isAuthenticated, user?.id, eventId, onRequestNotificationPermission]);
 
   // 인증되지 않은 경우 메인 페이지로 리다이렉트
   useEffect(() => {
@@ -57,24 +129,17 @@ export default function EventPageContent() {
 
   // 이벤트 데이터 가져오기 (단순화)
   useEffect(() => {
-    console.log('🔄 이벤트 데이터 useEffect 실행:', { 
-      eventId, 
-      hasCalledApi: hasCalledApi.current,
-      isMounted: isMounted.current,
-      authLoading,
-      isAuthenticated,
-      user
-    });
+
     
     // 인증 로딩 중이거나 인증되지 않은 경우 API 호출하지 않음
     if (authLoading || !isAuthenticated || !user) {
-      console.log('⏭️ 인증 대기 중:', { authLoading, isAuthenticated, user: !!user });
+
       return;
     }
     
     // 컴포넌트가 마운트되지 않았거나 이미 API를 호출했다면 중복 호출 방지
     if (!isMounted.current || hasCalledApi.current) {
-      console.log('⏭️ API 호출 방지:', { isMounted: isMounted.current, hasCalledApi: hasCalledApi.current });
+
       return;
     }
     
@@ -84,7 +149,7 @@ export default function EventPageContent() {
       setIsLoading(true);
       setError(null);
       
-      console.log('🔄 이벤트 종합 정보 요청:', { eventId });
+
       
       // AbortController를 사용하여 이전 요청 취소
       const abortController = new AbortController();
@@ -97,7 +162,41 @@ export default function EventPageContent() {
           
           if (featuredResult && featuredResult.success && featuredResult.featured) {
             setFeaturedData(featuredResult.featured);
-            console.log('✅ 이벤트 종합 정보 로드 성공:', featuredResult.featured);
+
+            
+            // 이벤트 데이터 로드 완료 후 토픽 구독 상태 확인 및 알림 권한 요청 모달 표시 - 임시 비활성화
+            // if (onRequestNotificationPermission && eventId) {
+            //   // 전역 알림 권한 상태 확인
+            //   const globalPermissionGranted = localStorage.getItem('notificationPermissionGranted');
+            //   const globalPermissionDenied = localStorage.getItem('notificationPermissionDenied');
+            //   
+            //   console.log('🔔 알림 권한 상태 확인:', {
+            //     globalPermissionGranted,
+            //     globalPermissionDenied,
+            //     eventId
+            //   });
+            //   
+            //   // 이미 전역적으로 권한을 허용했거나 거부한 경우 모달 표시하지 않음
+            //   if (globalPermissionGranted === 'true') {
+            //     // 이미 권한을 허용한 경우, 해당 이벤트에 대한 구독 상태만 확인
+            //     const hasRequestedBefore = localStorage.getItem(`notificationPermissionRequested_${eventId}`);
+            //     if (hasRequestedBefore === 'requested') {
+            //       setIsSubscribed(true);
+            //     }
+            //     console.log('🔔 이미 권한을 허용했으므로 모달을 표시하지 않습니다.');
+            //   } else if (globalPermissionDenied === 'true') {
+            //     // 이미 권한을 거부한 경우 모달 표시하지 않음
+            //     console.log('🔔 알림 권한이 이미 거부되어 모달을 표시하지 않습니다.');
+            //   } else {
+            //     // 처음 방문하는 경우 모달 표시
+            //     console.log('🔔 처음 방문하므로 모달을 표시합니다.');
+            //     setTimeout(() => {
+            //       if (isMounted.current) {
+            //         setShowNotificationModal(true);
+            //       }
+            //     }, 2000);
+            //   }
+            // }
           } else if (featuredResult) {
             let errorMessage = featuredResult.error || '이벤트 종합 정보를 가져올 수 없습니다.';
             
@@ -142,10 +241,10 @@ export default function EventPageContent() {
 
   const handleProfileClick = () => {
     if (user) {
-      console.log("프로필 버튼 클릭 - 프로필 페이지로 이동");
+  
       navigate("/profile");
     } else {
-      console.log("프로필 버튼 클릭 - 로그인 페이지로 이동");
+      
       navigate("/sign");
     }
   };
@@ -248,7 +347,7 @@ export default function EventPageContent() {
         style={{
           scrollbarWidth: 'none', /* Firefox */
           msOverflowStyle: 'none', /* Internet Explorer 10+ */
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingBottom: 'calc(16px + env(safe-area-inset-bottom))',
         }}
       >
         <style jsx>{`
@@ -389,12 +488,39 @@ export default function EventPageContent() {
         )}
 
         {/* 설문조사 섹션 */}
-        <EventSection
-          title="설문조사"
-          subtitle="설문 참여하고 커피 쿠폰 받아가세요!"
+        {featuredData.survey && (
+          <EventSurvey 
+            eventId={featuredData.event.id || 'default-event'} 
+            surveyData={featuredData.survey}
+          />
+        )}
+
+        {/* 알림 설정 섹션 - 임시 숨김 */}
+        {/* <EventSection
+          title="알림 설정"
+          subtitle="이벤트 소식을 놓치지 마세요"
         > 
-          <EventSurvey eventId={featuredData.event.id || 'default-event'} />
-        </EventSection>
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-gray-900">푸시 알림</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  이벤트 소식과 중요한 업데이트를 받아보세요
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (onRequestNotificationPermission && eventId) {
+                    onRequestNotificationPermission(eventId);
+                  }
+                }}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                알림 설정
+              </button>
+            </div>
+          </div>
+        </EventSection> */}
 
         {/* 도움말 섹션 */}
         <EventSection
@@ -420,6 +546,119 @@ export default function EventPageContent() {
           textColor="text-black"
         />
       </div>
+
+      {/* 알림 권한 요청 모달 - 임시 숨김 */}
+      {/* {showNotificationModal && eventId && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '400px',
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            margin: '16px',
+            border: '1px solid rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1)',
+            maxHeight: '80vh',
+            overflowY: 'auto'
+          }}>
+            <div className="mb-6">
+              <div className="flex items-center justify-center">
+                <img 
+                  src="/images/icon_notice.png" 
+                  alt="알림 아이콘" 
+                  className="w-12 h-12 object-contain mr-3 mt-1 flex-shrink-0"
+                  style={{ 
+                    animationDuration: '1.5s', 
+                    animationIterationCount: 'infinite', 
+                    animationTimingFunction: 'ease-in-out',
+                    animation: 'gentleBounce 1.5s ease-in-out infinite'
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <style jsx>{`
+                  @keyframes gentleBounce {
+                    0%, 100% {
+                      transform: translateY(0);
+                    }
+                    50% {
+                      transform: translateY(-4px);
+                    }
+                  }
+                `}</style>
+                <div className="flex-1">
+                  <h2 className="text-black text-xl font-bold mb-1">
+                    {isSubscribed ? '이벤트 알림 상태' : '이벤트 알림 설정'}
+                  </h2>
+                  <p className="text-black font-regular text-sm" style={{ opacity: 0.7 }}>
+                    {isSubscribed ? '현재 알림이 활성화되어 있습니다' : '이벤트 소식을 놓치지 마세요'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-black font-regular text-md text-center" style={{ opacity: 0.8 }}>
+                {isSubscribed ? (
+                  <>
+                    이미 이벤트 알림이 활성화되어 있습니다.<br />
+                    이벤트 소식과 중요한 업데이트를 받아보실 수 있습니다.
+                  </>
+                ) : (
+                  <>
+                    알림을 허용하시면 이벤트 소식과<br />
+                    중요한 업데이트를 받아보실 수 있습니다
+                  </>
+                )}
+              </p>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  localStorage.setItem(`notificationPermissionRequested_${eventId}`, 'denied');
+                  setShowNotificationModal(false);
+                }}
+                className="flex-1 py-3 px-4 rounded-lg text-black font-normal transition-colors"
+                style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+              >
+                {isSubscribed ? '닫기' : '나중에'}
+              </button>
+              {!isSubscribed && (
+                <button
+                  onClick={async () => {
+                    if (onRequestNotificationPermission && eventId) {
+                      try {
+                        await onRequestNotificationPermission(eventId);
+                        setShowNotificationModal(false);
+                      } catch (error) {
+                        console.error('알림 권한 요청 중 오류:', error);
+                        setShowNotificationModal(false);
+                      }
+                    }
+                  }}
+                  className="flex-1 py-3 px-4 rounded-lg font-bold transition-colors bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  알림 허용
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )} */}
     </div>
   );
 }

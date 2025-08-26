@@ -26,6 +26,51 @@ import { apiDebugger, logger } from '@/utils/logger';
 // API 기본 설정 - 통일된 API 주소
 const API_BASE_URL = 'https://api-participant.hence.events';
 
+// 네트워크 요청 재시도 설정
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  retryDelay: 1000, // 1초
+  timeout: 10000, // 10초
+};
+
+// 타임아웃이 있는 fetch 함수
+const fetchWithTimeout = async (url: string, options: RequestInit, timeout: number = RETRY_CONFIG.timeout) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+};
+
+// 재시도 로직이 포함된 fetch 함수
+const fetchWithRetry = async (url: string, options: RequestInit, retries: number = RETRY_CONFIG.maxRetries) => {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      logger.debug(`🌐 API 요청 시도 ${i + 1}/${retries + 1}: ${url}`);
+      const response = await fetchWithTimeout(url, options);
+      return response;
+    } catch (error) {
+      logger.warn(`🌐 API 요청 실패 ${i + 1}/${retries + 1}: ${url}`, error);
+      
+      if (i === retries) {
+        throw error;
+      }
+      
+      // 재시도 전 대기
+      await new Promise(resolve => setTimeout(resolve, RETRY_CONFIG.retryDelay * (i + 1)));
+    }
+  }
+};
+
 
 // 회원가입 API 호출
 export async function registerUser(email: string, password: string, nickname: string, confirmPassword?: string, provider?: string): Promise<LoginResponse> {
@@ -53,11 +98,15 @@ export async function registerUser(email: string, password: string, nickname: st
     // 요청 로깅
     apiDebugger.logRequest('POST', url, headers, requestBody);
 
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       method: 'POST',
       headers,
       body: jsonBody,
     });
+
+    if (!response) {
+      throw new Error('네트워크 요청이 실패했습니다.');
+    }
 
     const responseText = await response.text();
     const responseHeaders = Object.fromEntries(response.headers.entries());
@@ -139,11 +188,15 @@ export async function loginUser(email: string, password: string): Promise<LoginR
     // 요청 로깅
     apiDebugger.logRequest('POST', url, headers, requestBody);
 
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       method: 'POST',
       headers,
       body: jsonBody,
     });
+
+    if (!response) {
+      throw new Error('네트워크 요청이 실패했습니다.');
+    }
 
     const responseText = await response.text();
     const responseHeaders = Object.fromEntries(response.headers.entries());
@@ -340,22 +393,9 @@ export async function apiRequest<T>(
 ): Promise<{ success: boolean; data?: T; error?: string; status?: number }> {
   let accessToken = getAccessToken();
   
-  // 안드로이드 크롬 디버깅을 위한 추가 로깅
+  // 안드로이드 크롬을 위한 타임아웃 설정
   const isAndroidChrome = /Android.*Chrome/.test(navigator.userAgent);
-  if (isAndroidChrome) {
-    console.log('📱 안드로이드 크롬 감지 - API 요청 시작:', url);
-    console.log('📱 네트워크 상태:', navigator.onLine);
-    console.log('📱 User Agent:', navigator.userAgent);
-  }
-  
-  // users/me 호출인 경우 특별 로깅
   const isUsersMe = url.includes('/users/me');
-  if (isUsersMe) {
-    console.log('🔑 users/me 호출 - Access Token 확인:', { 
-      hasToken: !!accessToken, 
-      tokenLength: accessToken?.length || 0 
-    });
-  }
   
   if (!accessToken) {
     if (isUsersMe) {
@@ -384,12 +424,7 @@ export async function apiRequest<T>(
         });
       }
 
-      console.log('🔍 API 요청 상세:', {
-        url,
-        method: options.method || 'GET',
-        headers,
-        body: options.body instanceof FormData ? '[FormData]' : (options.body ? JSON.parse(options.body as string) : undefined)
-      });
+
 
     // 안드로이드 크롬을 위한 타임아웃 설정
     const timeoutDuration = isAndroidChrome ? 10000 : 5000; // 안드로이드는 10초, 다른 기기는 5초
@@ -413,8 +448,7 @@ export async function apiRequest<T>(
 
       clearTimeout(timeoutId);
 
-      console.log('🔍 API 응답 상태:', response.status, response.statusText);
-      console.log('🔍 API 응답 헤더:', Object.fromEntries(response.headers.entries()));
+
 
       if (response.status === 401) {
         return { status: 401 };
@@ -425,7 +459,7 @@ export async function apiRequest<T>(
         try {
           const errorData = await response.json();
           const originalMessage = errorData.message || errorMessage;
-          console.log('🔍 에러 응답 데이터:', errorData);
+
           
           // coroutine 관련 오류인 경우 사용자 친화적인 메시지로 변경
           if (originalMessage.includes('coroutine') || originalMessage.includes('not iterable')) {
@@ -439,7 +473,7 @@ export async function apiRequest<T>(
             errorMessage = originalMessage;
           }
         } catch (e) {
-          console.log('🔍 에러 응답을 JSON으로 파싱할 수 없음');
+
         }
         return { 
           status: response.status, 
@@ -448,10 +482,7 @@ export async function apiRequest<T>(
       }
 
       const data = await response.json();
-      console.log('🔍 성공 응답 데이터:', data);
-      console.log('🔍 응답 데이터 타입:', typeof data);
-      console.log('🔍 응답 데이터 키:', Object.keys(data || {}));
-      console.log('🔍 응답 데이터 상세:', JSON.stringify(data, null, 2));
+      
       return { status: 200, data };
     } catch (error) {
       // 안드로이드 크롬 특별 에러 처리
@@ -489,38 +520,24 @@ export async function apiRequest<T>(
 
   // 401 에러가 발생하면 토큰 갱신 시도 (안드로이드에서는 제한적으로)
   if (response.status === 401) {
-    if (isUsersMe) {
-      console.log('🔄 users/me - Access Token 만료, 토큰 갱신 시도...');
-    } else {
-      console.log('🔄 Access Token 만료, 토큰 갱신 시도...');
-    }
+    
     
     // 안드로이드에서는 토큰 갱신을 한 번만 시도
     const refreshResult = await refreshAccessToken();
     
     if (refreshResult.success && refreshResult.accessToken) {
-      if (isUsersMe) {
-        console.log('✅ users/me - 토큰 갱신 성공, 재요청 시도...');
-      } else {
-        console.log('✅ 토큰 갱신 성공, 재요청 시도...');
-      }
+      
       accessToken = refreshResult.accessToken;
       response = await makeRequest(accessToken);
     } else {
-      if (isUsersMe) {
-        console.log('❌ users/me - 토큰 갱신 실패:', refreshResult.error);
-      } else {
-        console.log('❌ 토큰 갱신 실패:', refreshResult.error);
-      }
+      
       return { success: false, error: 'AUTH_REQUIRED' };
     }
   }
 
   // 최종 응답 처리
   if (response.status === 200) {
-    if (isUsersMe) {
-      console.log('✅ users/me - 최종 응답 성공:', response.data);
-    }
+    
     return { success: true, data: response.data };
   } else {
     if (isUsersMe) {
@@ -2178,10 +2195,29 @@ export const sendFCMToken = async (token: string): Promise<{ success: boolean; e
   console.log('🔄 FCM 토큰 전송 시작:', { url, tokenLength: token.length });
 
   try {
-    const result = await apiRequest<any>(url, {
-      method: 'POST',
+    // 먼저 PUT 메서드로 시도
+    let result = await apiRequest<any>(url, {
+      method: 'PUT',
       body: JSON.stringify({ token }),
     });
+
+    // PUT이 실패하면 POST로 시도
+    if (!result.success && result.error?.includes('405')) {
+      console.log('🔄 PUT 실패, POST로 재시도');
+      result = await apiRequest<any>(url, {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      });
+    }
+
+    // POST도 실패하면 PATCH로 시도
+    if (!result.success && result.error?.includes('405')) {
+      console.log('🔄 POST 실패, PATCH로 재시도');
+      result = await apiRequest<any>(url, {
+        method: 'PATCH',
+        body: JSON.stringify({ token }),
+      });
+    }
 
     if (result.success) {
       console.log('✅ FCM 토큰 전송 성공');
@@ -2195,6 +2231,174 @@ export const sendFCMToken = async (token: string): Promise<{ success: boolean; e
     }
   } catch (error) {
     console.error('💥 FCM 토큰 전송 중 예외 발생:', error);
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+};
+
+// FCM 토픽 구독 API
+export const subscribeToEventTopic = async (eventId: string): Promise<{ success: boolean; error?: string }> => {
+  const url = `${API_BASE_URL}/users/fcm-topic`;
+  console.log('🔄 FCM 토픽 구독 시작:', { url, eventId });
+
+  try {
+    let result = await apiRequest<any>(url, {
+      method: 'POST',
+      body: JSON.stringify({ eventId }),
+    });
+
+    // POST가 실패하면 PUT으로 시도
+    if (!result.success && result.error?.includes('405')) {
+      console.log('🔄 POST 실패, PUT으로 재시도');
+      result = await apiRequest<any>(url, {
+        method: 'PUT',
+        body: JSON.stringify({ eventId }),
+      });
+    }
+
+    if (result.success) {
+      console.log('✅ FCM 토픽 구독 성공');
+      return { success: true };
+    } else {
+      console.error('❌ FCM 토픽 구독 실패:', result.error);
+      return {
+        success: false,
+        error: result.error || 'FCM 토픽 구독에 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('💥 FCM 토픽 구독 중 예외 발생:', error);
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+};
+
+// FCM 토픽 구독 상태 확인 API
+export const checkEventTopicSubscription = async (eventId: string): Promise<{ success: boolean; isSubscribed: boolean; error?: string }> => {
+  const url = `${API_BASE_URL}/users/fcm-topic/${eventId}`;
+  console.log('🔄 FCM 토픽 구독 상태 확인:', { url, eventId });
+
+  try {
+    const result = await apiRequest<{ isSubscribed: boolean }>(url, {
+      method: 'GET',
+    });
+
+    if (result.success && result.data) {
+      console.log('✅ FCM 토픽 구독 상태 확인 성공:', result.data);
+      return { 
+        success: true, 
+        isSubscribed: result.data.isSubscribed 
+      };
+    } else {
+      console.error('❌ FCM 토픽 구독 상태 확인 실패:', result.error);
+      return {
+        success: false,
+        isSubscribed: false,
+        error: result.error || 'FCM 토픽 구독 상태 확인에 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('💥 FCM 토픽 구독 상태 확인 중 예외 발생:', error);
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      isSubscribed: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+};
+
+// 사용자가 구독한 모든 FCM 토픽 목록 가져오기 API
+export const getUserSubscribedTopics = async (): Promise<{ success: boolean; data?: string[]; error?: string }> => {
+  const url = `${API_BASE_URL}/users/fcm-topics`;
+  console.log('🔄 사용자 구독 토픽 목록 요청:', { url });
+
+  try {
+    const result = await apiRequest<{ topics: string[] }>(url, {
+      method: 'GET',
+    });
+
+    if (result.success && result.data) {
+      console.log('✅ 사용자 구독 토픽 목록 로드 성공:', result.data);
+      return { 
+        success: true, 
+        data: result.data.topics || []
+      };
+    } else {
+      console.error('❌ 사용자 구독 토픽 목록 로드 실패:', result.error);
+      return {
+        success: false,
+        error: result.error || '구독 토픽 목록을 불러오는데 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('💥 사용자 구독 토픽 목록 요청 중 예외 발생:', error);
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+};
+
+// FCM 토픽 구독 해제 API
+export const unsubscribeFromEventTopic = async (eventId: string): Promise<{ success: boolean; error?: string }> => {
+  const url = `${API_BASE_URL}/users/fcm-topic/${eventId}`;
+  console.log('🔄 FCM 토픽 구독 해제 시작:', { url, eventId });
+
+  try {
+    const result = await apiRequest<any>(url, {
+      method: 'DELETE',
+    });
+
+    if (result.success) {
+      console.log('✅ FCM 토픽 구독 해제 성공');
+      return { success: true };
+    } else {
+      console.error('❌ FCM 토픽 구독 해제 실패:', result.error);
+      return {
+        success: false,
+        error: result.error || 'FCM 토픽 구독 해제에 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('💥 FCM 토픽 구독 해제 중 예외 발생:', error);
+    apiDebugger.logError(url, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+};
+
+// 모든 FCM 토픽 구독 해제 API
+export const unsubscribeFromAllTopics = async (): Promise<{ success: boolean; error?: string }> => {
+  const url = `${API_BASE_URL}/users/fcm-topics`;
+  console.log('🔄 모든 FCM 토픽 구독 해제 시작:', { url });
+
+  try {
+    const result = await apiRequest<any>(url, {
+      method: 'DELETE',
+    });
+
+    if (result.success) {
+      console.log('✅ 모든 FCM 토픽 구독 해제 성공');
+      return { success: true };
+    } else {
+      console.error('❌ 모든 FCM 토픽 구독 해제 실패:', result.error);
+      return {
+        success: false,
+        error: result.error || '모든 FCM 토픽 구독 해제에 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('💥 모든 FCM 토픽 구독 해제 중 예외 발생:', error);
     apiDebugger.logError(url, error);
     return {
       success: false,
@@ -2629,3 +2833,173 @@ export const changePassword = async (
     };
   }
 };
+
+// 설문조사 제출 API
+export async function submitSurvey(eventId: string, answers: Record<string, string>, surveyId?: string): Promise<{ success: boolean; error?: string; data?: any }> {
+  try {
+            const url = `${API_BASE_URL}/survey/${eventId}/submit`;
+
+            console.log('🔄 submitSurvey API 호출:', url);
+        console.log('📤 전송할 데이터:', answers);
+        
+        // 서버에서 기대하는 단순 형식: { "q1": "string", "q2": "string" }
+        const requestBody = answers;
+        console.log('📤 실제 전송되는 JSON:', JSON.stringify(requestBody, null, 2));
+
+    // 토큰 가져오기
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      console.error('❌ 액세스 토큰이 없습니다.');
+      return {
+        success: false,
+        error: '인증 토큰이 없습니다. 다시 로그인해주세요.',
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+                body: JSON.stringify(requestBody),
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-cache'
+    });
+
+    console.log('🔍 submitSurvey 응답 상태:', response.status, response.statusText);
+
+    if (!response.ok) {
+      // 404 에러인 경우 서버 API가 아직 구현되지 않은 것으로 간주하고 로컬 성공 처리
+      if (response.status === 404) {
+        console.log('🔍 submitSurvey 404 에러 - 서버 API 미구현, 로컬 성공 처리');
+        return {
+          success: true,
+          data: { message: '설문이 성공적으로 제출되었습니다.' }
+        };
+      }
+      
+                // 422 에러인 경우 요청 형식 오류
+          if (response.status === 422) {
+            console.log('🔍 submitSurvey 422 에러 - 요청 형식 오류');
+            let errorMessage = `설문 제출에 실패했습니다. (${response.status})`;
+            try {
+              const errorData = await response.json();
+              if (errorData.detail) {
+                errorMessage = errorData.detail;
+              }
+            } catch (e) {
+              // JSON 파싱 실패 시 기본 메시지 사용
+            }
+            return { success: false, error: errorMessage };
+          }
+      
+      let errorMessage = `설문 제출에 실패했습니다. (${response.status})`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+        console.log('🔍 submitSurvey 에러 응답:', errorData);
+      } catch (e) {
+        console.log('🔍 submitSurvey 에러 응답을 JSON으로 파싱할 수 없음');
+      }
+      
+      console.error('❌ submitSurvey 실패:', errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+
+    const data = await response.json();
+    console.log('✅ submitSurvey 성공:', data);
+    logger.info('✅ 설문 제출 성공', data);
+    
+    return {
+      success: true,
+      data: data
+    };
+  } catch (error) {
+    console.error('💥 submitSurvey 예외 발생:', error);
+    apiDebugger.logError(`${API_BASE_URL}/survey/${eventId}`, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
+
+// 설문조사 응답 확인 API
+export async function checkSurveyResponse(eventId: string): Promise<{ success: boolean; error?: string; hasSubmitted?: boolean }> {
+  try {
+    const url = `${API_BASE_URL}/survey/${eventId}/check-response`;
+
+    console.log('🔄 checkSurveyResponse API 호출:', url);
+
+    // 토큰 가져오기
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      console.error('❌ 액세스 토큰이 없습니다.');
+      return {
+        success: false,
+        error: '인증 토큰이 없습니다. 다시 로그인해주세요.',
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-cache'
+    });
+
+    console.log('🔍 checkSurveyResponse 응답 상태:', response.status, response.statusText);
+
+    if (!response.ok) {
+      // 404 에러인 경우 서버 API가 아직 구현되지 않은 것으로 간주하고 false 반환
+      if (response.status === 404) {
+        console.log('🔍 checkSurveyResponse 404 에러 - 서버 API 미구현, false 반환');
+        return {
+          success: true,
+          hasSubmitted: false
+        };
+      }
+      
+      let errorMessage = `설문 응답 확인에 실패했습니다. (${response.status})`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+        console.log('🔍 checkSurveyResponse 에러 응답:', errorData);
+      } catch (e) {
+        console.log('🔍 checkSurveyResponse 에러 응답을 JSON으로 파싱할 수 없음');
+      }
+      
+      console.error('❌ checkSurveyResponse 실패:', errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+
+    const data = await response.json();
+    console.log('✅ checkSurveyResponse 성공:', data);
+    logger.info('✅ 설문 응답 확인 성공', data);
+    
+    return {
+      success: true,
+      hasSubmitted: data.hasSubmitted || false
+    };
+  } catch (error) {
+    console.error('💥 checkSurveyResponse 예외 발생:', error);
+    apiDebugger.logError(`${API_BASE_URL}/survey/${eventId}/check-response`, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}

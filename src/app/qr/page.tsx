@@ -453,7 +453,9 @@ export default function QRPage() {
         </section>
 
         {/* 하단 버튼들 */}
-        <section className="flex-shrink-0 px-4 pb-4" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom) + 16px)' }}>
+        <section className="flex-shrink-0 px-4 pb-4" style={{ 
+          paddingBottom: 'calc(16px + env(safe-area-inset-bottom) + 16px)'
+        }}>
           <div className="space-y-3"> 
             {/* 수동 입력 버튼 */}
             <button

@@ -410,6 +410,30 @@ export interface ClubItem {
   updatedAt?: string;
 }
 
+// 설문 관련 타입
+export interface SurveyQuestion {
+  id: string;
+  questionText: string;
+  questionType: 'multiple_choice' | 'yes_no' | 'text';
+  options?: string[];
+  sortOrder: number;
+  isRequired: boolean;
+}
+
+export interface SurveyItem {
+  id: string;
+  eventId: string;
+  title: string;
+  description: string;
+  isActive: boolean;
+  questions: SurveyQuestion[];
+}
+
+export interface SurveyData {
+  survey: SurveyItem;
+  hasResponded: boolean;
+  message: string;
+}
 
 // FeaturedItem 타입 (이벤트 종합 정보)
 export interface FeaturedItem {
@@ -427,6 +451,7 @@ export interface FeaturedItem {
   emergencyInfo?: EmergencyInfo;
   freeBoard?: BoardItem[];
   advertisements?: AdItem[];
+  survey?: SurveyData;
 }
 
 // Featured 응답 타입

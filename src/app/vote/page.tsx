@@ -52,56 +52,52 @@ function VoteContent() {
         
         // 내 투표 상태 처리 - VoteItem 배열로 처리
         if (myVotesResult.success) {
-          console.log('🔍 getMyVotes 응답 데이터:', myVotesResult.data);
-          console.log('🔍 getMyVotes 응답 데이터 타입:', typeof myVotesResult.data);
-          console.log('🔍 getMyVotes 응답 데이터가 배열인가?', Array.isArray(myVotesResult.data));
+          
           
           let votes = myVotesResult.data || [];
-          console.log('🔍 votes 변수:', votes);
-          console.log('🔍 votes 타입:', typeof votes);
-          console.log('🔍 votes가 배열인가?', Array.isArray(votes));
+          
           
           // 객체인 경우 배열로 변환
           if (!Array.isArray(votes)) {
-            console.log('🔍 votes를 배열로 변환합니다. 원본 데이터:', votes);
+        
             if (votes && typeof votes === 'object') {
               // 객체의 키들을 확인
-              console.log('🔍 votes 객체의 키들:', Object.keys(votes as any));
+          
               
               // 가능한 시나리오들:
               // 1. { items: [...] } 형태
               if ((votes as any).items && Array.isArray((votes as any).items)) {
                 votes = (votes as any).items;
-                console.log('🔍 votes.items를 사용:', votes);
+            
               }
               // 2. { data: [...] } 형태  
               else if ((votes as any).data && Array.isArray((votes as any).data)) {
                 votes = (votes as any).data;
-                console.log('🔍 votes.data를 사용:', votes);
+            
               }
               // 3. 단일 객체를 배열로 변환
               else if ((votes as any).id || (votes as any).club_id) {
                 votes = [votes];
-                console.log('🔍 단일 객체를 배열로 변환:', votes);
+            
               }
               // 4. 빈 객체인 경우
               else {
                 votes = [];
-                console.log('🔍 빈 객체를 빈 배열로 변환');
+            
               }
             } else {
               votes = [];
-              console.log('🔍 null/undefined를 빈 배열로 변환');
+          
             }
           }
           
           const hasVoted = votes.length > 0;
           
-          console.log('🔍 투표 여부 판단:', hasVoted, '투표 개수:', votes.length);
+      
           
           if (hasVoted && votes.length > 0) {
             const voteData = votes[0]; // 첫 번째 투표 데이터 사용
-            console.log('🔍 투표 데이터:', voteData);
+        
             
             // 투표 데이터에서 직접 동아리 정보 구성 (ClubItem 형식)
             const votedClubData = {
@@ -111,7 +107,7 @@ function VoteContent() {
               vote_created_at: voteData.createdAt || (voteData as any).created_at
             };
             
-            console.log('🔍 응원한 동아리 정보:', votedClubData);
+        
             setVotedClub(votedClubData);
             setIsVoted(true);
           } else {
@@ -119,7 +115,7 @@ function VoteContent() {
             setIsVoted(false);
           }
           
-          console.log('🔍 최종 설정된 isVoted:', hasVoted);
+      
         } else {
           console.error('내 투표 상태 조회 실패:', myVotesResult.error);
           setVotedClub(null);
@@ -190,9 +186,7 @@ function VoteContent() {
       // 실제 투표 API 호출
       const result = await voteForClub(eventId, inviteCode.trim());
       
-      if (result.success) {
-        showToast("투표가 완료되었습니다!", "success");
-        
+      if (result.success) {        
         // 투표 완료 후 랭킹 데이터와 내 투표 상태 새로고침
         const [rankingResult, myVotesResult] = await Promise.all([
           getClubsRanking(eventId, 50),
@@ -206,53 +200,51 @@ function VoteContent() {
         
         // 내 투표 상태 업데이트 - VoteItem 배열로 처리
         if (myVotesResult.success) {
-          console.log('🔍 투표 후 getMyVotes 응답 데이터:', myVotesResult.data);
+      
           
           let votes = myVotesResult.data || [];
-          console.log('🔍 투표 후 votes 변수:', votes);
-          console.log('🔍 투표 후 votes 타입:', typeof votes);
-          console.log('🔍 투표 후 votes가 배열인가?', Array.isArray(votes));
+          
           
           // 객체인 경우 배열로 변환
           if (!Array.isArray(votes)) {
-            console.log('🔍 투표 후 votes를 배열로 변환합니다. 원본 데이터:', votes);
+        
             if (votes && typeof votes === 'object') {
               // 객체의 키들을 확인
-              console.log('🔍 투표 후 votes 객체의 키들:', Object.keys(votes as any));
+          
               
               // 가능한 시나리오들:
               // 1. { items: [...] } 형태
               if ((votes as any).items && Array.isArray((votes as any).items)) {
                 votes = (votes as any).items;
-                console.log('🔍 투표 후 votes.items를 사용:', votes);
+            
               }
               // 2. { data: [...] } 형태  
               else if ((votes as any).data && Array.isArray((votes as any).data)) {
                 votes = (votes as any).data;
-                console.log('🔍 투표 후 votes.data를 사용:', votes);
+            
               }
               // 3. 단일 객체를 배열로 변환
               else if ((votes as any).id || (votes as any).club_id) {
                 votes = [votes];
-                console.log('🔍 투표 후 단일 객체를 배열로 변환:', votes);
+            
               }
               // 4. 빈 객체인 경우
               else {
                 votes = [];
-                console.log('🔍 투표 후 빈 객체를 빈 배열로 변환');
+            
               }
             } else {
               votes = [];
-              console.log('🔍 투표 후 null/undefined를 빈 배열로 변환');
+          
             }
           }
           
           const hasVoted = votes.length > 0;
-          console.log('🔍 투표 후 투표 여부 판단:', hasVoted, '투표 개수:', votes.length);
+      
           
           if (hasVoted && votes.length > 0) {
             const voteData = votes[0]; // 첫 번째 투표 데이터 사용
-            console.log('🔍 투표 후 투표 데이터:', voteData);
+        
             
             // 투표 데이터에서 직접 동아리 정보 구성 (ClubItem 형식)
             const votedClubData = {
@@ -262,7 +254,7 @@ function VoteContent() {
               vote_created_at: voteData.createdAt || (voteData as any).created_at
             };
             
-            console.log('🔍 투표 후 응원한 동아리 정보:', votedClubData);
+        
             setVotedClub(votedClubData);
             setIsVoted(true);
           } else {
@@ -270,7 +262,7 @@ function VoteContent() {
             setIsVoted(false);
           }
           
-          console.log('🔍 투표 후 최종 설정된 isVoted:', hasVoted);
+      
         }
         
         // 초대 코드 초기화

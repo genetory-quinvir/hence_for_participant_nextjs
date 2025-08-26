@@ -3,17 +3,18 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ToastProvider } from "@/components/common/Toast";
+import { ForegroundMessageHandler } from "@/components/common/ForegroundMessageHandler";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Hence Event App",
-  description: "Hence 이벤트 참여자 앱",
+  title: "HENCE X 서울과학기술대학교",
+  description: "HENCE와 함께하는 서울과학기술대학교 횃불제",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Hence Event App"
+    title: "HENCE X 서울과학기술대학교"
   },
   icons: {
     icon: [
@@ -56,6 +57,7 @@ export default function RootLayout({
         <div className="mx-auto w-full max-w-lg min-h-screen bg-white" style={{ maxWidth: '700px' }}>
           <AuthProvider>
             <ToastProvider>
+              <ForegroundMessageHandler />
               {children}
             </ToastProvider>
           </AuthProvider>

@@ -189,7 +189,7 @@ function TimelineListContent() {
         
         {/* 타임라인 스켈레톤 */}
         <div className="flex-1 overflow-y-auto px-4 py-2 scrollbar-hide" style={{ 
-          paddingBottom: 'max(24px, env(safe-area-inset-bottom) + 24px)',
+          paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           WebkitOverflowScrolling: 'touch',
@@ -296,7 +296,7 @@ function TimelineListContent() {
         textColor="text-black"
       />
       
-      <div className="px-4 py-2" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom) + 24px)' }}>
+      <div className="px-4 py-2" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
         {/* 타임라인 리스트 */}
         <div className="space-y-4">
           {updatedTimelines.length > 0 ? (
@@ -482,7 +482,7 @@ function TimelineListLoading() {
       
       {/* 타임라인 스켈레톤 */}
       <div className="flex-1 overflow-y-auto px-4 py-2 scrollbar-hide" style={{ 
-        paddingBottom: 'max(24px, env(safe-area-inset-bottom) + 24px)',
+        paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
         scrollbarWidth: 'none',
         msOverflowStyle: 'none',
         WebkitOverflowScrolling: 'touch',

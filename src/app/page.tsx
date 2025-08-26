@@ -36,19 +36,32 @@ export default function HomePage() {
     fetchUserProfile();
   }, [isAuthenticated, userProfile, profileLoading]);
 
-  // 대기 중인 이벤트 확인
+
+
+  // 대기 중인 이벤트 확인 (인증 로딩 완료 후에만 처리)
   useEffect(() => {
+    // 인증 로딩이 완료된 후에만 처리
+    if (authLoading) {
+      return;
+    }
+
     const pendingEventId = sessionStorage.getItem('pendingEventId');
     const pendingUrl = sessionStorage.getItem('pendingEventUrl');
     
-    if (pendingEventId && pendingUrl && !isAuthenticated) {
-      setPendingEventUrl(pendingUrl);
-      setShowLoginAlert(true);
+    if (pendingEventId && pendingUrl) {
+      if (!isAuthenticated) {
+        // 로그인이 안된 경우에만 로그인 알럿 표시
+        setPendingEventUrl(pendingUrl);
+        setShowLoginAlert(true);
+      } else {
+        // 로그인이 된 경우 바로 이벤트 페이지로 이동
+        navigate(pendingUrl);
+      }
       // sessionStorage에서 제거
       sessionStorage.removeItem('pendingEventId');
       sessionStorage.removeItem('pendingEventUrl');
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   // 인증 로딩 중일 때 로딩 화면 표시
   if (authLoading) {
@@ -136,7 +149,7 @@ export default function HomePage() {
         ></CommonNavigationBar>
 
         <div className="mt-auto"
-          style={{ paddingBottom: 'max(48px, env(safe-area-inset-bottom) + 48px)' }}>
+          style={{ paddingBottom: 'calc(48px + env(safe-area-inset-bottom))' }}>
           <div className="text-left text-white text-3xl font-bold px-4 py-2 mb-4 leading-11"> 
             HENCE와 함께하는<br></br>서울과학기술대학교 횃불제
           </div>
@@ -229,6 +242,8 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+
     </div>
   );
 }

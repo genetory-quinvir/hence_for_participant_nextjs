@@ -12,12 +12,9 @@ function SurveyPageContent() {
   const { user, isAuthenticated } = useAuth();
   const { showToast } = useToast();
   
-  const [formData, setFormData] = useState({
-    satisfaction: "",
-    favoriteActivity: "",
-    improvement: "",
-    email: "",
-    agreeToContact: false
+  const [answers, setAnswers] = useState({
+    q1: "",
+    q2: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -25,11 +22,16 @@ function SurveyPageContent() {
     router.back();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.satisfaction || !formData.favoriteActivity || !formData.email || !formData.agreeToContact) {
-      showToast("모든 필수 항목을 입력해주세요.", "warning");
+  const handleAnswerSelect = (question: 'q1' | 'q2', answer: string) => {
+    setAnswers(prev => ({
+      ...prev,
+      [question]: answer
+    }));
+  };
+
+  const handleSubmit = async () => {
+    if (!answers.q1 || !answers.q2) {
+      showToast("모든 질문에 답변해주세요.", "warning");
       return;
     }
 
@@ -37,7 +39,7 @@ function SurveyPageContent() {
     
     try {
       // 실제 설문 제출 API 호출 (추후 구현)
-      // const result = await submitSurvey(formData);
+      // const result = await submitSurvey(answers);
       
       // 임시로 성공 처리
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -57,7 +59,7 @@ function SurveyPageContent() {
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-white text-black overflow-hidden">
+    <div className="fixed inset-0 w-full h-full bg-purple-100 text-black overflow-hidden">
       {/* 최대 너비 제한 컨테이너 */}
       <div className="w-full max-w-[700px] mx-auto h-full flex flex-col overflow-hidden">
         {/* 네비게이션바 */}
@@ -74,7 +76,7 @@ function SurveyPageContent() {
             </svg>
           }
           onLeftClick={handleBackClick}
-          backgroundColor="white"
+          backgroundColor="transparent"
           backgroundOpacity={1}
           textColor="text-black"
           sticky={true}
@@ -82,168 +84,103 @@ function SurveyPageContent() {
         />
 
         {/* 메인 컨텐츠 */}
-        <main className="flex-1 overflow-y-auto scrollbar-hide" style={{ 
+        <main className="flex-1 overflow-y-auto scrollbar-hide px-4 py-6" style={{ 
           scrollbarWidth: 'none', 
           msOverflowStyle: 'none',
-          WebkitOverflowScrolling: 'touch'
+          WebkitOverflowScrolling: 'touch',
+          paddingBottom: 'calc(24px + env(safe-area-inset-bottom))'
         }}>
-          <div className="px-4 py-6">
-            {/* 헤더 섹션 */}
-            <div className="text-center mb-8">
-              <div className="mb-4">
-                <img 
-                  src="/images/icon_coffee.png" 
-                  alt="커피 아이콘" 
-                  className="w-20 h-20 mx-auto object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-              <h1 className="text-2xl font-bold text-black mb-2">
-                횃불제 만족도 설문조사
-              </h1>
-              <p className="text-gray-600 text-base">
-                설문 완료 시 커피 쿠폰을 이메일로 발송해드립니다!
-              </p>
+          
+          {/* Q1 카드 */}
+          <div className="bg-white rounded-xl p-6 mb-6 shadow-sm">
+            <div className="mb-4">
+              <h2 className="text-purple-700 font-bold text-lg mb-2">Q1.</h2>
+              <p className="text-black text-base">오늘 어떤 기능이 가장 편리했나요?</p>
             </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: "쿠폰", label: "쿠폰" },
+                { value: "경품응모", label: "경품응모" },
+                { value: "푸드트럭", label: "푸드트럭" },
+                { value: "기타", label: "기타" }
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => handleAnswerSelect('q1', option.value)}
+                  className={`p-4 rounded-lg text-center transition-all duration-200 ${
+                    answers.q1 === option.value
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-            {/* 설문 폼 */}
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* 1. 전반적인 만족도 */}
-              <div>
-                <label className="block text-black text-lg font-semibold mb-3">
-                  1. 횃불제 전반적인 만족도는 어떠신가요? *
-                </label>
-                <div className="space-y-2">
-                  {[
-                    { value: "매우 만족", label: "매우 만족" },
-                    { value: "만족", label: "만족" },
-                    { value: "보통", label: "보통" },
-                    { value: "불만족", label: "불만족" },
-                    { value: "매우 불만족", label: "매우 불만족" }
-                  ].map((option) => (
-                    <label key={option.value} className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="satisfaction"
-                        value={option.value}
-                        checked={formData.satisfaction === option.value}
-                        onChange={(e) => setFormData({...formData, satisfaction: e.target.value})}
-                        className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
-                      />
-                      <span className="text-black">{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* 2. 가장 즐거웠던 활동 */}
-              <div>
-                <label className="block text-black text-lg font-semibold mb-3">
-                  2. 가장 즐거웠던 활동은 무엇인가요? *
-                </label>
-                <div className="space-y-2">
-                  {[
-                    { value: "동아리 공연", label: "동아리 공연" },
-                    { value: "푸드트럭", label: "푸드트럭" },
-                    { value: "게임/이벤트", label: "게임/이벤트" },
-                    { value: "친구들과의 시간", label: "친구들과의 시간" },
-                    { value: "기타", label: "기타" }
-                  ].map((option) => (
-                    <label key={option.value} className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="favoriteActivity"
-                        value={option.value}
-                        checked={formData.favoriteActivity === option.value}
-                        onChange={(e) => setFormData({...formData, favoriteActivity: e.target.value})}
-                        className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
-                      />
-                      <span className="text-black">{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* 3. 개선사항 */}
-              <div>
-                <label className="block text-black text-lg font-semibold mb-3">
-                  3. 다음 횃불제에서 개선되었으면 하는 점이 있나요?
-                </label>
-                <textarea
-                  value={formData.improvement}
-                  onChange={(e) => setFormData({...formData, improvement: e.target.value})}
-                  placeholder="의견을 자유롭게 작성해주세요..."
-                  className="w-full px-4 py-3 bg-gray-100 rounded-xl text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                  rows={4}
-                />
-              </div>
-
-              {/* 4. 이메일 입력 */}
-              <div>
-                <label className="block text-black text-lg font-semibold mb-3">
-                  4. 커피 쿠폰을 받을 이메일 주소를 입력해주세요. *
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="example@email.com"
-                  className="w-full px-4 py-3 bg-gray-100 rounded-xl text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* 5. 개인정보 동의 */}
-              <div>
-                <label className="flex items-start space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.agreeToContact}
-                    onChange={(e) => setFormData({...formData, agreeToContact: e.target.checked})}
-                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 mt-1"
-                  />
-                  <span className="text-black text-sm">
-                    커피 쿠폰 발송을 위한 개인정보 수집 및 이용에 동의합니다. *
-                    <br />
-                    <span className="text-gray-500 text-xs">
-                      (수집항목: 이메일 주소, 수집목적: 커피 쿠폰 발송, 보유기간: 쿠폰 발송 후 즉시 삭제)
-                    </span>
-                  </span>
-                </label>
-              </div>
-
-              {/* 제출 버튼 */}
+          {/* Q2 카드 */}
+          <div className="bg-white rounded-xl p-6 mb-6 shadow-sm">
+            <div className="mb-4">
+              <h2 className="text-purple-700 font-bold text-lg mb-2">Q2.</h2>
+              <p className="text-black text-base">HENCE를 다른 축제나 행사에도 추천 하나요?</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
               <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-4 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 rounded-xl font-bold text-white transition-colors"
+                onClick={() => handleAnswerSelect('q2', '네')}
+                className={`p-6 rounded-lg text-center transition-all duration-200 ${
+                  answers.q2 === '네'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+                }`}
               >
-                {isSubmitting ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    제출 중...
-                  </div>
-                ) : (
-                  "설문 제출하기"
-                )}
+                <div className="text-3xl font-bold mb-2">O</div>
+                <div className="text-base font-medium">네</div>
               </button>
-            </form>
+              
+              <button
+                onClick={() => handleAnswerSelect('q2', '아니오')}
+                className={`p-6 rounded-lg text-center transition-all duration-200 ${
+                  answers.q2 === '아니오'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+                }`}
+              >
+                <div className="text-3xl font-bold mb-2">X</div>
+                <div className="text-base font-medium">아니오</div>
+              </button>
+            </div>
+          </div>
 
-            {/* 안내 메시지 */}
-            <div className="mt-8 p-4 bg-purple-50 rounded-xl border border-purple-200">
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-white text-xs font-bold">!</span>
-                </div>
-                <div>
-                  <h3 className="text-purple-900 font-semibold text-sm mb-1">커피 쿠폰 안내</h3>
-                  <p className="text-purple-700 text-sm">
-                    설문 완료 후 3-5일 내에 입력하신 이메일로 커피 쿠폰을 발송해드립니다.
-                    <br />
-                    쿠폰은 스타벅스, 투썸플레이스, 할리스 등 주요 커피 체인점에서 사용 가능합니다.
-                  </p>
-                </div>
+          {/* 제출 버튼 */}
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting || !answers.q1 || !answers.q2}
+            className="w-full py-4 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 rounded-xl font-bold text-white transition-colors"
+          >
+            {isSubmitting ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                제출 중...
+              </div>
+            ) : (
+              "설문 제출하기"
+            )}
+          </button>
+
+          {/* 안내 메시지 */}
+          <div className="mt-6 p-4 bg-white rounded-xl border border-purple-200">
+            <div className="flex items-start space-x-3">
+              <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-white text-xs font-bold">!</span>
+              </div>
+              <div>
+                <h3 className="text-purple-900 font-semibold text-sm mb-1">커피 쿠폰 안내</h3>
+                <p className="text-purple-700 text-sm">
+                  설문 완료 후 3-5일 내에 입력하신 이메일로 커피 쿠폰을 발송해드립니다.
+                </p>
               </div>
             </div>
           </div>
@@ -256,9 +193,9 @@ function SurveyPageContent() {
 // 로딩 컴포넌트
 function SurveyPageLoading() {
   return (
-    <div className="fixed inset-0 w-full h-full bg-white text-black flex items-center justify-center">
+    <div className="fixed inset-0 w-full h-full bg-purple-100 text-black flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
         <p className="text-sm text-gray-600">설문 페이지를 불러오는 중...</p>
       </div>
     </div>

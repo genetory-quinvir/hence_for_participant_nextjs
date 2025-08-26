@@ -54,6 +54,9 @@ messaging.onBackgroundMessage((payload) => {
   return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
+// 토픽 구독/해제는 서버에서 처리하므로 Service Worker에서는 제거
+// 클라이언트에서 서버 API를 통해 토픽 구독/해제를 처리합니다
+
 // 알림 클릭 처리
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();

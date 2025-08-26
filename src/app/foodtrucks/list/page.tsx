@@ -26,12 +26,12 @@ function FoodTrucksContent() {
         setLoading(true);
         setError(null);
         const result = await getVendors(eventId, 'FOOD_TRUCK', 20);
-        console.log('푸드트럭 API 응답:', result);
+    
         if (result.success && result.data) {
-          console.log('푸드트럭 데이터:', result.data);
+      
           setVendors(result.data);
         } else {
-          console.log('푸드트럭 데이터 없음:', result.error);
+      
           setVendors([]);
         }
       } catch (err) {
@@ -167,7 +167,7 @@ function FoodTrucksContent() {
       
       {/* 푸드트럭 2열 그리드 */}
       <div className="flex-1 overflow-y-auto px-1 py-1 scrollbar-hide" style={{ 
-        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingBottom: 'calc(16px + env(safe-area-inset-bottom))',
         scrollbarWidth: 'none',
         msOverflowStyle: 'none',
         WebkitOverflowScrolling: 'touch',

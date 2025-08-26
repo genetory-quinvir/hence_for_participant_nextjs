@@ -101,6 +101,23 @@ export const apiDebugger = {
     if (typeof window === 'undefined') {
       return true;
     }
-    return navigator.onLine;
+    
+    // 기본 온라인 상태 확인
+    if (!navigator.onLine) {
+      console.warn('🌐 네트워크가 오프라인 상태입니다');
+      return false;
+    }
+    
+    // PWA 환경에서 추가 체크
+    if ('serviceWorker' in navigator) {
+      // Service Worker가 등록되어 있는지 확인
+      navigator.serviceWorker.getRegistration().then(registration => {
+        if (!registration) {
+          console.warn('🌐 Service Worker가 등록되지 않았습니다');
+        }
+      });
+    }
+    
+    return true;
   },
 }; 

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { getAccessToken, getRefreshToken, removeTokens } from '@/lib/api';
+import { unsubscribeFromTopic } from '@/lib/firebase';
 import { UserItem } from '@/types/api';
 import { logger } from '@/utils/logger';
 
@@ -58,8 +59,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // 로그아웃 함수
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     logger.info('🔐 로그아웃 실행');
+    
+    // LocalStorage에서 토픽 관련 정보 제거 및 FCM 토픽 구독 해제
+    if (typeof window !== 'undefined') {
+      // notificationPermissionRequested_로 시작하는 모든 키 제거
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('notificationPermissionRequested_')) {
+          keysToRemove.push(key);
+          // FCM 토픽 구독 해제
+          const eventId = key.replace('notificationPermissionRequested_', '');
+          const topicName = `event_${eventId}`;
+          unsubscribeFromTopic(topicName).catch(error => {
+            logger.error(`토픽 구독 해제 실패: ${topicName}`, error);
+          });
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      // 전역 알림 권한 상태도 초기화
+      localStorage.removeItem('notificationPermissionGranted');
+      localStorage.removeItem('notificationPermissionDenied');
+      
+      logger.info('🗑️ LocalStorage 토픽 정보 제거 및 FCM 토픽 구독 해제 완료');
+    }
     
     // 토큰 제거
     removeTokens();
