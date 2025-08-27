@@ -128,33 +128,7 @@ export default function EventRaffle({ raffle, eventId }: EventRaffleProps) {
             </div>
           </div>
         
-        {/* 래플 기간 */}
-        <div className="space-y-1">
-          {raffle.startDate && (
-            <div className="flex items-center">
-              <span className="text-white text-sm pr-3 opacity-80">시작일</span>
-              <span>
-                {new Date(raffle.startDate).toLocaleDateString('ko-KR', {
-                  timeZone: 'Asia/Seoul',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </span>
-            </div>
-          )}
-          {raffle.endDate && (
-            <div className="flex items-center">
-              <span className="text-white text-sm pr-3 opacity-80">종료일</span>
-              <span> {new Date(raffle.endDate).toLocaleDateString('ko-KR', {
-                timeZone: 'Asia/Seoul',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}</span>
-            </div>
-          )}
-        </div>
+
         
         {/* 응모 상태에 따른 버튼 */}
         <div>

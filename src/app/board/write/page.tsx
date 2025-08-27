@@ -43,6 +43,16 @@ function BoardWriteContent() {
     try {
       setIsSubmitting(true);
       
+      console.log('📝 글쓰기 시도:', {
+        eventId,
+        boardType,
+        title: boardType === 'notice' ? title.trim() : null,
+        content: content.trim(),
+        contentLength: content.trim().length,
+        imagesCount: images.length,
+        images: images.map(img => ({ name: img.name, size: img.size, type: img.type }))
+      });
+      
       // 글쓰기 API 호출
       const result = await createPost(
         eventId,
@@ -51,6 +61,8 @@ function BoardWriteContent() {
         content.trim(),
         images
       );
+      
+      console.log('📝 글쓰기 결과:', result);
 
       if (result.success) {
         // 글 리스트 페이지로 이동 (히스토리에서 글쓰기 페이지 제거)
@@ -78,7 +90,34 @@ function BoardWriteContent() {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
-      const newImages = [...images, ...files].slice(0, 5); // 최대 5개까지
+      // 파일 검증
+      const validFiles = files.filter(file => {
+        // 파일 크기 확인 (5MB 제한으로 줄임)
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+          showToast(`${file.name}: 파일 크기는 5MB를 초과할 수 없습니다.`, 'warning');
+          return false;
+        }
+
+        // 파일 형식 확인
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          showToast(`${file.name}: 지원하지 않는 파일 형식입니다.`, 'warning');
+          return false;
+        }
+
+        return true;
+      });
+
+      if (validFiles.length === 0) return;
+
+      // 개수 제한 확인
+      if (images.length + validFiles.length > 5) {
+        showToast('이미지는 최대 5개까지 업로드할 수 있습니다.', 'warning');
+        return;
+      }
+
+      const newImages = [...images, ...validFiles];
       setImages(newImages);
       
       // 이미지 URL 생성
@@ -251,26 +290,34 @@ function BoardWriteContent() {
             {/* 이미지 업로드 */}
             <div className="bg-gray-100 rounded-lg">
               <div className="flex items-center justify-between">
-                <button
-                  onClick={async () => {
-                    const cameraSupported = await checkCameraSupport();
-                    if (cameraSupported) {
-                      setShowActionSheet(true);
-                    } else {
-                      handleImageLibrary();
-                    }
-                  }}
-                  className="relative text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
-                >
-                  <div 
-                    className="w-12 h-12 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={async () => {
+                      const cameraSupported = await checkCameraSupport();
+                      if (cameraSupported) {
+                        setShowActionSheet(true);
+                      } else {
+                        handleImageLibrary();
+                      }
+                    }}
+                    className="relative text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                    <div 
+                      className="w-12 h-12 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  </button>
+                  
+                  {/* 이미지 업로드 정보 */}
+                  <div className="text-xs text-gray-500">
+                    <div>최대 5개, 각 파일 5MB 이하</div>
+                    <div>지원 형식: JPG, PNG, GIF, WebP</div>
                   </div>
-                </button>
+                </div>
                 <div className="flex items-center space-x-4">
                   <span className="text-sm text-gray-600">
                     {content.length}/1000

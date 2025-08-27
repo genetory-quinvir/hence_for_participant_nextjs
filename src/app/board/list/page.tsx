@@ -75,34 +75,8 @@ function BoardListContent() {
   const eventId = searchParams.get('eventId') || 'default-event';
   const type = searchParams.get('type') || 'free'; // 'free' 또는 'notice'
 
-  // 플로팅 버튼 컴포넌트 - 완전히 독립적
-  const FloatingWriteButton = () => {
-    if (!(type === 'free' || (type === 'notice' && user && (user.role === 'admin' || user.role === 'host')))) {
-      return null;
-    }
-
-    return (
-      <button
-        onClick={handleWriteClick}
-        className="fixed w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110"
-        style={{ 
-          bottom: '24px',
-          right: '24px',
-          position: 'fixed',
-          zIndex: 9999,
-          transform: 'translateZ(0)'
-        }}
-      >
-        <svg
-          className="w-6 h-6"
-          fill="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-        </svg>
-      </button>
-    );
-  };
+  // 글쓰기 버튼 렌더링 조건
+  const shouldShowWriteButton = type === 'free' || (type === 'notice' && user && (user.role === 'admin' || user.role === 'host'));
 
   // 초기 데이터 로딩
   useEffect(() => {
@@ -532,10 +506,21 @@ function BoardListContent() {
           </svg>
         }
         onLeftClick={handleBackClick}
+        rightButton={
+          shouldShowWriteButton ? (
+            <button
+              onClick={handleWriteClick}
+              className="px-3 py-1.5 text-purple-600 hover:text-purple-700 text-sm font-bold transition-all duration-200 hover:scale-105"
+            >
+              글쓰기
+            </button>
+          ) : null
+        }
         backgroundColor="white"
         backgroundOpacity={1}
         textColor="text-black"
         sticky={true}
+        fixedHeight={true}
       />
     
     {/* 정렬 드롭다운 (커뮤니티에서만 표시) */}
@@ -848,7 +833,6 @@ function BoardListContent() {
             ]
       }
     />
-    <FloatingWriteButton />
     </div>
   );
 }
