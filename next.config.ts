@@ -1,15 +1,31 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  trailingSlash: true,
-  images: {
-    unoptimized: true
+  serverExternalPackages: ['@react-native-async-storage/async-storage'],
+  
+  // 파비콘 캐시 문제 해결을 위한 헤더 설정
+  async headers() {
+    return [
+      {
+        source: '/favicon.ico',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/icons/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
+    ];
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  // Next.js 15에서 변경된 설정
-  serverExternalPackages: [],
 };
 
 export default nextConfig;
