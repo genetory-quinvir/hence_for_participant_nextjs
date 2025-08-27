@@ -163,6 +163,7 @@ function FoodTruckDetailContent() {
     setCouponLoading(true);
     
     try {
+      // useCoupon은 API 함수이므로 React Hook 규칙에 위배되지 않음
       const result = await useCoupon(eventId, selectedCoupon.id!, selectedVendor?.id);
       if (result.success) {
         showToast(selectedCoupon.discountType === 'EXCHANGE' ? '교환권이 사용되었습니다!' : '쿠폰이 사용되었습니다!', 'success');

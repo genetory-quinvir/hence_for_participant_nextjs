@@ -113,7 +113,7 @@ async function handleRequest(
 
     // 외부 API 호출 (타임아웃과 재시도 로직 포함)
     const maxRetries = 3;
-    let lastError: any;
+    let lastError: Error | null = null;
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -162,12 +162,13 @@ async function handleRequest(
           headers: responseHeaders,
         });
         
-      } catch (error: any) {
-        lastError = error;
+      } catch (error) {
+        const errorObj = error instanceof Error ? error : new Error(String(error));
+        lastError = errorObj;
         console.log(`❌ 프록시 요청 시도 ${attempt}/${maxRetries} 실패:`, {
-          message: error.message,
-          name: error.name,
-          cause: error.cause
+          message: errorObj.message,
+          name: errorObj.name,
+          cause: errorObj.cause
         });
         
         if (attempt === maxRetries) {

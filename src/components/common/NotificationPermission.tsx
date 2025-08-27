@@ -213,8 +213,8 @@ export default function NotificationPermission({ compact = false }: Notification
       {isIOS && iosVersion && (
         <div className="mb-2 p-2 bg-yellow-600 rounded text-xs">
           📱 iOS {iosVersion}: {parseInt(iosVersion.split('.')[0]) < 16 || (parseInt(iosVersion.split('.')[0]) === 16 && parseInt(iosVersion.split('.')[1]) < 4) 
-            ? '웹 푸시 알림을 지원하지 않습니다' 
-            : '웹 푸시 알림을 지원합니다'}
+            ? "웹 푸시 알림을 지원하지 않습니다" 
+            : "웹 푸시 알림을 지원합니다"}
         </div>
       )}
       <button

@@ -14,6 +14,8 @@ export default function EventClubs({ clubs, eventId }: EventClubsProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
 
+
+
   if (!clubs || clubs.length === 0) {
     return null;
   }
