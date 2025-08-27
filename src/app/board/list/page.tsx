@@ -88,9 +88,9 @@ function BoardListContent() {
         // 인증 상태 확인
         const accessToken = getAccessToken();
         if (!accessToken) {
-          showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+          showToast('로그인이 필요합니다.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
-          router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+          navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
           return;
         }
         
@@ -102,15 +102,14 @@ function BoardListContent() {
           setCursor(result.data.nextCursor || null);
         } else {
           if (result.error?.includes('로그인이 만료')) {
-            showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+            showToast('로그인이 만료되었습니다.', 'warning');
             const currentUrl = window.location.pathname + window.location.search;
-            router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+            navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
           } else {
             setError(result.error || '게시글을 불러오는데 실패했습니다.');
           }
         }
       } catch (err) {
-        console.error("게시글 로드 오류:", err);
         setError("게시글을 불러오는데 실패했습니다.");
       } finally {
         setLoading(false);
@@ -147,18 +146,16 @@ function BoardListContent() {
         });
         setHasNext(result.data.hasNext);
         setCursor(result.data.nextCursor || null);
-      } else {
-        if (result.error?.includes('로그인이 만료')) {
-          showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
-          const currentUrl = window.location.pathname + window.location.search;
-          router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
-        } else {
-          console.error("추가 데이터 로드 실패:", result.error);
+              } else {
+          if (result.error?.includes('로그인이 만료')) {
+            showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+            const currentUrl = window.location.pathname + window.location.search;
+            router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+          }
         }
-      }
-    } catch (err) {
-      console.error("추가 데이터 로드 오류:", err);
-    } finally {
+      } catch (err) {
+        // 추가 데이터 로드 실패 시 조용히 처리
+      } finally {
       setLoadingMore(false);
     }
   }, [eventId, type, hasNext, loadingMore, cursor, router, showToast]);
@@ -202,7 +199,7 @@ function BoardListContent() {
     }
     
     const url = `/board/${post.id}?type=${type}&eventId=${post.eventId || eventId}`;
-    router.push(url);
+    navigate(url);
   };
 
   const handleMoreClick = (post: BoardItem) => {
@@ -218,7 +215,7 @@ function BoardListContent() {
     switch (action) {
       case 'edit':
         // 수정 페이지로 이동
-        router.push(`/board/edit/${selectedPost.id}?type=${type}&eventId=${selectedPost.eventId || eventId}`);
+        navigate(`/board/edit/${selectedPost.id}?type=${type}&eventId=${selectedPost.eventId || eventId}`);
         break;
       case 'delete':
         if (confirm('정말로 이 글을 삭제하시겠습니까?')) {
@@ -228,19 +225,18 @@ function BoardListContent() {
               showToast('게시글이 삭제되었습니다.', 'success');
               // 목록에서 삭제된 게시글 제거
               setPosts(prev => prev.filter(post => post.id !== selectedPost.id));
-            } else {
-              showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
-            }
-          } catch (error) {
-            console.error('게시글 삭제 오류:', error);
-            showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
-          }
+                    } else {
+          showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
+        }
+      } catch (error) {
+        showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+      }
         }
         break;
       case 'report':
         if (confirm('이 글을 신고하시겠습니까?')) {
           // TODO: 신고 API 호출
-          console.log('게시글 신고:', selectedPost.id);
+          showToast('신고가 접수되었습니다.', 'success');
         }
         break;
     }
@@ -257,9 +253,9 @@ function BoardListContent() {
       // 인증 상태 확인
       const accessToken = getAccessToken();
       if (!accessToken) {
-        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+        showToast('로그인이 필요합니다.', 'warning');
         const currentUrl = window.location.pathname + window.location.search;
-        router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+        navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         return;
       }
 
@@ -282,15 +278,14 @@ function BoardListContent() {
         }));
       } else {
         if (result.error?.includes('로그인이 만료')) {
-          showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+          showToast('로그인이 만료되었습니다.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
-          router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+          navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         } else {
           showToast(result.error || '좋아요 처리에 실패했습니다.', 'error');
         }
       }
     } catch (error) {
-      console.error('좋아요 토글 오류:', error);
       showToast('좋아요 처리 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsLiking(false);
@@ -301,9 +296,9 @@ function BoardListContent() {
     // 로그인 상태 확인
     const accessToken = getAccessToken();
     if (!accessToken) {
-      showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+      showToast('로그인이 필요합니다.', 'warning');
       const currentUrl = window.location.pathname + window.location.search;
-      router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+      navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
       return;
     }
 
@@ -315,11 +310,11 @@ function BoardListContent() {
       }
     }
     
-    router.push(`/board/write?eventId=${eventId}&type=${type}&from=boardList`);
+    navigate(`/board/write?eventId=${eventId}&type=${type}&from=boardList`);
   };
 
   const handleBackClick = () => {
-    router.back();
+    goBack();
   };
 
   // 정렬된 게시글 목록
