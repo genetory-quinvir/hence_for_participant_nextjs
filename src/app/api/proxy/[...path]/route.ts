@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API_BASE_URL = 'https://api-participant.hence.events';
 
+// Next.js 15에서 API 라우트 설정
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+// 파일 업로드 크기 제한 설정
+export const maxDuration = 60; // 60초 타임아웃
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
@@ -80,6 +87,20 @@ async function handleRequest(
       const contentType = request.headers.get('content-type') || '';
       
       if (contentType.includes('multipart/form-data')) {
+        // FormData인 경우 크기 제한 확인
+        const contentLength = request.headers.get('content-length');
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        
+        if (contentLength && parseInt(contentLength) > maxSize) {
+          console.log('❌ 파일 크기 초과:', contentLength, 'bytes');
+          return new NextResponse(JSON.stringify({ 
+            error: '파일 크기가 10MB를 초과했습니다.' 
+          }), {
+            status: 413,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        
         // FormData인 경우 그대로 전달
         body = await request.formData();
         console.log('📦 FormData 요청 본문 크기:', body instanceof FormData ? 'FormData 객체' : '알 수 없음');
