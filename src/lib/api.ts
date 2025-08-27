@@ -31,6 +31,8 @@ const getApiBaseUrl = () => {
   }
   
   // 클라이언트 사이드에서는 항상 프록시 사용 (CORS 문제 완전 해결)
+  // 프로덕션에서도 확실히 프록시 사용하도록 강제 설정
+  console.log('🌐 API Base URL 설정:', '/api/proxy (프록시 사용)');
   return '/api/proxy';
 };
 
@@ -1016,6 +1018,8 @@ export async function createPost(eventId: string, boardType: string, title: stri
       }
       
       console.log('🌐 API 요청 (이미지 포함):', `${API_BASE_URL}/board/${eventId}/${boardType}`);
+      console.log('🔍 실제 요청 URL 확인:', `${API_BASE_URL}/board/${eventId}/${boardType}`);
+      console.log('🔍 API_BASE_URL 값:', API_BASE_URL);
       
       const response = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
         method: 'POST',
@@ -1114,6 +1118,10 @@ export async function createPost(eventId: string, boardType: string, title: stri
       for (let [key, value] of formData.entries()) {
         console.log(`  ${key}: ${value}`);
       }
+      
+      console.log('🌐 API 요청 (이미지 없음):', `${API_BASE_URL}/board/${eventId}/${boardType}`);
+      console.log('🔍 실제 요청 URL 확인:', `${API_BASE_URL}/board/${eventId}/${boardType}`);
+      console.log('🔍 API_BASE_URL 값:', API_BASE_URL);
       
       const response = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
         method: 'POST',
