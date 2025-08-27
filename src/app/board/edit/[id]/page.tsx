@@ -52,21 +52,14 @@ function BoardEditContent() {
           return;
         }
         
-        console.log('🔄 게시글 상세 정보 요청:', { eventId, postType, postId });
-        
         // API 호출
         const result = await getBoardDetail(eventId, postType, postId);
-        
-        console.log('📥 게시글 상세 정보 결과:', result);
         
         if (result.success && result.data) {
           const postData = result.data;
           
-          console.log('📋 게시글 데이터:', postData);
-          
           // 본인이 작성한 글인지 확인
           if (user && postData.user?.id !== user.id) {
-            console.log('❌ 권한 없음:', { userId: user.id, postUserId: postData.user?.id });
             showToast('본인이 작성한 글만 수정할 수 있습니다.', 'error');
             goBack();
             return;
@@ -76,17 +69,10 @@ function BoardEditContent() {
           setContent(postData.content || "");
           setExistingImages(postData.images || []);
           setImageUrls(postData.images || []);
-          
-          console.log('✅ 게시글 데이터 설정 완료:', {
-            content: postData.content,
-            images: postData.images
-          });
         } else {
-          console.error('❌ 게시글 로드 실패:', result.error);
           setError(result.error || "게시글을 불러오는데 실패했습니다.");
         }
       } catch (err) {
-        console.error("게시글 로드 오류:", err);
         setError("게시글을 불러오는데 실패했습니다.");
       } finally {
         setLoading(false);
@@ -102,8 +88,34 @@ function BoardEditContent() {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
+      // 파일 검증 (크기 초과 시 자동 압축)
+      const validFiles = files.filter(file => {
+        // 파일 형식 확인
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          showToast(`${file.name}: 지원하지 않는 파일 형식입니다.`, 'warning');
+          return false;
+        }
+
+        // 파일 크기 확인 (큰 파일은 WebP로 자동 변환)
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+          showToast(`${file.name}: 파일이 5MB를 초과합니다. WebP로 변환됩니다.`, 'info');
+        }
+
+        return true;
+      });
+
+      if (validFiles.length === 0) return;
+
+      // 개수 제한 확인
       const currentImageCount = existingImages.length - removedImages.length + images.length;
-      const newImages = [...images, ...files].slice(0, 5 - currentImageCount); // 최대 5개까지
+      if (currentImageCount + validFiles.length > 5) {
+        showToast('이미지는 최대 5개까지 업로드할 수 있습니다.', 'warning');
+        return;
+      }
+
+      const newImages = [...images, ...validFiles];
       setImages(newImages);
       
       // 이미지 URL 생성
@@ -176,7 +188,6 @@ function BoardEditContent() {
       setHasCamera(true);
       return true;
     } catch (error) {
-      console.log('카메라를 지원하지 않거나 권한이 없습니다:', error);
       setHasCamera(false);
       return false;
     }
@@ -192,20 +203,8 @@ function BoardEditContent() {
     try {
       setIsSubmitting(true);
       
-      console.log('🔄 게시글 수정 시작:', {
-        eventId,
-        postType,
-        postId,
-        content: content.trim(),
-        existingImages,
-        removedImages,
-        newImages: images.length
-      });
-      
       // 최종 이미지 목록 구성 (기존 이미지 - 제거된 이미지)
       const finalImages = existingImages.filter(img => !removedImages.includes(img));
-      
-      console.log('🖼️ 최종 이미지 목록:', finalImages);
       
       const updateData = {
         content: content.trim(),
@@ -213,14 +212,9 @@ function BoardEditContent() {
         newImages: images // 새로 추가된 이미지 파일들
       };
       
-      console.log('📤 수정 데이터:', updateData);
-      
       const result = await updateBoard(eventId, postType, postId, updateData);
       
-      console.log('📥 수정 결과:', result);
-      
       if (result.success) {
-        console.log('✅ 수정 성공! 수정된 데이터 확인:', result.data);
         showToast('게시글이 수정되었습니다.', 'success');
         
         // 수정된 데이터로 로컬 상태 업데이트
@@ -228,20 +222,8 @@ function BoardEditContent() {
           setPost(prev => prev ? { ...prev, ...result.data } : null);
         }
         
-        // 수정 후 게시글 상세 정보를 다시 불러와서 확인
-        console.log('🔄 수정 후 게시글 상세 정보 재확인...');
-        const verifyResult = await getBoardDetail(eventId, postType, postId);
-        console.log('📥 수정 후 게시글 상세 정보:', verifyResult);
-        
-        if (verifyResult.success && verifyResult.data) {
-          console.log('✅ 수정 확인됨:', verifyResult.data.content);
-        } else {
-          console.log('⚠️ 수정 확인 실패:', verifyResult.error);
-        }
-        
         replace(`/board/${postId}?type=${postType}&eventId=${eventId}`);
       } else {
-        console.error('❌ 수정 실패:', result.error);
         if (result.error?.includes('로그인이 만료')) {
           showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
@@ -251,7 +233,6 @@ function BoardEditContent() {
         }
       }
     } catch (error) {
-      console.error('게시글 수정 오류:', error);
       showToast('게시글 수정 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsSubmitting(false);
@@ -402,26 +383,34 @@ function BoardEditContent() {
           {/* 이미지 업로드 */}
           <div className="bg-gray-100 rounded-lg">
             <div className="flex items-center justify-between">
-              <button
-                onClick={async () => {
-                  const cameraSupported = await checkCameraSupport();
-                  if (cameraSupported) {
-                    setShowActionSheet(true);
-                  } else {
-                    handleImageLibrary();
-                  }
-                }}
-                className="relative text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
-              >
-                <div 
-                  className="w-12 h-12 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={async () => {
+                    const cameraSupported = await checkCameraSupport();
+                    if (cameraSupported) {
+                      setShowActionSheet(true);
+                    } else {
+                      handleImageLibrary();
+                    }
+                  }}
+                  className="relative text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+                  <div 
+                    className="w-12 h-12 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </button>
+                
+                {/* 이미지 업로드 정보 */}
+                <div className="text-xs text-gray-500">
+                  <div>최대 5개, WebP로 자동 변환</div>
+                  <div>지원 형식: JPG, PNG, GIF, WebP</div>
                 </div>
-              </button>
+              </div>
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-600">
                   {content.length}/1000
