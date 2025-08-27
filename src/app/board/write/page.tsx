@@ -20,10 +20,9 @@ function BoardWriteContent() {
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [hasCamera, setHasCamera] = useState<boolean | null>(null);
 
-  // 이벤트 ID와 출처, 게시판 타입 가져오기
+  // 이벤트 ID와 게시판 타입 가져오기
   const eventId = searchParams.get('eventId') || 'default-event';
-  const from = searchParams.get('from');
-  const boardType = searchParams.get('type') || 'free'; // 'free' 또는 'notice'
+  const boardType = searchParams.get('type') || 'free';
 
   const handleBackClick = () => {
     goBack();
@@ -43,15 +42,7 @@ function BoardWriteContent() {
     try {
       setIsSubmitting(true);
       
-      console.log('📝 글쓰기 시도:', {
-        eventId,
-        boardType,
-        title: boardType === 'notice' ? title.trim() : null,
-        content: content.trim(),
-        contentLength: content.trim().length,
-        imagesCount: images.length,
-        images: images.map(img => ({ name: img.name, size: img.size, type: img.type }))
-      });
+
       
       // 글쓰기 API 호출
       const result = await createPost(
@@ -62,7 +53,7 @@ function BoardWriteContent() {
         images
       );
       
-      console.log('📝 글쓰기 결과:', result);
+
 
       if (result.success) {
         // 글 리스트 페이지로 이동 (히스토리에서 글쓰기 페이지 제거)
@@ -80,7 +71,6 @@ function BoardWriteContent() {
         }
       
     } catch (error) {
-      console.error('글쓰기 오류:', error);
       showToast('글쓰기에 실패했습니다. 다시 시도해주세요.', 'error');
     } finally {
       setIsSubmitting(false);
@@ -99,10 +89,10 @@ function BoardWriteContent() {
           return false;
         }
 
-        // 파일 크기 확인 (1MB 초과 시 경고만 표시, 압축은 서버에서 처리)
-        const maxSize = 1 * 1024 * 1024; // 1MB
+        // 파일 크기 확인 (큰 파일은 WebP로 자동 변환)
+        const maxSize = 5 * 1024 * 1024; // 5MB
         if (file.size > maxSize) {
-          showToast(`${file.name}: 파일이 1MB를 초과합니다. 자동으로 압축됩니다.`, 'info');
+          showToast(`${file.name}: 파일이 5MB를 초과합니다. WebP로 변환됩니다.`, 'info');
         }
 
         return true;
@@ -175,7 +165,6 @@ function BoardWriteContent() {
       setHasCamera(true);
       return true;
     } catch (error) {
-      console.log('카메라를 지원하지 않거나 권한이 없습니다:', error);
       setHasCamera(false);
       return false;
     }
@@ -313,7 +302,7 @@ function BoardWriteContent() {
                   
                   {/* 이미지 업로드 정보 */}
                   <div className="text-xs text-gray-500">
-                    <div>최대 5개, 큰 파일은 자동 압축</div>
+                    <div>최대 5개, WebP로 자동 변환</div>
                     <div>지원 형식: JPG, PNG, GIF, WebP</div>
                   </div>
                 </div>

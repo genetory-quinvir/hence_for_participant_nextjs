@@ -910,8 +910,8 @@ export async function getBoardList(eventId: string, boardType: string, cursor?: 
   }
 }
 
-// 이미지 압축 함수 (1MB 이하로 압축)
-async function compressImage(file: File, maxWidth: number = 800, quality: number = 0.6): Promise<File> {
+// 이미지 WebP 변환 함수 (고품질 유지하면서 크기 감소)
+async function compressImage(file: File, maxWidth: number = 1200, quality: number = 0.8): Promise<File> {
   return new Promise((resolve, reject) => {
     try {
       const canvas = document.createElement('canvas');
@@ -927,7 +927,7 @@ async function compressImage(file: File, maxWidth: number = 800, quality: number
       
       img.onload = () => {
         try {
-          // 비율 유지하면서 크기 조정
+          // 비율 유지하면서 크기 조정 (더 큰 크기 허용)
           const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
           const newWidth = Math.round(img.width * ratio);
           const newHeight = Math.round(img.height * ratio);
@@ -938,22 +938,24 @@ async function compressImage(file: File, maxWidth: number = 800, quality: number
           // 이미지 그리기
           ctx.drawImage(img, 0, 0, newWidth, newHeight);
           
-          // 압축된 이미지를 Blob으로 변환
+          // WebP 형식으로 변환 (고품질)
           canvas.toBlob((blob) => {
             if (blob) {
-              const compressedFile = new File([blob], file.name, {
-                type: file.type,
+              // 파일명을 .webp로 변경
+              const fileName = file.name.replace(/\.[^/.]+$/, '') + '.webp';
+              const compressedFile = new File([blob], fileName, {
+                type: 'image/webp',
                 lastModified: Date.now(),
               });
-              console.log(`📸 이미지 압축 완료: ${file.size} → ${compressedFile.size} bytes`);
+              console.log(`📸 WebP 변환 완료: ${file.size} → ${compressedFile.size} bytes`);
               resolve(compressedFile);
             } else {
-              console.warn('❌ 이미지 압축 실패, 원본 사용');
+              console.warn('❌ WebP 변환 실패, 원본 사용');
               resolve(file);
             }
-          }, file.type, quality);
+          }, 'image/webp', quality);
         } catch (error) {
-          console.error('❌ 이미지 압축 중 오류:', error);
+          console.error('❌ 이미지 변환 중 오류:', error);
           resolve(file);
         }
       };
@@ -965,7 +967,7 @@ async function compressImage(file: File, maxWidth: number = 800, quality: number
       
       img.src = URL.createObjectURL(file);
     } catch (error) {
-      console.error('❌ 압축 함수 초기화 실패:', error);
+      console.error('❌ 변환 함수 초기화 실패:', error);
       resolve(file);
     }
   });
@@ -977,24 +979,19 @@ export async function createPost(eventId: string, boardType: string, title: stri
     
     // 이미지가 있는 경우와 없는 경우를 구분해서 처리
     if (images.length > 0) {
-            // 이미지 압축 처리 (1MB 이상인 이미지만 압축)
-      console.log('🔄 이미지 압축 시작...');
+            // 이미지 WebP 변환 처리 (모든 이미지를 WebP로 변환)
+      console.log('🔄 이미지 WebP 변환 시작...');
       const compressedImages = await Promise.all(
         images.map(async (image) => {
           try {
-            // 1MB 이상인 이미지만 압축
-            if (image.size > 1 * 1024 * 1024) {
-              console.log(`📸 이미지 압축 필요: ${image.name} (${image.size} bytes)`);
-              const compressed = await compressImage(image, 600, 0.5);
-              console.log(`📸 압축 완료: ${image.name} (${image.size} → ${compressed.size} bytes)`);
-              return compressed;
-            }
-            // 1MB 미만인 이미지는 그대로 사용
-            console.log(`📸 이미지 압축 불필요: ${image.name} (${image.size} bytes)`);
-            return image;
+            // 모든 이미지를 WebP로 변환 (고품질 유지)
+            console.log(`📸 WebP 변환: ${image.name} (${image.size} bytes)`);
+            const compressed = await compressImage(image, 1200, 0.8);
+            console.log(`📸 변환 완료: ${image.name} (${image.size} → ${compressed.size} bytes)`);
+            return compressed;
           } catch (error) {
-            console.error(`❌ 이미지 압축 실패: ${image.name}`, error);
-            return image; // 압축 실패시 원본 반환
+            console.error(`❌ 이미지 변환 실패: ${image.name}`, error);
+            return image; // 변환 실패시 원본 반환
           }
         })
       );

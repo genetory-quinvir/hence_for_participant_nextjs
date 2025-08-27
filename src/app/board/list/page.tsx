@@ -61,8 +61,6 @@ function BoardListContent() {
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedPost, setSelectedPost] = useState<BoardItem | null>(null);
   const [isLiking, setIsLiking] = useState(false);
-  const isMounted = useRef(true);
-  const hasCalledApi = useRef(false);
 
   // 인증 훅
   const { user } = useAuth();
@@ -97,14 +95,6 @@ function BoardListContent() {
         }
         
         const result = await getBoardList(eventId, type, null, 20);
-        
-        console.log('📥 게시글 목록 응답:', result);
-        console.log('📋 게시글 데이터 샘플:', result.data?.items?.[0]);
-        console.log('❤️ 좋아요 상태 확인:', result.data?.items?.map(post => ({
-          id: post.id,
-          isLiked: post.isLiked,
-          likeCount: post.likeCount
-        })));
         
         if (result.success && result.data) {
           setPosts(result.data.items);
@@ -644,10 +634,6 @@ function BoardListContent() {
                 /* 커뮤니티인 경우 내용과 이미지 표시 */
                 <div className="flex-1 flex space-x-4">
                   <div className="flex-1 min-w-0">
-                    {(() => {
-                      console.log('🔍 게시글 내용:', { id: post.id, content: post.content, hasContent: !!post.content });
-                      return null;
-                    })()}
                     {post.content ? (
                       <div className="text-md text-black font-regular line-clamp-3 whitespace-pre-wrap mt-3">
                         {post.content}
