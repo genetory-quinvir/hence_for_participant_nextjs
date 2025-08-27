@@ -23,24 +23,15 @@ import {
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
-// API 기본 설정 - 환경에 따른 최적화
+// API 기본 설정 - 모든 환경에서 프록시 사용 (CORS 문제 완전 해결)
 const getApiBaseUrl = () => {
-  // 서버 사이드에서는 항상 직접 호출 (CORS 없음)
+  // 서버 사이드에서는 직접 호출 (CORS 없음)
   if (typeof window === 'undefined') {
     return 'https://api-participant.hence.events';
   }
   
-  // 클라이언트 사이드에서는 환경에 따라 결정
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  
-  // 개발 환경 또는 로컬호스트에서는 프록시 사용 (CORS 해결)
-  if (isDevelopment || isLocalhost) {
-    return '/api/proxy';
-  }
-  
-  // 프로덕션 환경에서는 직접 호출 (같은 도메인이거나 CORS 설정된 경우)
-  return 'https://api-participant.hence.events';
+  // 클라이언트 사이드에서는 항상 프록시 사용 (CORS 문제 완전 해결)
+  return '/api/proxy';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -70,28 +61,15 @@ const fetchWithTimeout = async (url: string, options: RequestInit, timeout: numb
   }
 };
 
-// 재시도 로직이 포함된 fetch 함수 (CORS 폴백 포함)
+// 재시도 로직이 포함된 fetch 함수
 const fetchWithRetry = async (url: string, options: RequestInit, retries: number = RETRY_CONFIG.maxRetries) => {
   for (let i = 0; i <= retries; i++) {
     try {
       logger.debug(`🌐 API 요청 시도 ${i + 1}/${retries + 1}: ${url}`);
       const response = await fetchWithTimeout(url, options);
       return response;
-    } catch (error: any) {
+    } catch (error) {
       logger.warn(`🌐 API 요청 실패 ${i + 1}/${retries + 1}: ${url}`, error);
-      
-      // CORS 오류인 경우 프록시로 재시도
-      if (error.name === 'TypeError' && error.message.includes('CORS') && i === 0) {
-        logger.info('🔄 CORS 오류 감지, 프록시로 재시도...');
-        const proxyUrl = url.replace('https://api-participant.hence.events', '/api/proxy');
-        try {
-          const proxyResponse = await fetchWithTimeout(proxyUrl, options);
-          logger.info('✅ 프록시 요청 성공');
-          return proxyResponse;
-        } catch (proxyError) {
-          logger.warn('❌ 프록시 요청도 실패:', proxyError);
-        }
-      }
       
       if (i === retries) {
         throw error;
