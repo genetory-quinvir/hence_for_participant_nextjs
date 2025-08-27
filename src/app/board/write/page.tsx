@@ -90,20 +90,19 @@ function BoardWriteContent() {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
-      // 파일 검증
+      // 파일 검증 (크기 초과 시 자동 압축)
       const validFiles = files.filter(file => {
-        // 파일 크기 확인 (5MB 제한으로 줄임)
-        const maxSize = 5 * 1024 * 1024; // 5MB
-        if (file.size > maxSize) {
-          showToast(`${file.name}: 파일 크기는 5MB를 초과할 수 없습니다.`, 'warning');
-          return false;
-        }
-
         // 파일 형식 확인
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         if (!allowedTypes.includes(file.type)) {
           showToast(`${file.name}: 지원하지 않는 파일 형식입니다.`, 'warning');
           return false;
+        }
+
+        // 파일 크기 확인 (1MB 초과 시 경고만 표시, 압축은 서버에서 처리)
+        const maxSize = 1 * 1024 * 1024; // 1MB
+        if (file.size > maxSize) {
+          showToast(`${file.name}: 파일이 1MB를 초과합니다. 자동으로 압축됩니다.`, 'info');
         }
 
         return true;
@@ -314,7 +313,7 @@ function BoardWriteContent() {
                   
                   {/* 이미지 업로드 정보 */}
                   <div className="text-xs text-gray-500">
-                    <div>최대 5개, 각 파일 5MB 이하</div>
+                    <div>최대 5개, 큰 파일은 자동 압축</div>
                     <div>지원 형식: JPG, PNG, GIF, WebP</div>
                   </div>
                 </div>

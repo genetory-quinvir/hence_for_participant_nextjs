@@ -910,41 +910,64 @@ export async function getBoardList(eventId: string, boardType: string, cursor?: 
   }
 }
 
-// 이미지 압축 함수
-async function compressImage(file: File, maxWidth: number = 800, quality: number = 0.7): Promise<File> {
-  return new Promise((resolve) => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d')!;
-    const img = new Image();
-    
-    img.onload = () => {
-      // 비율 유지하면서 크기 조정
-      const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
-      const newWidth = img.width * ratio;
-      const newHeight = img.height * ratio;
+// 이미지 압축 함수 (1MB 이하로 압축)
+async function compressImage(file: File, maxWidth: number = 800, quality: number = 0.6): Promise<File> {
+  return new Promise((resolve, reject) => {
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
       
-      canvas.width = newWidth;
-      canvas.height = newHeight;
+      if (!ctx) {
+        console.error('❌ Canvas 2D 컨텍스트를 가져올 수 없습니다.');
+        resolve(file);
+        return;
+      }
       
-      // 이미지 그리기
-      ctx.drawImage(img, 0, 0, newWidth, newHeight);
+      const img = new Image();
       
-      // 압축된 이미지를 Blob으로 변환
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const compressedFile = new File([blob], file.name, {
-            type: file.type,
-            lastModified: Date.now(),
-          });
-          console.log(`📸 이미지 압축 완료: ${file.size} → ${compressedFile.size} bytes`);
-          resolve(compressedFile);
-        } else {
-          resolve(file); // 압축 실패시 원본 반환
+      img.onload = () => {
+        try {
+          // 비율 유지하면서 크기 조정
+          const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+          const newWidth = Math.round(img.width * ratio);
+          const newHeight = Math.round(img.height * ratio);
+          
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+          
+          // 이미지 그리기
+          ctx.drawImage(img, 0, 0, newWidth, newHeight);
+          
+          // 압축된 이미지를 Blob으로 변환
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: file.type,
+                lastModified: Date.now(),
+              });
+              console.log(`📸 이미지 압축 완료: ${file.size} → ${compressedFile.size} bytes`);
+              resolve(compressedFile);
+            } else {
+              console.warn('❌ 이미지 압축 실패, 원본 사용');
+              resolve(file);
+            }
+          }, file.type, quality);
+        } catch (error) {
+          console.error('❌ 이미지 압축 중 오류:', error);
+          resolve(file);
         }
-      }, file.type, quality);
-    };
-    
-    img.src = URL.createObjectURL(file);
+      };
+      
+      img.onerror = () => {
+        console.error('❌ 이미지 로드 실패');
+        resolve(file);
+      };
+      
+      img.src = URL.createObjectURL(file);
+    } catch (error) {
+      console.error('❌ 압축 함수 초기화 실패:', error);
+      resolve(file);
+    }
   });
 }
 
@@ -954,15 +977,25 @@ export async function createPost(eventId: string, boardType: string, title: stri
     
     // 이미지가 있는 경우와 없는 경우를 구분해서 처리
     if (images.length > 0) {
-      // 이미지 압축 처리
+            // 이미지 압축 처리 (1MB 이상인 이미지만 압축)
       console.log('🔄 이미지 압축 시작...');
       const compressedImages = await Promise.all(
         images.map(async (image) => {
-          // 2MB 이상인 이미지만 압축
-          if (image.size > 2 * 1024 * 1024) {
-            return await compressImage(image, 800, 0.7);
+          try {
+            // 1MB 이상인 이미지만 압축
+            if (image.size > 1 * 1024 * 1024) {
+              console.log(`📸 이미지 압축 필요: ${image.name} (${image.size} bytes)`);
+              const compressed = await compressImage(image, 600, 0.5);
+              console.log(`📸 압축 완료: ${image.name} (${image.size} → ${compressed.size} bytes)`);
+              return compressed;
+            }
+            // 1MB 미만인 이미지는 그대로 사용
+            console.log(`📸 이미지 압축 불필요: ${image.name} (${image.size} bytes)`);
+            return image;
+          } catch (error) {
+            console.error(`❌ 이미지 압축 실패: ${image.name}`, error);
+            return image; // 압축 실패시 원본 반환
           }
-          return image;
         })
       );
       
