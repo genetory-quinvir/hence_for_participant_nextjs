@@ -23,17 +23,9 @@ import {
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
 
-// API 기본 설정 - 모든 환경에서 프록시 사용 (CORS 문제 완전 해결)
+// API 기본 설정 - 직접 API 호출
 const getApiBaseUrl = () => {
-  // 서버 사이드에서는 직접 호출 (CORS 없음)
-  if (typeof window === 'undefined') {
-    return 'https://api-participant.hence.events';
-  }
-  
-  // 클라이언트 사이드에서는 항상 프록시 사용 (CORS 문제 완전 해결)
-  // 프로덕션에서도 확실히 프록시 사용하도록 강제 설정
-  console.log('🌐 API Base URL 설정:', '/api/proxy (프록시 사용)');
-  return '/api/proxy';
+  return 'https://api-participant.hence.events';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -1018,8 +1010,6 @@ export async function createPost(eventId: string, boardType: string, title: stri
       }
       
       console.log('🌐 API 요청 (이미지 포함):', `${API_BASE_URL}/board/${eventId}/${boardType}`);
-      console.log('🔍 실제 요청 URL 확인:', `${API_BASE_URL}/board/${eventId}/${boardType}`);
-      console.log('🔍 API_BASE_URL 값:', API_BASE_URL);
       
       const response = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
         method: 'POST',
@@ -1120,8 +1110,6 @@ export async function createPost(eventId: string, boardType: string, title: stri
       }
       
       console.log('🌐 API 요청 (이미지 없음):', `${API_BASE_URL}/board/${eventId}/${boardType}`);
-      console.log('🔍 실제 요청 URL 확인:', `${API_BASE_URL}/board/${eventId}/${boardType}`);
-      console.log('🔍 API_BASE_URL 값:', API_BASE_URL);
       
       const response = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
         method: 'POST',
