@@ -80,12 +80,17 @@ function AuthCallbackContent() {
           if (savedRedirectUrl) {
             console.log('저장된 소셜 로그인 리다이렉트 URL:', savedRedirectUrl);
             sessionStorage.removeItem('socialLoginRedirectUrl');
-            replace(savedRedirectUrl);
+            // 인증 상태 업데이트를 위한 약간의 지연
+            setTimeout(() => {
+              replace(savedRedirectUrl);
+            }, 100);
           } else if (clientRedirectUrl) {
             console.log('클라이언트 리다이렉트 URL:', clientRedirectUrl);
             const decodedUrl = decodeURIComponent(clientRedirectUrl);
             console.log('디코딩된 URL:', decodedUrl);
-            replace(decodedUrl);
+            setTimeout(() => {
+              replace(decodedUrl);
+            }, 100);
           } else {
             console.log('리다이렉트 파라미터가 없어서 메인 페이지로 리다이렉트');
             console.log('사용 가능한 파라미터들:', {
@@ -95,7 +100,9 @@ function AuthCallbackContent() {
               redirectUrl: !!redirectUrl,
               clientRedirectUrl: !!clientRedirectUrl
             });
-            replace("/");
+            setTimeout(() => {
+              replace("/");
+            }, 100);
           }
         } else {
           console.error('로그인 실패 상세:', result);

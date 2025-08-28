@@ -268,6 +268,15 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
   // 인증 상태 확인 - 로그인되지 않은 사용자도 이벤트 페이지를 볼 수 있도록 수정
   useEffect(() => {
     console.log('인증 상태 확인:', { authLoading, isAuthenticated, eventId, user });
+    
+    // 소셜 로그인 후 리다이렉트된 경우 처리
+    const savedRedirectUrl = sessionStorage.getItem('socialLoginRedirectUrl');
+    if (savedRedirectUrl && isAuthenticated && user) {
+      console.log('소셜 로그인 후 리다이렉트 처리 완료 - sessionStorage 정리');
+      sessionStorage.removeItem('socialLoginRedirectUrl');
+      return; // 추가 처리 중단
+    }
+    
     if (!authLoading && !isAuthenticated && eventId) {
       // 인증되지 않은 경우 이벤트 정보를 sessionStorage에 저장
       sessionStorage.setItem('pendingEventId', eventId);
