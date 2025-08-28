@@ -105,20 +105,13 @@ function SignContent() {
     setError("");
 
     // 현재 페이지의 redirect 파라미터 가져오기
-    const explicitRedirectUrl = searchParams.get('redirect');
+    const redirectUrl = searchParams.get('redirect');
     
-    // 현재 컨텍스트 정보 수집
-    const context = getCurrentRedirectContext();
-    
-    // 상황별 리다이렉트 URL 결정
-    const finalRedirectUrl = determineSocialLoginRedirect(explicitRedirectUrl, context);
-    
-    console.log('소셜 로그인 컨텍스트:', context);
-    console.log('최종 리다이렉트 URL:', finalRedirectUrl);
+    console.log('로그인 페이지에서 받은 redirect 파라미터:', redirectUrl);
 
     // 소셜 로그인 URL 생성
     const baseUrl = `http://api.hence.events/api/v1/auth/${provider}?redirect=participant&joinPlatform=participant`;
-    const socialLoginUrl = addRedirectToSocialLoginUrl(baseUrl, finalRedirectUrl);
+    const socialLoginUrl = addRedirectToSocialLoginUrl(baseUrl, redirectUrl);
     
     console.log(`${provider} 로그인 URL:`, socialLoginUrl);
     

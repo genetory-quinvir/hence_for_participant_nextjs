@@ -25,7 +25,7 @@ export function determineSocialLoginRedirect(
     return redirectUrl;
   }
 
-  // 2. 현재 URL 분석
+  // 2. 현재 URL 분석 (로그인 페이지에서는 이전 페이지 정보를 사용)
   const currentUrl = context.currentUrl;
   
   // 이벤트 페이지에서 온 경우
