@@ -267,12 +267,14 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
 
   // 인증 상태 확인 - 로그인되지 않은 사용자도 이벤트 페이지를 볼 수 있도록 수정
   useEffect(() => {
+    console.log('인증 상태 확인:', { authLoading, isAuthenticated, eventId, user });
     if (!authLoading && !isAuthenticated && eventId) {
       // 인증되지 않은 경우 이벤트 정보를 sessionStorage에 저장
       sessionStorage.setItem('pendingEventId', eventId);
       sessionStorage.setItem('pendingEventUrl', window.location.pathname + window.location.search);
+      console.log('로그인되지 않은 사용자 - 이벤트 정보 저장:', eventId);
     }
-  }, [isAuthenticated, authLoading, eventId]);
+  }, [isAuthenticated, authLoading, eventId, user]);
 
   // 컴포넌트 마운트 상태 관리
   useEffect(() => {
@@ -285,15 +287,13 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
 
   // 인증이 완료된 후에만 API 호출 (로그인되지 않은 사용자도 이벤트 정보를 볼 수 있도록 수정)
   useEffect(() => {
+    console.log('API 호출 조건 확인:', { eventId, authLoading, isMounted: isMounted.current, hasCalledApi: hasCalledApi.current });
     if (!eventId || authLoading || !isMounted.current || hasCalledApi.current) {
+      console.log('API 호출 조건 미충족 - 호출하지 않음');
       return;
     }
 
-    // 로그인되지 않은 사용자도 이벤트 정보를 볼 수 있도록 수정
-    // if (!isAuthenticated || !user) {
-    //   return;
-    // }
-
+    console.log('API 호출 시작 - 이벤트 데이터 가져오기');
     hasCalledApi.current = true;
     setIsLoading(true);
     setError(null);
@@ -327,7 +327,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     };
 
     fetchData();
-  }, [authLoading, isAuthenticated, user, eventId, currentDay]);
+  }, [authLoading, eventId, currentDay]);
 
   // 네비게이션 핸들러 메모이제이션
   const handleNavigateToTimeline = useCallback(() => {
@@ -402,7 +402,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
   // 모든 로딩이 완료될 때까지 스켈레톤 표시
   const isFullyLoaded = !authLoading && !isLoading && featuredData;
   
-  // 인증되지 않은 경우에도 스켈레톤을 표시하여 부드러운 전환
+  // 로딩 중이면 스켈레톤 표시
   if (!isFullyLoaded) {
     return <EventSkeleton />;
   }
