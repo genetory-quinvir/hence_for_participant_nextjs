@@ -22,7 +22,7 @@ import EventMap from "@/components/event/EventMap";
 import EventHelp from "@/components/event/EventHelp";
 import { useSimpleNavigation } from "@/utils/navigation";
 import EventSection from "@/components/event/EventSection";
-import LoginOverlay from "@/components/common/LoginOverlay";
+
 
 interface EventPageContentProps {
   onRequestNotificationPermission?: (eventId: string) => Promise<void>;
@@ -254,7 +254,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
   const [featuredData, setFeaturedData] = useState<FeaturedItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showLoginOverlay, setShowLoginOverlay] = useState(false);
+
   // dismissedLoginPrompt 상태 제거 - 로그인되지 않은 사용자는 항상 블러 처리
   
   // Ref 관리
@@ -385,7 +385,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     if (user) {
       navigate("/profile");
     } else {
-      setShowLoginOverlay(true);
+      navigate("/sign");
     }
   }, [navigate, user]);
 
@@ -393,13 +393,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     navigate("/");
   }, [navigate]);
 
-  const handleLoginClick = useCallback(() => {
-    setShowLoginOverlay(false);
-  }, []);
 
-  const handleCloseLoginOverlay = useCallback(() => {
-    setShowLoginOverlay(false);
-  }, []);
 
   const handleGoToMain = useCallback(() => {
     // sessionStorage 정리하여 메인 페이지에서 로그인 알럿이 뜨지 않도록 함
@@ -430,7 +424,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
           border: '1px solid rgba(255, 255, 255, 0.6)',
           backgroundColor: 'transparent'
         }}
-        onClick={() => setShowLoginOverlay(true)}
+        onClick={() => navigate("/sign")}
       >
         <span className="text-white text-sm font-medium">로그인</span>
       </div>
@@ -634,7 +628,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
                   메인으로 돌아가기
                 </button>
                 <button
-                  onClick={() => setShowLoginOverlay(true)}
+                  onClick={() => navigate("/sign")}
                   className="flex-1 py-3 px-4 rounded-lg font-bold transition-colors bg-purple-600 hover:bg-purple-700 text-white"
                 >
                   로그인하기
@@ -645,13 +639,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
         </div>
       )}
 
-      {/* 로그인 모달 */}
-      {showLoginOverlay && (
-        <LoginOverlay
-          onLoginClick={handleLoginClick}
-          onClose={handleCloseLoginOverlay}
-        />
-      )}
+
     </div>
   );
 }
