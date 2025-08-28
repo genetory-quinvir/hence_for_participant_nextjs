@@ -22,6 +22,7 @@ import EventMap from "@/components/event/EventMap";
 import EventHelp from "@/components/event/EventHelp";
 import { useSimpleNavigation } from "@/utils/navigation";
 import EventSection from "@/components/event/EventSection";
+import LoginOverlay from "@/components/common/LoginOverlay";
 
 interface EventPageContentProps {
   onRequestNotificationPermission?: (eventId: string) => Promise<void>;
@@ -253,6 +254,8 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
   const [featuredData, setFeaturedData] = useState<FeaturedItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showLoginOverlay, setShowLoginOverlay] = useState(false);
+  // dismissedLoginPrompt 상태 제거 - 로그인되지 않은 사용자는 항상 블러 처리
   
   // Ref 관리
   const isMounted = useRef(false);
@@ -262,17 +265,14 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
   const eventId = useMemo(() => searchParams.get('id'), [searchParams]);
   const safeEventId = useMemo(() => eventId || DEFAULT_EVENT_ID, [eventId]);
 
-  // 인증 상태 확인 - 로딩이 완료된 후에만 리다이렉트
+  // 인증 상태 확인 - 로그인되지 않은 사용자도 이벤트 페이지를 볼 수 있도록 수정
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      // 인증되지 않은 경우 이벤트 정보를 sessionStorage에 저장하고 메인으로 이동
-      if (eventId) {
-        sessionStorage.setItem('pendingEventId', eventId);
-        sessionStorage.setItem('pendingEventUrl', window.location.pathname + window.location.search);
-      }
-      navigate("/");
+    if (!authLoading && !isAuthenticated && eventId) {
+      // 인증되지 않은 경우 이벤트 정보를 sessionStorage에 저장
+      sessionStorage.setItem('pendingEventId', eventId);
+      sessionStorage.setItem('pendingEventUrl', window.location.pathname + window.location.search);
     }
-  }, [isAuthenticated, authLoading, navigate, eventId]);
+  }, [isAuthenticated, authLoading, eventId]);
 
   // 컴포넌트 마운트 상태 관리
   useEffect(() => {
@@ -283,16 +283,16 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     };
   }, []);
 
-  // 인증이 완료된 후에만 API 호출
+  // 인증이 완료된 후에만 API 호출 (로그인되지 않은 사용자도 이벤트 정보를 볼 수 있도록 수정)
   useEffect(() => {
     if (!eventId || authLoading || !isMounted.current || hasCalledApi.current) {
       return;
     }
 
-    // 인증이 완료되고 사용자가 있을 때만 API 호출
-    if (!isAuthenticated || !user) {
-      return;
-    }
+    // 로그인되지 않은 사용자도 이벤트 정보를 볼 수 있도록 수정
+    // if (!isAuthenticated || !user) {
+    //   return;
+    // }
 
     hasCalledApi.current = true;
     setIsLoading(true);
@@ -347,10 +347,27 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
   }, [navigate, safeEventId]);
 
   const handleProfileClick = useCallback(() => {
-    navigate(user ? "/profile" : "/sign");
+    if (user) {
+      navigate("/profile");
+    } else {
+      setShowLoginOverlay(true);
+    }
   }, [navigate, user]);
 
   const handleRetry = useCallback(() => {
+    navigate("/");
+  }, [navigate]);
+
+  const handleLoginClick = useCallback(() => {
+    setShowLoginOverlay(false);
+  }, []);
+
+  const handleCloseLoginOverlay = useCallback(() => {
+    setShowLoginOverlay(false);
+  }, []);
+
+  const handleGoToMain = useCallback(() => {
+    // 메인 페이지로 이동
     navigate("/");
   }, [navigate]);
 
@@ -370,11 +387,12 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     
     return (
       <div 
-        className="rounded-lg px-4 py-1 transition-colors hover:bg-white hover:bg-opacity-10"
+        className="rounded-lg px-4 py-1 transition-colors hover:bg-white hover:bg-opacity-10 cursor-pointer"
         style={{ 
           border: '1px solid rgba(255, 255, 255, 0.6)',
           backgroundColor: 'transparent'
         }}
+        onClick={() => setShowLoginOverlay(true)}
       >
         <span className="text-white text-sm font-medium">로그인</span>
       </div>
@@ -397,7 +415,9 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     <div className="min-h-screen bg-gray-100 text-black relative overflow-x-hidden">
       {/* 메인 컨텐츠 */}
       <main 
-        className="w-full min-h-screen overflow-y-auto overflow-x-hidden"
+        className={`w-full min-h-screen overflow-y-auto overflow-x-hidden ${
+          !isAuthenticated ? 'filter blur-sm pointer-events-none' : ''
+        }`}
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
@@ -539,6 +559,42 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
           textColor="text-black"
         />
       </div>
+
+      {/* 로그인되지 않은 사용자를 위한 오버레이 */}
+      {!isAuthenticated && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
+          <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full">
+            <div className="text-center">
+              <div className="text-4xl mb-4">🔒</div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">로그인이 필요합니다</h3>
+              <p className="text-gray-600 mb-6">이벤트에 참여하려면 로그인해주세요</p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleGoToMain}
+                  className="flex-1 py-3 px-4 rounded-lg text-gray-600 font-normal transition-colors"
+                  style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+                >
+                  메인으로 돌아가기
+                </button>
+                <button
+                  onClick={() => setShowLoginOverlay(true)}
+                  className="flex-1 py-3 px-4 rounded-lg font-bold transition-colors bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  로그인하기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 로그인 모달 */}
+      {showLoginOverlay && (
+        <LoginOverlay
+          onLoginClick={handleLoginClick}
+          onClose={handleCloseLoginOverlay}
+        />
+      )}
     </div>
   );
 }
