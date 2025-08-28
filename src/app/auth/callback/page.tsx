@@ -25,6 +25,8 @@ function AuthCallbackContent() {
         const clientRedirectUrl = searchParams.get('clientRedirect');
 
         console.log('로그인 콜백 처리:', { code, provider, isNewUser, redirectUrl, clientRedirectUrl });
+        console.log('전체 URL 파라미터:', window.location.search);
+        console.log('clientRedirect 파라미터 존재 여부:', !!clientRedirectUrl);
 
         if (!code || !provider) {
           setError('인증 정보가 올바르지 않습니다.');
@@ -75,9 +77,18 @@ function AuthCallbackContent() {
           // clientRedirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
           if (clientRedirectUrl) {
             console.log('클라이언트 리다이렉트 URL:', clientRedirectUrl);
-            replace(decodeURIComponent(clientRedirectUrl));
+            const decodedUrl = decodeURIComponent(clientRedirectUrl);
+            console.log('디코딩된 URL:', decodedUrl);
+            replace(decodedUrl);
           } else {
-            console.log('메인 페이지로 리다이렉트');
+            console.log('clientRedirect 파라미터가 없어서 메인 페이지로 리다이렉트');
+            console.log('사용 가능한 파라미터들:', {
+              code: !!code,
+              provider: !!provider,
+              isNewUser: !!isNewUser,
+              redirectUrl: !!redirectUrl,
+              clientRedirectUrl: !!clientRedirectUrl
+            });
             replace("/");
           }
         } else {
