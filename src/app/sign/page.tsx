@@ -8,6 +8,11 @@ import { SocialProvider } from "@/types/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSimpleNavigation } from "@/utils/navigation";
 import { useToast } from "@/components/common/Toast";
+import { 
+  determineSocialLoginRedirect, 
+  addRedirectToSocialLoginUrl, 
+  getCurrentRedirectContext 
+} from "@/utils/redirect";
 
 function SignContent() {
   const { navigate, goBack, replace } = useSimpleNavigation();
@@ -100,24 +105,25 @@ function SignContent() {
     setError("");
 
     // 현재 페이지의 redirect 파라미터 가져오기
-    const redirectUrl = searchParams.get('redirect');
+    const explicitRedirectUrl = searchParams.get('redirect');
+    
+    // 현재 컨텍스트 정보 수집
+    const context = getCurrentRedirectContext();
+    
+    // 상황별 리다이렉트 URL 결정
+    const finalRedirectUrl = determineSocialLoginRedirect(explicitRedirectUrl, context);
+    
+    console.log('소셜 로그인 컨텍스트:', context);
+    console.log('최종 리다이렉트 URL:', finalRedirectUrl);
 
-    if (provider === 'naver') {
-      // 네이버 로그인 URL로 리다이렉트
-      const naverLoginUrl = `http://api.hence.events/api/v1/auth/naver?redirect=participant&joinPlatform=participant`;
-      window.location.href = naverLoginUrl;
-    } else if (provider === 'google') {
-      // 구글 로그인 URL로 리다이렉트
-      const googleLoginUrl = `http://api.hence.events/api/v1/auth/google?redirect=participant&joinPlatform=participant`;
-      window.location.href = googleLoginUrl;
-    } else if (provider === 'kakao') {
-      // 카카오 로그인 URL로 리다이렉트
-      const kakaoLoginUrl = `http://api.hence.events/api/v1/auth/kakao?redirect=participant&joinPlatform=participant`;
-      window.location.href = kakaoLoginUrl;
-    } else {
-      // 다른 소셜 로그인은 아직 준비 중
-      showToast(`${provider} 로그인 기능은 준비 중입니다.`);
-    }
+    // 소셜 로그인 URL 생성
+    const baseUrl = `http://api.hence.events/api/v1/auth/${provider}?redirect=participant&joinPlatform=participant`;
+    const socialLoginUrl = addRedirectToSocialLoginUrl(baseUrl, finalRedirectUrl);
+    
+    console.log(`${provider} 로그인 URL:`, socialLoginUrl);
+    
+    // 소셜 로그인 페이지로 이동
+    window.location.href = socialLoginUrl;
   };
 
   return (
