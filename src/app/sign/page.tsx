@@ -109,6 +109,12 @@ function SignContent() {
     
     console.log('로그인 페이지에서 받은 redirect 파라미터:', redirectUrl);
 
+    // 소셜 로그인 시 이벤트 정보를 sessionStorage에 저장
+    if (redirectUrl && redirectUrl.includes('/event')) {
+      sessionStorage.setItem('socialLoginRedirectUrl', redirectUrl);
+      console.log('소셜 로그인 리다이렉트 URL 저장:', redirectUrl);
+    }
+
     // 소셜 로그인 URL 생성
     const baseUrl = `http://api.hence.events/api/v1/auth/${provider}?redirect=participant&joinPlatform=participant`;
     const socialLoginUrl = addRedirectToSocialLoginUrl(baseUrl, redirectUrl);

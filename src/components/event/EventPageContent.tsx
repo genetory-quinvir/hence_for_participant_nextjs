@@ -274,7 +274,24 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
       sessionStorage.setItem('pendingEventUrl', window.location.pathname + window.location.search);
       console.log('로그인되지 않은 사용자 - 이벤트 정보 저장:', eventId);
     }
-  }, [isAuthenticated, authLoading, eventId, user]);
+    
+    // 로그인 완료 후 이벤트 페이지로 자동 리다이렉트
+    if (!authLoading && isAuthenticated && user && eventId) {
+      const pendingEventId = sessionStorage.getItem('pendingEventId');
+      const pendingEventUrl = sessionStorage.getItem('pendingEventUrl');
+      
+      if (pendingEventId === eventId && pendingEventUrl) {
+        console.log('로그인 완료 - 이벤트 페이지로 자동 리다이렉트:', pendingEventUrl);
+        // sessionStorage 정리
+        sessionStorage.removeItem('pendingEventId');
+        sessionStorage.removeItem('pendingEventUrl');
+        // 현재 URL이 다르면 리다이렉트
+        if (window.location.pathname + window.location.search !== pendingEventUrl) {
+          navigate(pendingEventUrl);
+        }
+      }
+    }
+  }, [isAuthenticated, authLoading, eventId, user, navigate]);
 
   // 로그인되지 않은 사용자의 경우 body 스크롤 막기
   useEffect(() => {

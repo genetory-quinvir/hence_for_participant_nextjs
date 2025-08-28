@@ -74,14 +74,20 @@ function AuthCallbackContent() {
 
           // 소셜 로그인에서는 토스트 메시지 제거
 
-          // clientRedirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
-          if (clientRedirectUrl) {
+          // 소셜 로그인 완료 후 리다이렉트 처리
+          const savedRedirectUrl = sessionStorage.getItem('socialLoginRedirectUrl');
+          
+          if (savedRedirectUrl) {
+            console.log('저장된 소셜 로그인 리다이렉트 URL:', savedRedirectUrl);
+            sessionStorage.removeItem('socialLoginRedirectUrl');
+            replace(savedRedirectUrl);
+          } else if (clientRedirectUrl) {
             console.log('클라이언트 리다이렉트 URL:', clientRedirectUrl);
             const decodedUrl = decodeURIComponent(clientRedirectUrl);
             console.log('디코딩된 URL:', decodedUrl);
             replace(decodedUrl);
           } else {
-            console.log('clientRedirect 파라미터가 없어서 메인 페이지로 리다이렉트');
+            console.log('리다이렉트 파라미터가 없어서 메인 페이지로 리다이렉트');
             console.log('사용 가능한 파라미터들:', {
               code: !!code,
               provider: !!provider,
