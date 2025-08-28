@@ -101,22 +101,18 @@ function SignContent() {
 
     // 현재 페이지의 redirect 파라미터 가져오기
     const redirectUrl = searchParams.get('redirect');
-    const redirectParam = redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : '';
 
     if (provider === 'naver') {
       // 네이버 로그인 URL로 리다이렉트
-      const naverLoginUrl = `http://api.hence.events/api/v1/auth/naver?redirect=participant&joinPlatform=participant${redirectParam}`;
-      console.log('네이버 로그인 URL:', naverLoginUrl);
+      const naverLoginUrl = `http://api.hence.events/api/v1/auth/naver?redirect=participant&joinPlatform=participant`;
       window.location.href = naverLoginUrl;
     } else if (provider === 'google') {
       // 구글 로그인 URL로 리다이렉트
-      const googleLoginUrl = `http://api.hence.events/api/v1/auth/google?redirect=participant&joinPlatform=participant${redirectParam}`;
-      console.log('구글 로그인 URL:', googleLoginUrl);
+      const googleLoginUrl = `http://api.hence.events/api/v1/auth/google?redirect=participant&joinPlatform=participant`;
       window.location.href = googleLoginUrl;
     } else if (provider === 'kakao') {
       // 카카오 로그인 URL로 리다이렉트
-      const kakaoLoginUrl = `http://api.hence.events/api/v1/auth/kakao?redirect=participant&joinPlatform=participant${redirectParam}`;
-      console.log('카카오 로그인 URL:', kakaoLoginUrl);
+      const kakaoLoginUrl = `http://api.hence.events/api/v1/auth/kakao?redirect=participant&joinPlatform=participant`;
       window.location.href = kakaoLoginUrl;
     } else {
       // 다른 소셜 로그인은 아직 준비 중
