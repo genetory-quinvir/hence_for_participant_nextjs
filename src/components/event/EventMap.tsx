@@ -28,9 +28,9 @@ export default function EventMap({ eventId, location }: EventMapProps) {
 
   const getMapImage = (type: 'regular' | 'satellite') => {
     if (type === 'satellite') {
-      return '/images/img_map_1.jpg';
+      return '/images/img_map_1.webp';
     } else {
-      return '/images/img_map_0.jpg';
+      return '/images/img_map_0.webp';
     }
   };
 
