@@ -280,12 +280,21 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
   useEffect(() => {
     if (!isAuthenticated) {
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
     } else {
       document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
     }
 
     return () => {
       document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
     };
   }, [isAuthenticated]);
 
@@ -444,18 +453,20 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     <div className="min-h-screen bg-gray-100 text-black relative overflow-x-hidden">
       {/* 메인 컨텐츠 */}
       <main 
-        className="w-full min-h-screen overflow-y-auto overflow-x-hidden"
+        className={`w-full min-h-screen overflow-y-auto overflow-x-hidden ${
+          !isAuthenticated ? 'overflow-hidden fixed top-0 left-0 right-0 bottom-0 pointer-events-none' : ''
+        }`}
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           paddingBottom: 'calc(16px + env(safe-area-inset-bottom))',
           ...(isAuthenticated ? {} : { 
-            overflow: 'hidden',
-            position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
-            bottom: 0
+            bottom: 0,
+            overflow: 'hidden',
+            position: 'fixed'
           })
         }}
       >
@@ -597,7 +608,18 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
 
       {/* 로그인되지 않은 사용자를 위한 딤 오버레이 */}
       {!isAuthenticated && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-40">
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-40"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 40
+          }}
+        >
           <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full shadow-lg">
             <div className="text-center">
               <div className="text-4xl mb-4">🔒</div>
