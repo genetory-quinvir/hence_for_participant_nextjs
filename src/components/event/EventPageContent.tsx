@@ -276,6 +276,19 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     }
   }, [isAuthenticated, authLoading, eventId, user]);
 
+  // 로그인되지 않은 사용자의 경우 body 스크롤 막기
+  useEffect(() => {
+    if (!isAuthenticated) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isAuthenticated]);
+
   // 컴포넌트 마운트 상태 관리
   useEffect(() => {
     isMounted.current = true;
@@ -429,12 +442,20 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
       {/* 메인 컨텐츠 */}
       <main 
         className={`w-full min-h-screen overflow-y-auto overflow-x-hidden ${
-          !isAuthenticated ? 'filter blur-sm pointer-events-none' : ''
+          !isAuthenticated ? 'filter blur-md pointer-events-none' : ''
         }`}
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           paddingBottom: 'calc(16px + env(safe-area-inset-bottom))',
+          ...(isAuthenticated ? {} : { 
+            overflow: 'hidden',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+          })
         }}
       >
         <style jsx>{`
@@ -575,8 +596,8 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
 
       {/* 로그인되지 않은 사용자를 위한 오버레이 */}
       {!isAuthenticated && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
-          <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full">
+        <div className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center z-40">
+          <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full shadow-lg">
             <div className="text-center">
               <div className="text-4xl mb-4">🔒</div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">로그인이 필요합니다</h3>
