@@ -108,7 +108,7 @@ export function addRedirectToSocialLoginUrl(
   }
   
   const separator = baseUrl.includes('?') ? '&' : '?';
-  return `${baseUrl}${separator}redirect=${encodeURIComponent(redirectUrl)}`;
+  return `${baseUrl}${separator}clientRedirect=${encodeURIComponent(redirectUrl)}`;
 }
 
 /**
