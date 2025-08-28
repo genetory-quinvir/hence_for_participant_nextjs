@@ -300,27 +300,40 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
 
     const fetchData = async () => {
       try {
+        console.log('getFeaturedEvent API 호출 시작:', { eventId, currentDay });
         const featuredResult = await getFeaturedEvent(eventId, currentDay);
+        console.log('getFeaturedEvent API 응답:', featuredResult);
         
-        if (!isMounted.current) return;
+        if (!isMounted.current) {
+          console.log('컴포넌트가 언마운트됨 - 처리 중단');
+          return;
+        }
         
         if (featuredResult?.success && featuredResult.featured) {
+          console.log('이벤트 데이터 설정 성공:', featuredResult.featured);
           setFeaturedData(featuredResult.featured);
         } else {
           const errorMessage = featuredResult?.error || '이벤트 종합 정보를 가져올 수 없습니다.';
+          console.log('이벤트 데이터 로드 실패:', errorMessage);
           setError(errorMessage);
         }
       } catch (error) {
-        if (!isMounted.current) return;
+        console.error('getFeaturedEvent API 호출 중 오류:', error);
+        if (!isMounted.current) {
+          console.log('컴포넌트가 언마운트됨 - 오류 처리 중단');
+          return;
+        }
         
         const errorMessage = error instanceof Error && 
           (error.message.includes('coroutine') || error.message.includes('not iterable'))
           ? '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
           : '이벤트 로드 중 오류가 발생했습니다.';
         
+        console.log('오류 메시지 설정:', errorMessage);
         setError(errorMessage);
       } finally {
         if (isMounted.current) {
+          console.log('로딩 상태 해제');
           setIsLoading(false);
         }
       }

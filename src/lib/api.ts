@@ -1680,25 +1680,59 @@ export async function getFeaturedEvent(eventId: string, day: number = 1): Promis
       };
     }
 
-    const result = await apiRequest<any>(`${API_BASE_URL}/featured/${eventId}?day=${day}`, {
+    // 로그인되지 않은 사용자도 이벤트 정보를 볼 수 있도록 직접 fetch 사용
+    const url = `${API_BASE_URL}/featured/${eventId}?day=${day}`;
+    console.log('getFeaturedEvent 직접 fetch 호출:', url);
+
+    const response = await fetchWithRetry(url, {
       method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'accept': 'application/json',
+      },
     });
 
-    if (result.success && result.data) {
-      logger.info('✅ 이벤트 상세 정보 로드 성공', result.data);
-      return {
-        success: true,
-        featured: result.data.data || result.data,
-      };
+    if (!response) {
+      throw new Error('네트워크 요청이 실패했습니다.');
+    }
+
+    const responseText = await response.text();
+    console.log('getFeaturedEvent 응답 상태:', response.status);
+    console.log('getFeaturedEvent 응답 텍스트:', responseText);
+
+    if (response.ok) {
+      try {
+        const responseData = JSON.parse(responseText);
+        console.log('getFeaturedEvent 파싱된 응답:', responseData);
+        
+        logger.info('✅ 이벤트 상세 정보 로드 성공', responseData);
+        return {
+          success: true,
+          featured: responseData.data || responseData,
+        };
+      } catch (parseError) {
+        console.error('getFeaturedEvent JSON 파싱 오류:', parseError);
+        return {
+          success: false,
+          error: '서버 응답을 처리할 수 없습니다.',
+        };
+      }
     } else {
       // 서버 오류 메시지 확인
-      let errorMessage = result.error || '이벤트 정보를 가져오는데 실패했습니다.';
+      let errorMessage = `이벤트 정보를 가져오는데 실패했습니다. (${response.status})`;
+      
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch (e) {
+        // JSON 파싱 실패 시 기본 메시지 사용
+      }
       
       // coroutine 관련 오류인 경우 사용자 친화적인 메시지로 변경
       if (errorMessage.includes('coroutine') || errorMessage.includes('not iterable')) {
         errorMessage = '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
         try {
-          logger.error('❌ 서버 코루틴 오류:', result.error || 'Unknown coroutine error');
+          logger.error('❌ 서버 코루틴 오류:', errorMessage);
         } catch (logError) {
           logger.error('❌ 서버 코루틴 오류: Unknown error');
         }
@@ -1710,6 +1744,7 @@ export async function getFeaturedEvent(eventId: string, day: number = 1): Promis
       };
     }
   } catch (error) {
+    console.error('getFeaturedEvent 네트워크 오류:', error);
     apiDebugger.logError(`${API_BASE_URL}/featured/${eventId}`, error);
     
     // 오류 메시지 확인
