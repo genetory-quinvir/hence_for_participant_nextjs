@@ -21,8 +21,9 @@ function AuthCallbackContent() {
         const code = searchParams.get('code');
         const provider = searchParams.get('provider');
         const isNewUser = searchParams.get('isNewUser') === 'true';
+        const redirectUrl = searchParams.get('redirect');
 
-        console.log('로그인 콜백 처리:', { code, provider, isNewUser });
+        console.log('로그인 콜백 처리:', { code, provider, isNewUser, redirectUrl });
 
         if (!code || !provider) {
           setError('인증 정보가 올바르지 않습니다.');
@@ -71,10 +72,11 @@ function AuthCallbackContent() {
           // 소셜 로그인에서는 토스트 메시지 제거
 
           // redirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
-          const redirectUrl = searchParams.get('redirect');
           if (redirectUrl) {
+            console.log('리다이렉트 URL:', redirectUrl);
             replace(decodeURIComponent(redirectUrl));
           } else {
+            console.log('메인 페이지로 리다이렉트');
             replace("/");
           }
         } else {
