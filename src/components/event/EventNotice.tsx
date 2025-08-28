@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { NoticeItem } from "@/types/api";
 
@@ -44,10 +44,54 @@ const getRelativeTime = (dateString: string): string => {
 export default function EventNotice({ notices }: EventNoticeProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const [isMobile, setIsMobile] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   const displayNotices = notices
     .filter(notice => notice.id)
     .slice(0, 3);
+
+  // 모바일 체크
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 스크롤 가능 여부 체크
+  const checkScrollPosition = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  useEffect(() => {
+    checkScrollPosition();
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkScrollPosition);
+      return () => container.removeEventListener('scroll', checkScrollPosition);
+    }
+  }, [displayNotices]);
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
+  };
 
   if (!displayNotices || displayNotices.length === 0) {
     return null;
@@ -64,6 +108,29 @@ export default function EventNotice({ notices }: EventNoticeProps) {
           msOverflowStyle: 'none'
         }}
       >
+        {/* 왼쪽 스크롤 화살표 - 모바일이 아닌 경우에만 표시 */}
+        {!isMobile && canScrollLeft && (
+          <button
+            onClick={scrollLeft}
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 bg-purple-100 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-200 transition-all"
+          >
+            <svg className="w-4 h-4 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
+
+        {/* 오른쪽 스크롤 화살표 - 모바일이 아닌 경우에만 표시 */}
+        {!isMobile && canScrollRight && (
+          <button
+            onClick={scrollRight}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 bg-purple-100 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-200 transition-all"
+          >
+            <svg className="w-4 h-4 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
         {displayNotices.map((notice) => (
           <div
             key={notice.id}

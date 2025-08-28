@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CouponItem, VendorItem } from "@/types/api";
 import { getVendorsSimple, useCoupon, getAccessToken } from "@/lib/api";
@@ -25,6 +25,9 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
   const [usedCoupons, setUsedCoupons] = useState<Set<string>>(new Set());
   const [cardRotations, setCardRotations] = useState<{ [key: string]: { x: number, y: number } }>({});
   const [isScrolling, setIsScrolling] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   const handleCouponUse = async (coupon: CouponItem) => {
     const accessToken = getAccessToken();
@@ -101,6 +104,47 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
     }));
   };
 
+  // 모바일 체크
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 스크롤 가능 여부 체크
+  const checkScrollPosition = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  useEffect(() => {
+    checkScrollPosition();
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkScrollPosition);
+      return () => container.removeEventListener('scroll', checkScrollPosition);
+    }
+  }, [coupons]);
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
+  };
+
   // 스크롤 이벤트 핸들러
   const handleScroll = () => {
     setIsScrolling(true);
@@ -154,6 +198,29 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
           }}
           onScroll={handleScroll}
         >
+          {/* 왼쪽 스크롤 화살표 - 모바일이 아닌 경우에만 표시 */}
+          {!isMobile && canScrollLeft && (
+            <button
+              onClick={scrollLeft}
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 bg-purple-100 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-200 transition-all"
+            >
+              <svg className="w-4 h-4 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+
+          {/* 오른쪽 스크롤 화살표 - 모바일이 아닌 경우에만 표시 */}
+          {!isMobile && canScrollRight && (
+            <button
+              onClick={scrollRight}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 bg-purple-100 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-200 transition-all"
+            >
+              <svg className="w-4 h-4 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            </button>
+          )}
           {coupons.map((coupon) => {
             const rotation = cardRotations[coupon.id!] || { x: 0, y: 0 };
             

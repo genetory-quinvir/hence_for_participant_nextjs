@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { VendorItem } from "@/types/api";
 
@@ -15,15 +15,59 @@ export default function EventFoodTrucks({
 }: EventFoodTrucksProps) {
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   const displayVendors = vendors.filter(vendor => vendor.id);
+
+  // 모바일 체크
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 스크롤 가능 여부 체크
+  const checkScrollPosition = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  useEffect(() => {
+    checkScrollPosition();
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkScrollPosition);
+      return () => container.removeEventListener('scroll', checkScrollPosition);
+    }
+  }, [displayVendors]);
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
+  };
 
   if (!displayVendors || displayVendors.length === 0) {
     return null;
   }
 
   return (
-    <div className="mb-12">
+    <div className="mb-12 relative">
       <div
         ref={scrollContainerRef}
         className="flex space-x-4 overflow-x-auto mb-12 scrollbar-hide px-4"
@@ -32,6 +76,29 @@ export default function EventFoodTrucks({
           msOverflowStyle: 'none'
         }}
       >
+        {/* 왼쪽 스크롤 화살표 - 모바일이 아닌 경우에만 표시 */}
+        {!isMobile && canScrollLeft && (
+          <button
+            onClick={scrollLeft}
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 bg-purple-100 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-200 transition-all"
+          >
+            <svg className="w-4 h-4 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
+
+        {/* 오른쪽 스크롤 화살표 - 모바일이 아닌 경우에만 표시 */}
+        {!isMobile && canScrollRight && (
+          <button
+            onClick={scrollRight}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 bg-purple-100 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-200 transition-all"
+          >
+            <svg className="w-4 h-4 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
         {displayVendors.map((vendor) => (
           <div
             key={vendor.id}

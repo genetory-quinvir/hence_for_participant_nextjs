@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BoardItem } from '@/types/api';
 import PostHeader from '@/components/common/PostHeader';
@@ -36,6 +36,9 @@ export default function EventCommunity({
   const containerRef = useRef<HTMLDivElement>(null);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedPost, setSelectedPost] = useState<BoardItem | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   // 이미지 갤러리 훅
   const { isOpen, images, initialIndex, openGallery, closeGallery } = useImageGallery();
@@ -97,6 +100,47 @@ export default function EventCommunity({
     
     showToast('게시글이 신고되었습니다. 검토 후 처리하겠습니다.', 'success');
     setShowActionSheet(false);
+  };
+
+  // 모바일 체크
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 스크롤 가능 여부 체크
+  const checkScrollPosition = () => {
+    if (containerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = containerRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  useEffect(() => {
+    checkScrollPosition();
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkScrollPosition);
+      return () => container.removeEventListener('scroll', checkScrollPosition);
+    }
+  }, [freeBoard]);
+
+  const scrollLeft = () => {
+    if (containerRef.current) {
+      containerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (containerRef.current) {
+      containerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
   };
 
   // id가 있는 것만 필터링하고 최대 5개까지만 표시
@@ -165,6 +209,29 @@ export default function EventCommunity({
             msOverflowStyle: 'none',
           }}
         >
+          {/* 왼쪽 스크롤 화살표 - 모바일이 아닌 경우에만 표시 */}
+          {!isMobile && canScrollLeft && (
+            <button
+              onClick={scrollLeft}
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 bg-purple-100 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-200 transition-all"
+            >
+              <svg className="w-4 h-4 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+
+          {/* 오른쪽 스크롤 화살표 - 모바일이 아닌 경우에만 표시 */}
+          {!isMobile && canScrollRight && (
+            <button
+              onClick={scrollRight}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 bg-purple-100 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-200 transition-all"
+            >
+              <svg className="w-4 h-4 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
           <style jsx>{`
             .scrollbar-hide::-webkit-scrollbar {
               display: none;
