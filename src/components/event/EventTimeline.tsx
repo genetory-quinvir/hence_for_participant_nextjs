@@ -81,7 +81,7 @@ export default function EventTimeline({ timelines }: EventTimelineProps) {
   }
 
   return (
-    <div className="px-4 mb-4">
+    <div className="px-4 mb-12">
       <div className="space-y-4">
         {displayTimelines.map((timeline, index) => (
           <div key={timeline.id} className="flex">

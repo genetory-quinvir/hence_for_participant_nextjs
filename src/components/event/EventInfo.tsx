@@ -11,7 +11,7 @@ export default function EventInfo({ event }: EventInfoProps) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   return (
-    <section className="px-4 mt-4 mb-12 bg-gray-100">
+    <section className="px-4 mt-4 bg-gray-100">
       <h1 className="text-2xl font-bold text-black mb-3">
         {event.title || '이벤트'}
       </h1>

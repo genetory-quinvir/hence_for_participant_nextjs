@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense, useCallback, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { VendorItem, FeaturedItem, CouponItem } from "@/types/api";
 import { getVendorDetail, getFeaturedEvent, getVendorsSimple, useCoupon, getAccessToken } from "@/lib/api";
+import { useDay } from "@/contexts/DayContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useSimpleNavigation } from "@/utils/navigation";
 import { useImageGallery } from "@/hooks/useImageGallery";
@@ -16,6 +17,7 @@ function FoodTruckDetailContent() {
   const params = useParams();
   const { navigate, goBack } = useSimpleNavigation();
   const searchParams = useSearchParams();
+  const { currentDay } = useDay();
   const [vendor, setVendor] = useState<VendorItem | null>(null);
   const [featuredData, setFeaturedData] = useState<FeaturedItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,8 +78,8 @@ function FoodTruckDetailContent() {
           }
 
           // 이벤트 정보와 쿠폰 정보 가져오기
-          console.log('🔄 이벤트 정보 요청:', { eventId });
-          const eventResult = await getFeaturedEvent(eventId);
+          console.log('🔄 이벤트 정보 요청:', { eventId, currentDay });
+          const eventResult = await getFeaturedEvent(eventId, currentDay);
           
           if (eventResult.success && eventResult.featured) {
             setFeaturedData(eventResult.featured);

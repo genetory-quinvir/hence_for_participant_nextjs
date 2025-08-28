@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import CommonNavigationBar from '@/components/CommonNavigationBar';
 
 interface ImageGalleryProps {
   images: string[];
@@ -33,7 +34,7 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
     };
   }, [isOpen, onClose]);
 
@@ -213,7 +214,18 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black bg-opacity-95 flex items-center justify-center"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.95)',
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -227,18 +239,30 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
           scrollbar-width: none;
         }
       `}</style>
-      {/* 닫기 버튼 */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 z-10 w-10 h-10 bg-black bg-opacity-50 rounded-full flex items-center justify-center text-white hover:bg-opacity-70 transition-all"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+      {/* 네비게이션바 */}
+      <div className="absolute top-0 left-0 right-0 z-[10000]">
+        <CommonNavigationBar
+          height="44px"
+          rightButton={
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center text-white"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          }
+          backgroundColor="transparent"
+          backgroundOpacity={0}
+          textColor="text-white"
+          sticky={false}
+          fixedHeight={true}
+        />
+      </div>
 
       {/* 이미지 카운터 */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 bg-black bg-opacity-50 rounded-full px-4 py-2 text-white text-sm">
+      <div className="absolute top-16 left-1/2 transform -translate-x-1/2 z-[10000] bg-black bg-opacity-50 rounded-full px-4 py-2 text-white text-sm">
         {currentIndex + 1} / {images.length}
       </div>
 
@@ -247,7 +271,7 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
         <>
           <button
             onClick={goToPrevious}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-black bg-opacity-50 rounded-full flex items-center justify-center text-white hover:bg-opacity-70 transition-all"
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 z-[10000] w-12 h-12 bg-black bg-opacity-50 rounded-full flex items-center justify-center text-white hover:bg-opacity-70 transition-all"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -255,7 +279,7 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
           </button>
           <button
             onClick={goToNext}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-black bg-opacity-50 rounded-full flex items-center justify-center text-white hover:bg-opacity-70 transition-all"
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 z-[10000] w-12 h-12 bg-black bg-opacity-50 rounded-full flex items-center justify-center text-white hover:bg-opacity-70 transition-all"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -267,7 +291,15 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
       {/* 이미지 컨테이너 */}
       <div 
         ref={containerRef}
-        className="relative w-full h-full flex items-center justify-center overflow-hidden"
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden'
+        }}
         onWheel={handleWheel}
         onTouchStart={handleSwipeStart}
         onTouchMove={handleSwipeMove}

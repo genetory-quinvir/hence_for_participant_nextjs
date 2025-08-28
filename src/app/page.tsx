@@ -4,16 +4,21 @@ import { useEffect, useState } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSimpleNavigation } from "@/utils/navigation";
-import { getUserProfile } from "@/lib/api";
+import { getUserProfile, checkEventCode } from "@/lib/api";
 import { UserItem } from "@/types/api";
+import { useToast } from "@/components/common/Toast";
+import CodeInputModal from "@/components/common/CodeInputModal";
 
 export default function HomePage() {
   const { navigate } = useSimpleNavigation();
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
+  const { showToast } = useToast();
   const [userProfile, setUserProfile] = useState<UserItem | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [showLoginAlert, setShowLoginAlert] = useState(false);
   const [pendingEventUrl, setPendingEventUrl] = useState<string | null>(null);
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [isCheckingCode, setIsCheckingCode] = useState(false);
 
   // 사용자 프로필 정보 가져오기
   useEffect(() => {
@@ -159,7 +164,13 @@ export default function HomePage() {
               style={{
                 background: 'linear-gradient(135deg,rgb(93, 0, 255), #ec4899)'
               }}
-              onClick={() => navigate(isAuthenticated ? "/qr" : "/sign")}
+              onClick={() => {
+                if (isAuthenticated) {
+                  setShowCodeModal(true);
+                } else {
+                  navigate("/sign");
+                }
+              }}
             >
               입장하기
             </button>
@@ -243,6 +254,31 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* QR 코드 입력 모달 */}
+      <CodeInputModal
+        isOpen={showCodeModal}
+        onClose={() => setShowCodeModal(false)}
+        onSubmit={async (code) => {
+          setIsCheckingCode(true);
+          try {
+            const result = await checkEventCode(code);
+            if (result.success && result.event) {
+              const eventId = result.event.id;
+              // showToast("입장코드가 확인되었습니다.", "success");
+              setShowCodeModal(false);
+              navigate(`/event?id=${eventId}`);
+            } else {
+              showToast(result.error || "잘못된 입장코드입니다.", "error");
+            }
+          } catch (error) {
+            console.error('입장코드 확인 실패:', error);
+            showToast("입장코드 확인 중 오류가 발생했습니다.", "error");
+          } finally {
+            setIsCheckingCode(false);
+          }
+        }}
+        isChecking={isCheckingCode}
+      />
 
     </div>
   );

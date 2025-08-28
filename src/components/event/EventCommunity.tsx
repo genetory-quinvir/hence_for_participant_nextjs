@@ -313,7 +313,7 @@ export default function EventCommunity({
           }}
           className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-md"
         >
-          <span>소식 올리기</span>
+          <span>커뮤니티 글쓰기</span>
         </button>
       </div>
 

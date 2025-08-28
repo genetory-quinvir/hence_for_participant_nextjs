@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { DayProvider } from "@/contexts/DayContext";
 import { ToastProvider } from "@/components/common/Toast";
 import { ForegroundMessageHandler } from "@/components/common/ForegroundMessageHandler";
 
@@ -62,10 +63,12 @@ export default function RootLayout({
       <body className="font-sans antialiased bg-white text-black">
         <div className="mx-auto w-full max-w-lg min-h-screen bg-white" style={{ maxWidth: '700px' }}>
           <AuthProvider>
-            <ToastProvider>
-              <ForegroundMessageHandler />
-              {children}
-            </ToastProvider>
+            <DayProvider>
+              <ToastProvider>
+                <ForegroundMessageHandler />
+                {children}
+              </ToastProvider>
+            </DayProvider>
           </AuthProvider>
         </div>
       </body>

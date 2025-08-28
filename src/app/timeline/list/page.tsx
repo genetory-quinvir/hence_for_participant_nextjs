@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TimelineItem } from "@/types/api";
 import { getTimelineList } from "@/lib/api";
+import { useDay } from "@/contexts/DayContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 
 function TimelineListContent() {
@@ -17,6 +18,10 @@ function TimelineListContent() {
   const [hasNext, setHasNext] = useState(true);
   const [total, setTotal] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const { currentDay, setCurrentDay } = useDay();
+
+  const [selectedDay, setSelectedDay] = useState(currentDay);
+  const [availableDays, setAvailableDays] = useState<number[]>([1, 2]); // Day 1, 2만 제공
 
   // 이벤트 ID 가져오기
   const eventId = searchParams.get('eventId') || 'default-event';
@@ -58,20 +63,42 @@ function TimelineListContent() {
           nextTimelineTimeString = nextTimeline.time;
         }
       }
+
+      // Day별 상태 로직
+      if (currentDay === 1) {
+        // Day 1일 때
+        if (selectedDay === 1) {
+          // Day 1의 타임라인: 시간대로 상태 진행
+          if (currentTimeString < timelineTimeString) {
+            return 'PENDING';
+          } else if (currentTimeString >= timelineTimeString && (!nextTimelineTimeString || currentTimeString < nextTimelineTimeString)) {
+            return 'ACTIVE';
+          } else {
+            return 'COMPLETED';
+          }
+        } else if (selectedDay === 2) {
+          // Day 2의 타임라인: 모두 예정중 (PENDING)
+          return 'PENDING';
+        }
+      } else if (currentDay === 2) {
+        // Day 2일 때
+        if (selectedDay === 1) {
+          // Day 1의 타임라인: 모두 종료 (COMPLETED)
+          return 'COMPLETED';
+        } else if (selectedDay === 2) {
+          // Day 2의 타임라인: 시간대로 상태 진행
+          if (currentTimeString < timelineTimeString) {
+            return 'PENDING';
+          } else if (currentTimeString >= timelineTimeString && (!nextTimelineTimeString || currentTimeString < nextTimelineTimeString)) {
+            return 'ACTIVE';
+          } else {
+            return 'COMPLETED';
+          }
+        }
+      }
       
-      // 시간 문자열 비교 (HH:MM 형식)
-      // 현재 시간이 타임라인 시간보다 작으면 PENDING
-      if (currentTimeString < timelineTimeString) {
-        return 'PENDING';
-      }
-      // 현재 시간이 타임라인 시간과 같거나 크고, 다음 타임라인이 없거나 다음 타임라인 시간보다 작으면 ACTIVE
-      else if (currentTimeString >= timelineTimeString && (!nextTimelineTimeString || currentTimeString < nextTimelineTimeString)) {
-        return 'ACTIVE';
-      }
-      // 그 외의 경우 (다음 타임라인이 시작된 경우) COMPLETED
-      else {
-        return 'COMPLETED';
-      }
+      // 기본값
+      return 'PENDING';
     } catch (error) {
       // 시간 파싱에 실패하면 PENDING으로 처리
       console.error('시간 파싱 오류:', error);
@@ -94,7 +121,7 @@ function TimelineListContent() {
         setPage(1);
         setHasNext(true);
         
-        const result = await getTimelineList(eventId, 1, 10);
+        const result = await getTimelineList(eventId, 1, 10, selectedDay);
         
         if (result.success && result.data) {
           setTimelines(result.data.items);
@@ -112,7 +139,7 @@ function TimelineListContent() {
     };
 
     fetchInitialData();
-  }, [eventId]);
+  }, [eventId, selectedDay]);
 
   // 추가 데이터 로딩
   const loadMore = useCallback(async () => {
@@ -122,7 +149,7 @@ function TimelineListContent() {
       setLoadingMore(true);
       const nextPage = page + 1;
       
-      const result = await getTimelineList(eventId, nextPage, 10);
+      const result = await getTimelineList(eventId, nextPage, 10, selectedDay);
       
       if (result.success && result.data) {
         setTimelines(prev => {
@@ -141,7 +168,7 @@ function TimelineListContent() {
     } finally {
       setLoadingMore(false);
     }
-  }, [eventId, hasNext, loadingMore]);
+  }, [eventId, hasNext, loadingMore, selectedDay]);
 
   // 스크롤 감지
   const handleScroll = useCallback(() => {
@@ -162,6 +189,14 @@ function TimelineListContent() {
 
   const handleBackClick = () => {
     router.back();
+  };
+
+  const handleDayChange = (day: number) => {
+    // 모든 Day로 자유롭게 이동 가능
+    setSelectedDay(day);
+    setTimelines([]); // 기존 타임라인 초기화
+    setPage(1);
+    setHasNext(true);
   };
 
   if (loading) {
@@ -259,6 +294,8 @@ function TimelineListContent() {
           backgroundColor="white"
           backgroundOpacity={1}
           textColor="text-black"
+          sticky={true}
+          fixedHeight={true}
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-center px-4">
@@ -294,7 +331,40 @@ function TimelineListContent() {
         backgroundColor="white"
         backgroundOpacity={1}
         textColor="text-black"
+        sticky={true}
+        fixedHeight={true}
       />
+      
+      {/* Day 탭 */}
+      <div className="px-4 py-3 border-b border-gray-200">
+        <div className="flex space-x-2 overflow-x-auto scrollbar-hide" style={{ 
+          scrollbarWidth: 'none', 
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch'
+        }}>
+          {availableDays.map((day) => {
+            const isCurrentDay = day === currentDay;
+            const isSelected = selectedDay === day;
+            
+            return (
+              <button
+                key={day}
+                onClick={() => handleDayChange(day)}
+                className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  isSelected
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Day-{day}
+                {isCurrentDay && (
+                  <span className="ml-1 text-xs">(오늘)</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       
       <div className="px-4 py-2" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
         {/* 타임라인 리스트 */}

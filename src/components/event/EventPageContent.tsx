@@ -6,6 +6,7 @@ import CommonNavigationBar from "@/components/CommonNavigationBar";
 import CommonProfileView from "@/components/common/CommonProfileView";
 import { useAuth } from "@/contexts/AuthContext";
 import { getFeaturedEvent, checkEventTopicSubscription } from "@/lib/api";
+import { useDay } from "@/contexts/DayContext";
 import { subscribeToTopic } from "@/lib/firebase";
 import { FeaturedItem } from "@/types/api";
 import EventHero from "@/components/event/EventHero";
@@ -23,6 +24,7 @@ import EventAdvertisements from "@/components/event/EventAdvertisements";
 import EventChat from "@/components/event/EventChat";
 import EventClubs from "@/components/event/EventClubs";
 import EventSurvey from "@/components/event/EventSurvey";
+import EventMap from "@/components/event/EventMap";
 import { useSimpleNavigation } from "@/utils/navigation";
 import EventSection from "@/components/event/EventSection";
 
@@ -34,6 +36,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
   const { navigate, goBack } = useSimpleNavigation();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { currentDay } = useDay();
   const [featuredData, setFeaturedData] = useState<FeaturedItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -154,8 +157,8 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
       // AbortController를 사용하여 이전 요청 취소
       const abortController = new AbortController();
       
-      // eventId로 직접 이벤트 정보 가져오기
-      getFeaturedEvent(eventId)
+      // eventId와 currentDay로 이벤트 정보 가져오기
+      getFeaturedEvent(eventId, currentDay)
         .then((featuredResult) => {
           // 컴포넌트가 언마운트되었거나 요청이 취소되었으면 상태 업데이트하지 않음
           if (!isMounted.current || abortController.signal.aborted) return;
@@ -237,7 +240,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
         abortController.abort();
       };
     }
-  }, [eventId, authLoading, isAuthenticated, user]); // 인증 상태를 의존성에 추가
+  }, [eventId, currentDay, authLoading, isAuthenticated, user]); // 인증 상태와 currentDay를 의존성에 추가
 
   const handleProfileClick = () => {
     if (user) {
@@ -362,6 +365,14 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
         {/* 이벤트 정보 섹션 */}
         <EventInfo event={featuredData.event} />
 
+        {/* 이벤트 경품 섹션 */}
+        {featuredData.raffle && (
+          <EventRaffle 
+            raffle={featuredData.raffle} 
+            eventId={featuredData.event.id || 'default-event'}
+          />
+        )}  
+
         {/* 공지사항 섹션 */}
         {featuredData.notices && (
             <EventSection
@@ -428,13 +439,16 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
           </EventSection>
         )}
 
-        {/* 이벤트 경품 섹션 */}
-        {featuredData.raffle && (
-          <EventRaffle 
-            raffle={featuredData.raffle} 
+        {/* 지도 섹션 */}
+        <EventSection
+          title="지도"
+          subtitle="이벤트가 진행되는 장소를 확인해보세요"
+        > 
+          <EventMap 
             eventId={featuredData.event.id || 'default-event'}
           />
-        )}  
+        </EventSection>
+
 
         {/* 광고 섹션 2 */}
         {/* {featuredData.advertisements && featuredData.advertisements.length > 1 && (

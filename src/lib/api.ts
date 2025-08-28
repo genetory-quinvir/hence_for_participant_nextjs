@@ -825,9 +825,9 @@ export async function toggleLike(eventId: string, boardType: string, postId: str
 }
 
 // 타임라인 목록 조회 API
-export async function getTimelineList(eventId: string, page: number = 1, limit: number = 20): Promise<{ success: boolean; error?: string; data?: { items: TimelineItem[]; hasNext: boolean; total: number } }> {
+export async function getTimelineList(eventId: string, page: number = 1, limit: number = 20, day: number = 1): Promise<{ success: boolean; error?: string; data?: { items: TimelineItem[]; hasNext: boolean; total: number } }> {
   try {
-    const result = await apiRequest<any>(`${API_BASE_URL}/timelines/${eventId}?page=${page}&limit=${limit}`, {
+    const result = await apiRequest<any>(`${API_BASE_URL}/timelines/${eventId}?page=${page}&limit=${limit}&day=${day}`, {
       method: 'GET',
     });
 
@@ -1669,7 +1669,7 @@ export async function useCoupon(eventId: string, couponId: string, vendorId?: st
   }
 }
 
-export async function getFeaturedEvent(eventId: string): Promise<FeaturedResponse> {
+export async function getFeaturedEvent(eventId: string, day: number = 1): Promise<FeaturedResponse> {
   try {
     // 네트워크 상태 체크 (클라이언트 사이드에서만)
     if (typeof window !== 'undefined' && !navigator.onLine) {
@@ -1679,7 +1679,7 @@ export async function getFeaturedEvent(eventId: string): Promise<FeaturedRespons
       };
     }
 
-    const result = await apiRequest<any>(`${API_BASE_URL}/featured/${eventId}`, {
+    const result = await apiRequest<any>(`${API_BASE_URL}/featured/${eventId}?day=${day}`, {
       method: 'GET',
     });
 
