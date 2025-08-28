@@ -213,10 +213,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (result.success && result.data) {
         // 사용자 정보 추출 및 저장
         const userData = result.data.data || result.data.user || result.data;
+        
+        // 기존 저장된 사용자 정보에서 provider 정보 가져오기
+        const existingUser = getStoredUser();
+        if (existingUser && existingUser.provider && !userData.provider) {
+          userData.provider = existingUser.provider;
+        }
+        
         logger.info('✅ users/me 사용자 데이터 추출:', {
           userId: userData.id,
           nickname: userData.nickname,
           email: userData.email,
+          provider: userData.provider,
           profileImageUrl: userData.profileImageUrl
         });
         

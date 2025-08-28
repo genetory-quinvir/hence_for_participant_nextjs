@@ -4,17 +4,34 @@ import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useSimpleNavigation } from "@/utils/navigation";
+import { deleteAccount } from "@/lib/api";
+import { useToast } from "@/components/common/Toast";
 
 export default function SettingsPage() {
   const { navigate, goBack } = useSimpleNavigation();
-  const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, logout, isAuthenticated, isLoading: authLoading, checkAuthStatus } = useAuth();
+  const { showToast } = useToast();
+
+  // 인증 상태 확인 및 사용자 정보 가져오기
+  useEffect(() => {
+    console.log('설정 페이지 - 인증 상태:', { authLoading, isAuthenticated, user });
+    if (isAuthenticated && user) {
+      console.log('설정 페이지 - 인증된 사용자:', user);
+      
+      // provider 정보가 없는 경우 사용자 정보를 다시 가져오기
+      if (!user.provider) {
+        console.log('설정 페이지 - provider 정보가 없어서 사용자 정보를 다시 가져옵니다.');
+        checkAuthStatus();
+      }
+    }
+  }, [authLoading, isAuthenticated, user, checkAuthStatus]);
 
   // 인증되지 않은 경우 메인 페이지로 리다이렉트
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || !user)) {
+    if (!authLoading && !isAuthenticated) {
       navigate("/");
     }
-  }, [isAuthenticated, user, navigate, authLoading]);
+  }, [isAuthenticated, navigate, authLoading]);
 
   // 설정 페이지 진입 시 히스토리에 추가
   useEffect(() => {
@@ -37,10 +54,7 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAccount = () => {
-    if (confirm("정말로 회원탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) {
-      // TODO: 회원탈퇴 API 호출
-      alert("회원탈퇴 기능은 준비 중입니다.");
-    }
+    navigate("/settings/delete-account");
   };
 
   const handleContactDeveloper = () => {
@@ -56,15 +70,25 @@ export default function SettingsPage() {
     window.open('https://nettle-animal-431.notion.site/hence-b2c-privacypolicy?pvs=73', '_blank');
   };
 
-  // 로딩 상태
-  if (authLoading || !isAuthenticated || !user) {
+  // 로딩 상태 - 인증 로딩 중일 때만
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-white text-black flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-sm" style={{ opacity: 0.7 }}>
-            {authLoading ? '인증 확인 중...' : '메인 페이지로 이동 중...'}
-          </p>
+          <p className="text-sm" style={{ opacity: 0.7 }}>인증 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 인증되지 않은 경우 또는 사용자 정보가 없는 경우
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-sm" style={{ opacity: 0.7 }}>메인 페이지로 이동 중...</p>
         </div>
       </div>
     );
@@ -108,11 +132,11 @@ export default function SettingsPage() {
             <div className="bg-white">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
                 <span className="text-sm text-gray-600">
-                  {user.provider === 'email' ? '이메일' : '연결된 서비스'}
+                  {user.provider?.toLowerCase() === 'email' || user.provider === 'EMAIL' ? '이메일' : '연결된 서비스'}
                 </span>
-                {user.provider === 'email' ? (
+                {user.provider?.toLowerCase() === 'email' || user.provider === 'EMAIL' ? (
                   <span className="text-sm text-black">{user.email || '이메일 정보 없음'}</span>
-                ) : (
+                ) : user.provider ? (
                   <div className="flex items-center">
                     <img 
                       src={`/images/icon_${user.provider?.toLowerCase()}.png`}
@@ -123,19 +147,22 @@ export default function SettingsPage() {
                       }}
                     />
                     <span className="text-sm text-black capitalize">
-                      {user.provider === 'naver' ? '네이버' : 
-                       user.provider === 'google' ? '구글' : 
-                       user.provider === 'kakao' ? '카카오' : 
-                       user.provider}
+                      {user.provider?.toLowerCase() === 'naver' ? '네이버' : 
+                       user.provider?.toLowerCase() === 'google' ? '구글' : 
+                       user.provider?.toLowerCase() === 'kakao' ? '카카오' : 
+                       user.provider?.toLowerCase()}
                     </span>
                   </div>
+                ) : (
+                  <span className="text-sm text-black">서비스 정보 없음</span>
                 )}
               </div>
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
                 <span className="text-sm text-gray-600">닉네임</span>
                 <span className="text-sm text-black">{user.nickname || '닉네임 정보 없음'}</span>
               </div>
-              {user.provider === 'email' && (
+              {/* 비밀번호 변경 옵션 임시 숨김
+              {(user.provider?.toLowerCase() === 'email' || user.provider === 'EMAIL') && (
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handleChangePassword}>
                   <span className="text-sm text-gray-600">비밀번호 변경</span>
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,6 +170,7 @@ export default function SettingsPage() {
                   </svg>
                 </div>
               )}
+              */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handleLogout}>
                 <span className="text-sm text-gray-600">로그아웃</span>
               </div>

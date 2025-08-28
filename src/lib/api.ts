@@ -76,6 +76,193 @@ const fetchWithRetry = async (url: string, options: RequestInit, retries: number
 };
 
 
+// 회원탈퇴용 로그인 API 호출
+export async function withdrawalLogin(email: string, password: string): Promise<{ 
+  success: boolean; 
+  data?: { 
+    internal_token: string; 
+    external_token: string; 
+    user_info: any; 
+  }; 
+  error?: string 
+}> {
+  const url = `${API_BASE_URL}/auth/withdrawal-login`;
+  
+  try {
+    // 네트워크 상태 체크
+    if (!apiDebugger.checkNetworkStatus()) {
+      return {
+        success: false,
+        error: '네트워크 연결을 확인해주세요.',
+      };
+    }
+
+    const requestBody = { email, password };
+    const headers = { 'Content-Type': 'application/json' };
+    const jsonBody = JSON.stringify(requestBody);
+    
+    // 요청 로깅
+    apiDebugger.logRequest('POST', url, headers, requestBody);
+
+    const response = await fetchWithRetry(url, {
+      method: 'POST',
+      headers,
+      body: jsonBody,
+    });
+
+    if (!response) {
+      throw new Error('네트워크 요청이 실패했습니다.');
+    }
+
+    const responseText = await response.text();
+    const responseHeaders = Object.fromEntries(response.headers.entries());
+    
+    // 응답 로깅
+    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
+
+    if (response.status === 200) {
+      const responseData = JSON.parse(responseText);
+      
+      if (responseData.data && responseData.data.external_token) {
+        logger.info('✅ 회원탈퇴용 로그인 성공');
+        return {
+          success: true,
+          data: responseData.data,
+        };
+      } else {
+        return {
+          success: false,
+          error: '토큰 정보를 받지 못했습니다.',
+        };
+      }
+    } else {
+      const errorData = JSON.parse(responseText);
+      return {
+        success: false,
+        error: errorData.message || '로그인에 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    logger.error('❌ 회원탈퇴용 로그인 API 호출 중 오류:', error);
+    return {
+      success: false,
+      error: '로그인 중 오류가 발생했습니다.',
+    };
+  }
+}
+
+// 회원탈퇴 API 호출 (external_token 사용)
+export async function deleteAccountWithToken(externalToken: string): Promise<{ success: boolean; error?: string }> {
+  const url = `${API_BASE_URL}/auth/withdrawal`;
+  
+  try {
+    // 네트워크 상태 체크
+    if (!apiDebugger.checkNetworkStatus()) {
+      return {
+        success: false,
+        error: '네트워크 연결을 확인해주세요.',
+      };
+    }
+
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      return {
+        success: false,
+        error: '로그인이 필요합니다.',
+      };
+    }
+
+    const requestBody = { external_token: externalToken };
+    const headers = { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    };
+    const jsonBody = JSON.stringify(requestBody);
+    
+    // 요청 로깅
+    apiDebugger.logRequest('POST', url, headers, requestBody);
+
+    const response = await fetchWithRetry(url, {
+      method: 'POST',
+      headers,
+      body: jsonBody,
+    });
+
+    if (!response) {
+      throw new Error('네트워크 요청이 실패했습니다.');
+    }
+
+    const responseText = await response.text();
+    const responseHeaders = Object.fromEntries(response.headers.entries());
+    
+    // 응답 로깅
+    apiDebugger.logResponse(response.status, url, responseHeaders, responseText);
+
+    if (response && response.ok) {
+      return { success: true };
+    } else {
+      const errorData = response ? JSON.parse(responseText) : {};
+      return {
+        success: false,
+        error: errorData.message || '회원탈퇴에 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    logger.error('❌ 회원탈퇴 API 호출 중 오류:', error);
+    return {
+      success: false,
+      error: '회원탈퇴 중 오류가 발생했습니다.',
+    };
+  }
+}
+
+// 기존 회원탈퇴 API 호출 (호환성을 위해 유지)
+export async function deleteAccount(): Promise<{ success: boolean; error?: string }> {
+  const url = `${API_BASE_URL}/auth/delete-account`;
+  
+  try {
+    // 네트워크 상태 체크
+    if (!apiDebugger.checkNetworkStatus()) {
+      return {
+        success: false,
+        error: '네트워크 연결을 확인해주세요.',
+      };
+    }
+
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      return {
+        success: false,
+        error: '로그인이 필요합니다.',
+      };
+    }
+
+    const response = await fetchWithRetry(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response && response.ok) {
+      return { success: true };
+    } else {
+      const errorData = response ? await response.json().catch(() => ({})) : {};
+      return {
+        success: false,
+        error: errorData.message || '회원탈퇴에 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    logger.error('❌ 회원탈퇴 API 호출 중 오류:', error);
+    return {
+      success: false,
+      error: '회원탈퇴 중 오류가 발생했습니다.',
+    };
+  }
+}
+
 // 회원가입 API 호출
 export async function registerUser(email: string, password: string, nickname: string, confirmPassword?: string, provider?: string): Promise<LoginResponse> {
   const url = `${API_BASE_URL}/auth/register`;
@@ -94,7 +281,7 @@ export async function registerUser(email: string, password: string, nickname: st
       password, 
       confirmPassword: confirmPassword || password, 
       nickname, 
-      provider: provider || "email",
+      provider: provider || "EMAIL",
       joinPlatform: "participant"
     };
     const headers = { 'Content-Type': 'application/json' };
