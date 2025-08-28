@@ -8,6 +8,114 @@ import { getRaffleInfo, participateRaffle } from "@/lib/api";
 import { useSimpleNavigation } from "@/utils/navigation";
 import { useToast } from "@/components/common/Toast";
 
+// 스켈레톤 컴포넌트
+const SkeletonPulse = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded ${className}`}></div>
+);
+
+// 스켈레톤 로딩 뷰
+const RaffleSkeleton = () => (
+  <div className="min-h-screen bg-white text-black flex flex-col">
+    {/* 네비게이션바 스켈레톤 */}
+    <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4">
+      <SkeletonPulse className="w-6 h-6" />
+      <div className="flex-1" />
+      <SkeletonPulse className="w-6 h-6" />
+    </div>
+
+    {/* 메인 컨텐츠 */}
+    <main className="flex-1 w-full px-4 overflow-y-auto" style={{ paddingBottom: 'max(32px, env(safe-area-inset-bottom) + 16px)' }}>
+      <div className="items-center justify-center flex flex-col px-4 py-4">
+        {/* 제목 스켈레톤 */}
+        <div className="text-center mb-6">
+          <SkeletonPulse className="w-64 h-8 mb-2" />
+          <SkeletonPulse className="w-48 h-6" />
+        </div>
+        
+        {/* 선물상자 이미지 스켈레톤 */}
+        <div className="mb-8">
+          <SkeletonPulse className="w-32 h-32 rounded-full" />
+        </div>
+      </div>
+
+      {/* 상품 안내 섹션 스켈레톤 */}
+      <div>
+        <SkeletonPulse className="w-24 h-6 mb-4" />
+        <div className="space-y-4">
+          {[1, 2, 3, 4].map((index) => (
+            <div key={index} className="bg-white rounded-2xl p-4 border border-gray-100">
+              <div className="flex items-center">
+                <SkeletonPulse className="w-20 h-20 rounded-xl mr-2" />
+                <div className="flex-1">
+                  <div className="flex items-center mb-1">
+                    <SkeletonPulse className="w-16 h-4" />
+                  </div>
+                  <SkeletonPulse className="w-32 h-5 mb-1" />
+                  <SkeletonPulse className="w-48 h-4" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 응모 상태 스켈레톤 */}
+      <div className="mb-8 mt-8">
+        <div className="rounded-xl p-6 text-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+          <div className="flex items-center justify-center mb-2">
+            <SkeletonPulse className="w-8 h-8 rounded-full mr-2" />
+            <SkeletonPulse className="w-48 h-6" />
+          </div>
+          <SkeletonPulse className="w-64 h-4 mx-auto" />
+        </div>
+      </div>
+
+      {/* 응모 정보 섹션 스켈레톤 */}
+      <div className="mb-8 mt-12">
+        <SkeletonPulse className="w-24 h-6 mb-4" />
+        
+        {/* 이름 입력 스켈레톤 */}
+        <div className="mb-4">
+          <SkeletonPulse className="w-12 h-4 mb-2" />
+          <SkeletonPulse className="w-full h-12 rounded-xl" />
+        </div>
+
+        {/* 전화번호 입력 스켈레톤 */}
+        <div className="mb-4">
+          <SkeletonPulse className="w-20 h-4 mb-2" />
+          <SkeletonPulse className="w-full h-12 rounded-xl" />
+        </div>
+
+        {/* 개인정보 동의 스켈레톤 */}
+        <div className="mb-6">
+          <div className="flex items-center">
+            <SkeletonPulse className="w-4 h-4 mr-3" />
+            <SkeletonPulse className="w-48 h-4" />
+          </div>
+        </div>
+      </div>
+
+      {/* 참여 안내 섹션 스켈레톤 */}
+      <div className="mb-8">
+        <SkeletonPulse className="w-24 h-6 mb-4" />
+        <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+          <div className="space-y-2">
+            {[1, 2, 3, 4].map((index) => (
+              <SkeletonPulse key={index} className="w-full h-4" />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 응모하기 버튼 스켈레톤 */}
+      <SkeletonPulse className="w-full h-12 rounded-lg mb-4" />
+
+      {/* 안내 문구 스켈레톤 */}
+      <SkeletonPulse className="w-64 h-3 mx-auto" />
+    </main>
+  </div>
+);
+
 function RaffleContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -164,18 +272,9 @@ function RaffleContent() {
     }
   };
 
-  // 인증 상태 확인 중이거나 인증되지 않은 경우 로딩 표시
+  // 인증 상태 확인 중이거나 인증되지 않은 경우 스켈레톤 표시
   if (authLoading || !isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen bg-white text-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-sm" style={{ opacity: 0.7 }}>
-            {authLoading ? '인증 상태 확인 중...' : '메인 페이지로 이동 중...'}
-          </p>
-        </div>
-      </div>
-    );
+    return <RaffleSkeleton />;
   }
 
   return (
@@ -232,11 +331,33 @@ function RaffleContent() {
         </div>
 
         {/* 경품 안내 섹션 */}
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 mt-4">상품 안내</h2>
+        {isLoadingParticipation ? (
+          // 로딩 중일 때 스켈레톤 표시
+          <div>
+            <SkeletonPulse className="w-24 h-6 mb-4 mt-4" />
             <div className="space-y-4">
-            {raffleData?.prizes && raffleData.prizes.length > 0 ? (
-              raffleData.prizes.map((prize: any, index: number) => (
+              {[1, 2, 3, 4].map((index) => (
+                <div key={index} className="bg-white rounded-2xl p-4 border border-gray-100">
+                  <div className="flex items-center">
+                    <SkeletonPulse className="w-20 h-20 rounded-xl mr-2" />
+                    <div className="flex-1">
+                      <div className="flex items-center mb-1">
+                        <SkeletonPulse className="w-16 h-4" />
+                      </div>
+                      <SkeletonPulse className="w-32 h-5 mb-1" />
+                      <SkeletonPulse className="w-48 h-4" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : raffleData?.prizes && raffleData.prizes.length > 0 ? (
+          // 실제 데이터가 있을 때
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 mt-4">상품 안내</h2>
+            <div className="space-y-4">
+              {raffleData.prizes.map((prize: any, index: number) => (
                 <div 
                   key={prize.id} 
                   className="bg-white rounded-2xl"
@@ -263,85 +384,21 @@ function RaffleContent() {
                     </div>
                   </div>
                 </div>
-              ))
-            ) : (
-              // 기본 경품 정보 (데이터가 없을 때)
-              <>
-                <div className="bg-white rounded-2xl p-4 border border-gray-100">
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-xl mr-4 flex items-center justify-center">
-                      <span className="text-xl">🥇</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-gray-900 font-semibold text-base">1등</span>
-                        <span className="text-gray-500 text-sm">1명</span>
-                      </div>
-                      <h3 className="text-gray-900 font-medium text-base mb-1">최신형 스마트폰</h3>
-                      <p className="text-gray-600 text-sm">2024년 최신 플래그십 스마트폰</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-gray-100">
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-xl mr-4 flex items-center justify-center">
-                      <span className="text-xl">🥈</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-gray-900 font-semibold text-base">2등</span>
-                        <span className="text-gray-500 text-sm">3명</span>
-                      </div>
-                      <h3 className="text-gray-900 font-medium text-base mb-1">무선이어폰</h3>
-                      <p className="text-gray-600 text-sm">프리미엄 무선이어폰 (화이트)</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-gray-100">
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-xl mr-4 flex items-center justify-center">
-                      <span className="text-xl">🥉</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-gray-900 font-semibold text-base">3등</span>
-                        <span className="text-gray-500 text-sm">5명</span>
-                      </div>
-                      <h3 className="text-gray-900 font-medium text-base mb-1">기프티콘</h3>
-                      <p className="text-gray-600 text-sm">스타벅스 아메리카노 Tall 기프티콘</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-gray-100">
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-xl mr-4 flex items-center justify-center">
-                      <span className="text-xl">🎁</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-gray-900 font-semibold text-base">행운상</span>
-                        <span className="text-gray-500 text-sm">100명</span>
-                      </div>
-                      <h3 className="text-gray-900 font-medium text-base mb-1">모바일 상품권</h3>
-                      <p className="text-gray-600 text-sm">편의점 모바일 상품권 1000원</p>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         {/* 응모 상태에 따른 조건부 렌더링 */}
         {isLoadingParticipation ? (
-          // 로딩 상태
-          <div className="mb-8">
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-              <p className="text-black text-sm" style={{ opacity: 0.7 }}>응모 상태를 확인하는 중...</p>
+          // 로딩 상태 - 스켈레톤으로 대체
+          <div className="mb-8 mt-8">
+            <div className="rounded-xl p-6 text-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+              <div className="flex items-center justify-center mb-2">
+                <SkeletonPulse className="w-8 h-8 rounded-full mr-2" />
+                <SkeletonPulse className="w-48 h-6" />
+              </div>
+              <SkeletonPulse className="w-64 h-4 mx-auto" />
             </div>
           </div>
         ) : isParticipated ? (
@@ -489,21 +546,10 @@ function RaffleContent() {
   );
 }
 
-// 로딩 컴포넌트
-function RaffleLoading() {
-  return (
-    <div className="min-h-screen bg-white text-black">
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">로딩 중...</div>
-      </div>
-    </div>
-  );
-}
-
 // Suspense로 감싸는 메인 컴포넌트
 export default function RafflePage() {
   return (
-    <Suspense fallback={<RaffleLoading />}>
+    <Suspense fallback={<RaffleSkeleton />}>
       <RaffleContent />
     </Suspense>
   );

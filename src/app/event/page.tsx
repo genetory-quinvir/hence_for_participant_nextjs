@@ -13,7 +13,7 @@ import { usePWA } from "@/hooks/usePWA";
 function EventPageWrapper() {
   const { navigate } = useSimpleNavigation();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { showToast } = useToast();
   const { requestPermission, notificationPermission } = usePWA();
   const [showNotificationModal, setShowNotificationModal] = useState(false);
@@ -22,6 +22,7 @@ function EventPageWrapper() {
   const [isIOS, setIsIOS] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
   const [iosVersion, setIosVersion] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const registeredEventsRef = useRef<Set<string>>(new Set());
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -162,21 +163,16 @@ function EventPageWrapper() {
     const eventId = searchParams.get('id');
     
     if (eventId) {
-      // eventId가 있으면 참여자 등록 시도
+      // eventId가 있으면 참여자 등록 시도 (인증 상태와 관계없이)
       const accessToken = getAccessToken();
       if (accessToken && user) {
         // 참여자 등록 처리 (비동기로 실행)
         handleParticipantRegistration(eventId);
-        // API 호출 결과와 관계없이 이벤트 페이지 렌더링 (아래 return 문에서 처리)
-      } else {
-        // 로그인이 안된 경우 이벤트 정보를 sessionStorage에 저장하고 메인으로 이동
-        sessionStorage.setItem('pendingEventId', eventId);
-        sessionStorage.setItem('pendingEventUrl', window.location.pathname + window.location.search);
-        navigate('/');
-        return;
       }
+      // API 호출 결과와 관계없이 이벤트 페이지 렌더링 (아래 return 문에서 처리)
     } else if (eventCode) {
       // eventCode가 있으면 이벤트 코드로 이벤트 ID를 찾아서 이동
+      setIsLoading(true);
       checkEventCode(eventCode)
         .then((result) => {
           if (result.success && result.event && result.event.id) {
@@ -205,6 +201,9 @@ function EventPageWrapper() {
         .catch((error) => {
           console.error('이벤트 코드 확인 오류:', error);
           navigate("/");
+        })
+        .finally(() => {
+          setIsLoading(false);
         });
     } else {
       // 파라미터가 없으면 메인 페이지로 이동
@@ -227,20 +226,26 @@ function EventPageWrapper() {
     return <EventPageContent onRequestNotificationPermission={handleRequestNotificationPermission} />;
   }
 
-  // 로딩 상태 표시
-  return (
-    <div
-      className="min-h-screen bg-white text-black flex items-center justify-center"
-      style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}
-    >
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-        <p className="text-white text-sm" style={{ opacity: 0.7 }}>이벤트를 불러오는 중...</p>
+  // 로딩 중이거나 eventCode 처리 중이면 로딩 상태 표시
+  if (isLoading || searchParams.get('code')) {
+    return (
+      <div
+        className="min-h-screen bg-white text-black flex items-center justify-center"
+        style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        }}
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white text-sm" style={{ opacity: 0.7 }}>이벤트를 불러오는 중...</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // 파라미터가 없으면 메인 페이지로 이동
+  navigate("/");
+  return null;
 }
 
 // 로딩 컴포넌트

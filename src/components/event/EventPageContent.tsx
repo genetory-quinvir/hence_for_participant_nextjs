@@ -30,13 +30,200 @@ interface EventPageContentProps {
 // 상수 정의
 const DEFAULT_EVENT_ID = 'default-event';
 
-// 로딩 컴포넌트
-const LoadingSpinner = ({ message }: { message: string }) => (
-  <div className="min-h-screen bg-white text-black flex items-center justify-center">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-      <p className="text-sm" style={{ opacity: 0.7 }}>{message}</p>
+// 스켈레톤 컴포넌트
+const SkeletonPulse = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded ${className}`}></div>
+);
+
+// 스켈레톤 로딩 뷰
+const EventSkeleton = () => (
+  <div className="min-h-screen bg-gray-100 text-black relative overflow-x-hidden">
+    {/* 네비게이션바 스켈레톤 */}
+    <div className="absolute top-2 left-0 right-0 z-50">
+      <div className="mx-4 h-11 bg-white rounded-lg shadow-sm flex items-center justify-between px-4">
+        <SkeletonPulse className="w-20 h-6" />
+        <SkeletonPulse className="w-16 h-8 rounded-full" />
+      </div>
     </div>
+
+    {/* 메인 컨텐츠 */}
+    <main className="w-full min-h-screen overflow-y-auto overflow-x-hidden">
+      {/* 히어로 섹션 스켈레톤 */}
+      <div className="relative h-64 bg-gradient-to-br from-purple-600 to-purple-800">
+        <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+        <div className="relative h-full flex items-end p-6">
+          <div className="w-full">
+            <SkeletonPulse className="w-3/4 h-8 mb-2 bg-white bg-opacity-20" />
+            <SkeletonPulse className="w-1/2 h-4 bg-white bg-opacity-20" />
+          </div>
+        </div>
+      </div>
+
+      {/* 이벤트 정보 섹션 스켈레톤 */}
+      <div className="px-4 py-6">
+        <div className="bg-white rounded-lg p-4 mb-4">
+          <SkeletonPulse className="w-1/3 h-6 mb-4" />
+          <div className="space-y-3">
+            <SkeletonPulse className="w-full h-4" />
+            <SkeletonPulse className="w-2/3 h-4" />
+            <SkeletonPulse className="w-3/4 h-4" />
+          </div>
+        </div>
+      </div>
+
+      {/* 경품 섹션 스켈레톤 */}
+      <div className="px-4 mb-6">
+        <div className="bg-white rounded-lg p-4">
+          <SkeletonPulse className="w-1/4 h-6 mb-4" />
+          <div className="flex space-x-4 overflow-x-auto">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex-shrink-0 w-32">
+                <SkeletonPulse className="w-full h-24 mb-2" />
+                <SkeletonPulse className="w-3/4 h-4 mb-1" />
+                <SkeletonPulse className="w-1/2 h-3" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 공지사항 섹션 스켈레톤 */}
+      <div className="px-4 mb-6">
+        <div className="bg-white rounded-lg p-4">
+          <div className="flex justify-between items-center mb-4">
+            <SkeletonPulse className="w-1/4 h-6" />
+            <SkeletonPulse className="w-16 h-6" />
+          </div>
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <div key={i} className="border-b border-gray-100 pb-3 last:border-b-0">
+                <SkeletonPulse className="w-full h-4 mb-2" />
+                <SkeletonPulse className="w-2/3 h-3" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 동아리 섹션 스켈레톤 */}
+      <div className="px-4 mb-6">
+        <div className="bg-white rounded-lg p-4">
+          <SkeletonPulse className="w-1/4 h-6 mb-4" />
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center space-x-3">
+                <SkeletonPulse className="w-8 h-8 rounded-full" />
+                <div className="flex-1">
+                  <SkeletonPulse className="w-1/3 h-4 mb-1" />
+                  <SkeletonPulse className="w-1/4 h-3" />
+                </div>
+                <SkeletonPulse className="w-16 h-8 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 타임라인 섹션 스켈레톤 */}
+      <div className="px-4 mb-6">
+        <div className="bg-white rounded-lg p-4">
+          <div className="flex justify-between items-center mb-4">
+            <SkeletonPulse className="w-1/4 h-6" />
+            <SkeletonPulse className="w-16 h-6" />
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-start space-x-3">
+                <SkeletonPulse className="w-3 h-3 rounded-full mt-2" />
+                <div className="flex-1">
+                  <SkeletonPulse className="w-2/3 h-4 mb-1" />
+                  <SkeletonPulse className="w-1/3 h-3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 지도 섹션 스켈레톤 */}
+      <div className="px-4 mb-6">
+        <div className="bg-white rounded-lg p-4">
+          <SkeletonPulse className="w-1/4 h-6 mb-4" />
+          <SkeletonPulse className="w-full h-48 rounded-lg" />
+        </div>
+      </div>
+
+      {/* 푸드트럭 섹션 스켈레톤 */}
+      <div className="px-4 mb-6">
+        <div className="bg-white rounded-lg p-4">
+          <div className="flex justify-between items-center mb-4">
+            <SkeletonPulse className="w-1/4 h-6" />
+            <SkeletonPulse className="w-16 h-6" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="space-y-2">
+                <SkeletonPulse className="w-full h-24 rounded-lg" />
+                <SkeletonPulse className="w-3/4 h-4" />
+                <SkeletonPulse className="w-1/2 h-3" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 쿠폰 섹션 스켈레톤 */}
+      <div className="px-4 mb-6">
+        <div className="bg-white rounded-lg p-4">
+          <SkeletonPulse className="w-1/4 h-6 mb-4" />
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <div key={i} className="border border-gray-200 rounded-lg p-3">
+                <SkeletonPulse className="w-full h-4 mb-2" />
+                <SkeletonPulse className="w-2/3 h-3" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 커뮤니티 섹션 스켈레톤 */}
+      <div className="px-4 mb-6">
+        <div className="bg-white rounded-lg p-4">
+          <div className="flex justify-between items-center mb-4">
+            <SkeletonPulse className="w-1/4 h-6" />
+            <SkeletonPulse className="w-16 h-6" />
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="border-b border-gray-100 pb-4 last:border-b-0">
+                <div className="flex items-center space-x-3 mb-2">
+                  <SkeletonPulse className="w-8 h-8 rounded-full" />
+                  <SkeletonPulse className="w-20 h-4" />
+                </div>
+                <SkeletonPulse className="w-full h-4 mb-1" />
+                <SkeletonPulse className="w-2/3 h-3" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 도움말 섹션 스켈레톤 */}
+      <div className="px-4 mb-6">
+        <div className="bg-white rounded-lg p-4">
+          <SkeletonPulse className="w-1/3 h-6 mb-4" />
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="border-b border-gray-100 pb-3 last:border-b-0">
+                <SkeletonPulse className="w-full h-4 mb-1" />
+                <SkeletonPulse className="w-3/4 h-3" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </main>
   </div>
 );
 
@@ -75,12 +262,17 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
   const eventId = useMemo(() => searchParams.get('id'), [searchParams]);
   const safeEventId = useMemo(() => eventId || DEFAULT_EVENT_ID, [eventId]);
 
-  // 인증 상태 확인
+  // 인증 상태 확인 - 로딩이 완료된 후에만 리다이렉트
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || !user)) {
+    if (!authLoading && !isAuthenticated) {
+      // 인증되지 않은 경우 이벤트 정보를 sessionStorage에 저장하고 메인으로 이동
+      if (eventId) {
+        sessionStorage.setItem('pendingEventId', eventId);
+        sessionStorage.setItem('pendingEventUrl', window.location.pathname + window.location.search);
+      }
       navigate("/");
     }
-  }, [isAuthenticated, user, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate, eventId]);
 
   // 컴포넌트 마운트 상태 관리
   useEffect(() => {
@@ -91,9 +283,14 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     };
   }, []);
 
-  // 이벤트 데이터 가져오기
-  const fetchEventData = useCallback(async () => {
-    if (!eventId || authLoading || !isAuthenticated || !user || !isMounted.current || hasCalledApi.current) {
+  // 인증이 완료된 후에만 API 호출
+  useEffect(() => {
+    if (!eventId || authLoading || !isMounted.current || hasCalledApi.current) {
+      return;
+    }
+
+    // 인증이 완료되고 사용자가 있을 때만 API 호출
+    if (!isAuthenticated || !user) {
       return;
     }
 
@@ -101,36 +298,36 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     setIsLoading(true);
     setError(null);
 
-    try {
-      const featuredResult = await getFeaturedEvent(eventId, currentDay);
-      
-      if (!isMounted.current) return;
-      
-      if (featuredResult?.success && featuredResult.featured) {
-        setFeaturedData(featuredResult.featured);
-      } else {
-        const errorMessage = featuredResult?.error || '이벤트 종합 정보를 가져올 수 없습니다.';
+    const fetchData = async () => {
+      try {
+        const featuredResult = await getFeaturedEvent(eventId, currentDay);
+        
+        if (!isMounted.current) return;
+        
+        if (featuredResult?.success && featuredResult.featured) {
+          setFeaturedData(featuredResult.featured);
+        } else {
+          const errorMessage = featuredResult?.error || '이벤트 종합 정보를 가져올 수 없습니다.';
+          setError(errorMessage);
+        }
+      } catch (error) {
+        if (!isMounted.current) return;
+        
+        const errorMessage = error instanceof Error && 
+          (error.message.includes('coroutine') || error.message.includes('not iterable'))
+          ? '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+          : '이벤트 로드 중 오류가 발생했습니다.';
+        
         setError(errorMessage);
+      } finally {
+        if (isMounted.current) {
+          setIsLoading(false);
+        }
       }
-    } catch (error) {
-      if (!isMounted.current) return;
-      
-      const errorMessage = error instanceof Error && 
-        (error.message.includes('coroutine') || error.message.includes('not iterable'))
-        ? '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
-        : '이벤트 로드 중 오류가 발생했습니다.';
-      
-      setError(errorMessage);
-    } finally {
-      if (isMounted.current) {
-        setIsLoading(false);
-      }
-    }
-  }, [eventId, currentDay, authLoading, isAuthenticated, user]);
+    };
 
-  useEffect(() => {
-    fetchEventData();
-  }, [fetchEventData]);
+    fetchData();
+  }, [authLoading, isAuthenticated, user, eventId, currentDay]);
 
   // 네비게이션 핸들러 메모이제이션
   const handleNavigateToTimeline = useCallback(() => {
@@ -184,21 +381,16 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     );
   }, [user]);
 
-  // 로딩/에러 상태 처리
-  if (authLoading || !isAuthenticated || !user) {
-    return <LoadingSpinner message={authLoading ? '인증 상태 확인 중...' : '메인 페이지로 이동 중...'} />;
-  }
-
-  if (isLoading) {
-    return <LoadingSpinner message="이벤트 정보를 불러오는 중..." />;
+  // 모든 로딩이 완료될 때까지 스켈레톤 표시
+  const isFullyLoaded = !authLoading && !isLoading && featuredData;
+  
+  // 인증되지 않은 경우에도 스켈레톤을 표시하여 부드러운 전환
+  if (!isFullyLoaded) {
+    return <EventSkeleton />;
   }
 
   if (error) {
     return <ErrorDisplay error={error} onRetry={handleRetry} />;
-  }
-
-  if (!featuredData) {
-    return <ErrorDisplay error="이벤트 정보를 찾을 수 없습니다." onRetry={handleRetry} />;
   }
 
   return (
