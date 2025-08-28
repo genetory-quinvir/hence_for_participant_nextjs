@@ -140,11 +140,11 @@ export default function EventCoupon({ coupons, eventId }: EventCouponProps) {
   }
 
   return (
-    <section className="mb-12">
+    <section className="">
       <div className="relative">
         <div
           ref={scrollContainerRef}
-          className="flex space-x-4 overflow-x-auto scrollbar-hide py-4"
+          className="flex space-x-4 overflow-x-auto scrollbar-hide pb-16 pt-2"
           style={{ 
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',

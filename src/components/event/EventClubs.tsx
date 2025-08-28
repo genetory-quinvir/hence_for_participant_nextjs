@@ -94,7 +94,7 @@ export default function EventClubs({ clubs, eventId }: EventClubsProps) {
   }, []);
 
   return (
-    <div className="relative overflow-hidden px-4 py-8 bg-gray-100 mb-8">
+    <div className="relative overflow-hidden px-4 py-8 bg-gray-100 pb-16">
       {/* 카드 내용 */}
       <div 
         ref={cardRef}
