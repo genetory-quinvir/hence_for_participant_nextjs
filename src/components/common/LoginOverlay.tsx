@@ -15,6 +15,14 @@ export default function LoginOverlay({ onLoginClick, onClose }: LoginOverlayProp
     navigate("/sign");
   };
 
+  const handleGoToMain = () => {
+    // sessionStorage 정리하여 메인 페이지에서 로그인 알럿이 뜨지 않도록 함
+    sessionStorage.removeItem('pendingEventId');
+    sessionStorage.removeItem('pendingEventUrl');
+    onClose();
+    navigate("/");
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full">
@@ -64,10 +72,7 @@ export default function LoginOverlay({ onLoginClick, onClose }: LoginOverlayProp
         {/* 버튼 */}
         <div className="flex space-x-3">
           <button
-            onClick={() => {
-              onClose();
-              navigate("/");
-            }}
+            onClick={handleGoToMain}
             className="flex-1 py-3 px-4 rounded-lg text-black font-normal transition-colors"
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
           >

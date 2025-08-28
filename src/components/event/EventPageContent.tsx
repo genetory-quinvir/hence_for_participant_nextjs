@@ -393,6 +393,9 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
   }, []);
 
   const handleGoToMain = useCallback(() => {
+    // sessionStorage 정리하여 메인 페이지에서 로그인 알럿이 뜨지 않도록 함
+    sessionStorage.removeItem('pendingEventId');
+    sessionStorage.removeItem('pendingEventUrl');
     // 메인 페이지로 이동
     navigate("/");
   }, [navigate]);
@@ -441,9 +444,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     <div className="min-h-screen bg-gray-100 text-black relative overflow-x-hidden">
       {/* 메인 컨텐츠 */}
       <main 
-        className={`w-full min-h-screen overflow-y-auto overflow-x-hidden ${
-          !isAuthenticated ? 'filter blur-md pointer-events-none' : ''
-        }`}
+        className="w-full min-h-screen overflow-y-auto overflow-x-hidden"
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
@@ -594,9 +595,9 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
         />
       </div>
 
-      {/* 로그인되지 않은 사용자를 위한 오버레이 */}
+      {/* 로그인되지 않은 사용자를 위한 딤 오버레이 */}
       {!isAuthenticated && (
-        <div className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center z-40">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-40">
           <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full shadow-lg">
             <div className="text-center">
               <div className="text-4xl mb-4">🔒</div>
