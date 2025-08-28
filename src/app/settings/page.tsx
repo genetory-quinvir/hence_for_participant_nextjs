@@ -174,9 +174,12 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handleLogout}>
                 <span className="text-sm text-gray-600">로그아웃</span>
               </div>
-              <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50" onClick={handleDeleteAccount}>
-                <span className="text-sm text-red-600">회원탈퇴</span>
-              </div>
+              {/* 이메일 계정인 경우에만 회원탈퇴 표시 */}
+              {(user.provider?.toLowerCase() === 'email' || user.provider === 'EMAIL') && (
+                <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50" onClick={handleDeleteAccount}>
+                  <span className="text-sm text-red-600">회원탈퇴</span>
+                </div>
+              )}
             </div>
           </div>
 
