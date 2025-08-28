@@ -14,6 +14,7 @@ function AuthCallbackContent() {
   const { showToast } = useToast();
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
     const processCallback = async () => {
@@ -75,22 +76,25 @@ function AuthCallbackContent() {
           // 소셜 로그인에서는 토스트 메시지 제거
 
           // 소셜 로그인 완료 후 리다이렉트 처리
+          if (hasRedirected) {
+            console.log('이미 리다이렉트됨 - 추가 처리 중단');
+            return;
+          }
+          
           const savedRedirectUrl = sessionStorage.getItem('socialLoginRedirectUrl');
           
           if (savedRedirectUrl) {
             console.log('저장된 소셜 로그인 리다이렉트 URL:', savedRedirectUrl);
             sessionStorage.removeItem('socialLoginRedirectUrl');
-            // 인증 상태 업데이트를 위한 약간의 지연
-            setTimeout(() => {
-              replace(savedRedirectUrl);
-            }, 100);
+            setHasRedirected(true);
+            // window.location.href를 사용하여 완전한 페이지 전환
+            window.location.href = savedRedirectUrl;
           } else if (clientRedirectUrl) {
             console.log('클라이언트 리다이렉트 URL:', clientRedirectUrl);
             const decodedUrl = decodeURIComponent(clientRedirectUrl);
             console.log('디코딩된 URL:', decodedUrl);
-            setTimeout(() => {
-              replace(decodedUrl);
-            }, 100);
+            setHasRedirected(true);
+            window.location.href = decodedUrl;
           } else {
             console.log('리다이렉트 파라미터가 없어서 메인 페이지로 리다이렉트');
             console.log('사용 가능한 파라미터들:', {
@@ -100,9 +104,8 @@ function AuthCallbackContent() {
               redirectUrl: !!redirectUrl,
               clientRedirectUrl: !!clientRedirectUrl
             });
-            setTimeout(() => {
-              replace("/");
-            }, 100);
+            setHasRedirected(true);
+            window.location.href = '/';
           }
         } else {
           console.error('로그인 실패 상세:', result);
