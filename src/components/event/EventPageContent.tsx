@@ -385,7 +385,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     if (user) {
       navigate("/profile");
     } else {
-      navigate("/sign");
+      navigate(`/sign?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
     }
   }, [navigate, user]);
 
@@ -424,7 +424,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
           border: '1px solid rgba(255, 255, 255, 0.6)',
           backgroundColor: 'transparent'
         }}
-        onClick={() => navigate("/sign")}
+        onClick={() => navigate(`/sign?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)}
       >
         <span className="text-white text-sm font-medium">로그인</span>
       </div>
@@ -628,7 +628,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
                   메인으로 돌아가기
                 </button>
                 <button
-                  onClick={() => navigate("/sign")}
+                  onClick={() => navigate(`/sign?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)}
                   className="flex-1 py-3 px-4 rounded-lg font-bold transition-colors bg-purple-600 hover:bg-purple-700 text-white"
                 >
                   로그인하기
