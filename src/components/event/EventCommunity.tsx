@@ -148,8 +148,49 @@ export default function EventCommunity({
     .filter(post => post.id)
     .slice(0, 5);
 
+  // 게시글이 없을 때 "첫 글을 써보세요" 메시지 표시
   if (!displayPosts || displayPosts.length === 0) {
-    return null;
+    return (
+      <EventSection
+        title="커뮤니티"
+        subtitle="이벤트 참여자들과 소통해보세요"
+        rightButton={showViewAllButton ? {
+          text: "전체보기",
+          onClick: onViewAllClick || (() => {
+            console.log('전체보기 클릭');
+          })
+        } : undefined}
+      >
+        <div className="px-4 py-8">
+          <div className="bg-white rounded-xl p-6 text-center">
+            <div className="w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <img 
+                src="/images/icon_empty_board.png" 
+                alt="빈 게시판 아이콘" 
+                className="w-24 h-24 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">첫 글을 써보세요!</h3>
+            <p className="text-gray-600 text-sm mb-4">
+              이벤트 참여자들과 소통을 시작해보세요.
+            </p>
+            <button
+              onClick={() => {
+                const url = `/board/write?eventId=${freeBoard[0]?.eventId || 'default-event'}&type=free`;
+                router.push(url);
+              }}
+              className="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+            >
+              소통 시작해보기
+            </button>
+          </div>
+        </div>
+      </EventSection>
+    );
   }
 
   // 상대적 시간 표시 함수 - 한국 시간 기준
