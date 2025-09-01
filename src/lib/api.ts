@@ -1459,123 +1459,159 @@ export async function updateBoard(eventId: string, boardType: string, postId: st
     console.log('🔄 updateBoard API 호출:', {
       url: `${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`,
       method: 'PUT',
-      data: data
+      data: {
+        ...data,
+        newImagesCount: data.newImages?.length || 0
+      }
     });
     
-    // 새 이미지가 있는 경우 FormData 사용, 없는 경우 JSON 사용
-    if (data.newImages && data.newImages.length > 0) {
-      const formData = new FormData();
-      
-      // 제목 추가 (null이 아닌 경우에만)
-      if (data.title) {
-        formData.append('title', data.title);
-      }
-      
-      // 내용 추가
-      formData.append('content', data.content || '');
-      
-      // 기존 이미지 URL들 추가
-      if (data.images) {
-        data.images.forEach((imageUrl, index) => {
-          formData.append('images', imageUrl);
-        });
-      }
-      
-      // 새 이미지 파일들 추가
+    // 항상 FormData 사용
+    const formData = new FormData();
+    
+    // 제목 추가 (null이 아닌 경우에만)
+    if (data.title) {
+      formData.append('title', data.title);
+    }
+    
+    // 내용 추가
+    formData.append('content', data.content || '');
+    
+    // 기존 이미지 URL들 추가
+    if (data.images) {
+      data.images.forEach((imageUrl, index) => {
+        formData.append('images', imageUrl);
+      });
+    }
+    
+    // 새 이미지 파일들 추가 (있는 경우에만)
+    if (data.newImages) {
       data.newImages.forEach((image, index) => {
         formData.append('newImages', image);
       });
+    }
 
-      // FormData를 사용하는 경우 직접 fetch 호출
-      const accessToken = getAccessToken();
-      if (!accessToken) {
+    // FormData를 사용하는 경우 직접 fetch 호출
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      return { success: false, error: 'AUTH_REQUIRED' };
+    }
+
+    console.log('📤 FormData 내용:', {
+      title: data.title,
+      content: data.content,
+      imagesCount: data.images?.length || 0,
+      newImagesCount: data.newImages?.length || 0
+    });
+
+    // FormData 내용 상세 로깅
+    console.log('📋 FormData 상세:');
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`  ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+      } else {
+        console.log(`  ${key}: ${value}`);
+      }
+    }
+
+    const response = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        // Content-Type 헤더를 설정하지 않음 (브라우저가 자동으로 multipart/form-data 설정)
+      },
+      body: formData,
+    });
+
+    if (response.status === 401) {
+      // 토큰 갱신 시도
+      const refreshResult = await refreshAccessToken();
+      if (refreshResult.success && refreshResult.accessToken) {
+        // 갱신된 토큰으로 재요청
+        const retryResponse = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${refreshResult.accessToken}`,
+          },
+          body: formData,
+        });
+
+        if (retryResponse.ok) {
+          const responseData = await retryResponse.json();
+          console.log('✅ 게시글 수정 성공 (토큰 갱신 후):', responseData);
+          return {
+            success: true,
+            data: responseData.data || responseData
+          };
+        } else {
+          const errorData = await retryResponse.json();
+          return {
+            success: false,
+            error: errorData.message || '게시글 수정에 실패했습니다.'
+          };
+        }
+      } else {
         return { success: false, error: 'AUTH_REQUIRED' };
       }
+    }
 
-      const response = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          // Content-Type 헤더를 설정하지 않음 (브라우저가 자동으로 multipart/form-data 설정)
-        },
-        body: formData,
-      });
-
-      if (response.status === 401) {
-        // 토큰 갱신 시도
-        const refreshResult = await refreshAccessToken();
-        if (refreshResult.success && refreshResult.accessToken) {
-          // 갱신된 토큰으로 재요청
-          const retryResponse = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${refreshResult.accessToken}`,
-            },
-            body: formData,
-          });
-
-          if (retryResponse.ok) {
-            const responseData = await retryResponse.json();
-            console.log('✅ 게시글 수정 성공 (토큰 갱신 후):', responseData);
-            return {
-              success: true,
-              data: responseData.data || responseData
-            };
-          } else {
-            const errorData = await retryResponse.json();
-            return {
-              success: false,
-              error: errorData.message || '게시글 수정에 실패했습니다.'
-            };
-          }
-        } else {
-          return { success: false, error: 'AUTH_REQUIRED' };
-        }
-      }
-
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log('✅ 게시글 수정 성공:', responseData);
-        return {
-          success: true,
-          data: responseData.data || responseData
-        };
-      } else {
-        const errorData = await response.json();
-        console.log('❌ 게시글 수정 실패:', errorData);
-        return {
-          success: false,
-          error: errorData.message || '게시글 수정에 실패했습니다.'
-        };
-      }
+    if (response.ok) {
+      const responseData = await response.json();
+      console.log('✅ 게시글 수정 성공:', responseData);
+      return {
+        success: true,
+        data: responseData.data || responseData
+      };
     } else {
-      // 새 이미지가 없는 경우 기존 방식 (JSON)
-      const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          title: data.title,
-          content: data.content,
-          images: data.images
-        }),
-      });
-
-      if (result.success) {
-        logger.info('✅ 게시글 수정 성공', { eventId, boardType, postId });
-        console.log('✅ 수정 결과 데이터:', result.data);
-        console.log('✅ 수정 결과 상세:', JSON.stringify(result.data, null, 2));
-        return {
-          success: true,
-          data: result.data
-        };
-      } else {
-        logger.error('❌ 게시글 수정 실패', { eventId, boardType, postId, error: result.error });
-        console.log('❌ 실패 응답:', result);
-        console.log('❌ 실패 응답 상세:', JSON.stringify(result, null, 2));
-        return {
-          success: false,
-          error: result.error || '게시글 수정에 실패했습니다.',
-        };
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { message: `서버 오류 (${response.status})` };
       }
+      
+      console.log('❌ 게시글 수정 실패:', errorData);
+      console.log('📊 응답 상태:', response.status, response.statusText);
+      
+      // 서버 오류에 대한 더 구체적인 메시지
+      if (response.status === 500) {
+              return {
+        success: false,
+        error: '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+      };
+    }
+    
+    // 500 오류이고 새 이미지가 없는 경우 JSON 방식으로 재시도
+    if (response.status === 500 && (!data.newImages || data.newImages.length === 0)) {
+      console.log('🔄 FormData 실패, JSON 방식으로 재시도...');
+      
+      try {
+        const jsonResult = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            title: data.title,
+            content: data.content,
+            images: data.images
+          }),
+        });
+
+        if (jsonResult.success) {
+          console.log('✅ JSON 방식으로 수정 성공:', jsonResult.data);
+          return {
+            success: true,
+            data: jsonResult.data
+          };
+        } else {
+          console.log('❌ JSON 방식도 실패:', jsonResult.error);
+        }
+      } catch (jsonError) {
+        console.log('❌ JSON 방식 시도 중 오류:', jsonError);
+      }
+    }
+    
+    return {
+      success: false,
+      error: errorData.message || '게시글 수정에 실패했습니다.'
+    };
     }
   } catch (error) {
     apiDebugger.logError(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, error);

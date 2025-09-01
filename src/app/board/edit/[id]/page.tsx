@@ -9,6 +9,7 @@ import CommonActionSheet from "@/components/CommonActionSheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSimpleNavigation } from "@/utils/navigation";
 import { useToast } from "@/components/common/Toast";
+import { resizeImages, isSupportedImageFormat, getFileSizeInMB } from "@/utils/imageResizer";
 
 function BoardEditContent() {
   const params = useParams();
@@ -85,24 +86,15 @@ function BoardEditContent() {
   }, [params.id, postType, eventId, user]);
 
   // 이미지 선택 핸들러
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
-      // 파일 검증 (크기 초과 시 자동 압축)
+      // 파일 검증
       const validFiles = files.filter(file => {
-        // 파일 형식 확인
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-        if (!allowedTypes.includes(file.type)) {
+        if (!isSupportedImageFormat(file)) {
           showToast(`${file.name}: 지원하지 않는 파일 형식입니다.`, 'warning');
           return false;
         }
-
-        // 파일 크기 확인 (큰 파일은 WebP로 자동 변환)
-        const maxSize = 5 * 1024 * 1024; // 5MB
-        if (file.size > maxSize) {
-          showToast(`${file.name}: 파일이 5MB를 초과합니다. WebP로 변환됩니다.`, 'info');
-        }
-
         return true;
       });
 
@@ -115,12 +107,37 @@ function BoardEditContent() {
         return;
       }
 
-      const newImages = [...images, ...validFiles];
-      setImages(newImages);
-      
-      // 이미지 URL 생성
-      const newUrls = newImages.map(file => URL.createObjectURL(file));
-      setImageUrls(prev => [...existingImages.filter(img => !removedImages.includes(img)), ...newUrls]);
+      try {
+        // 이미지 리사이징 처리
+        const resizedImages = await resizeImages(validFiles, {
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.8,
+          format: 'webp'
+        });
+
+        // 리사이징 결과 로깅
+        validFiles.forEach((originalFile, index) => {
+          const resizedFile = resizedImages[index];
+          const originalSize = getFileSizeInMB(originalFile);
+          const resizedSize = getFileSizeInMB(resizedFile);
+          console.log(`📸 이미지 리사이징: ${originalFile.name}`, {
+            original: `${originalSize.toFixed(2)}MB`,
+            resized: `${resizedSize.toFixed(2)}MB`,
+            reduction: `${((originalSize - resizedSize) / originalSize * 100).toFixed(1)}%`
+          });
+        });
+
+        const newImages = [...images, ...resizedImages];
+        setImages(newImages);
+        
+        // 이미지 URL 생성
+        const newUrls = newImages.map(file => URL.createObjectURL(file));
+        setImageUrls(prev => [...existingImages.filter(img => !removedImages.includes(img)), ...newUrls]);
+      } catch (error) {
+        console.error('이미지 리사이징 실패:', error);
+        showToast('이미지 처리 중 오류가 발생했습니다.', 'error');
+      }
     }
   };
 
@@ -205,6 +222,13 @@ function BoardEditContent() {
       
       // 최종 이미지 목록 구성 (기존 이미지 - 제거된 이미지)
       const finalImages = existingImages.filter(img => !removedImages.includes(img));
+      
+      console.log('📝 수정 데이터:', {
+        content: content.trim(),
+        finalImages,
+        newImagesCount: images.length,
+        removedImages
+      });
       
       const updateData = {
         content: content.trim(),

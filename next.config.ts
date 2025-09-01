@@ -3,6 +3,18 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@react-native-async-storage/async-storage'],
   
+  // 외부 이미지 도메인 설정
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'd1veuh7wapeo8j.cloudfront.net',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
+  
   // 파비콘 캐시 문제 해결을 위한 헤더 설정
   async headers() {
     return [
