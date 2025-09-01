@@ -588,6 +588,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
         {featuredData.freeBoard && (
           <EventCommunity 
             freeBoard={featuredData.freeBoard} 
+            eventId={safeEventId}
             showViewAllButton={true}
             onViewAllClick={handleNavigateToBoard}
           />

@@ -15,6 +15,7 @@ import { deleteBoard } from '@/lib/api';
 
 interface EventCommunityProps {
   freeBoard: BoardItem[];
+  eventId?: string;
   showViewAllButton?: boolean;
   onViewAllClick?: () => void;
   onRefresh?: () => void;
@@ -24,6 +25,7 @@ interface EventCommunityProps {
 
 export default function EventCommunity({ 
   freeBoard, 
+  eventId = 'default-event',
   showViewAllButton = false,
   onViewAllClick,
   onRefresh
@@ -180,7 +182,7 @@ export default function EventCommunity({
             </p>
             <button
               onClick={() => {
-                const url = `/board/write?eventId=${freeBoard[0]?.eventId || 'default-event'}&type=free`;
+                const url = `/board/write?eventId=${eventId}&type=free`;
                 router.push(url);
               }}
               className="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
