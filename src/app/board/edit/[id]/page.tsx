@@ -88,6 +88,8 @@ function BoardEditContent() {
   // 이미지 선택 핸들러
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    console.log('📁 선택된 파일들:', files.map(f => ({ name: f.name, size: f.size, type: f.type })));
+    
     if (files.length > 0) {
       // 파일 검증
       const validFiles = files.filter(file => {
@@ -97,6 +99,8 @@ function BoardEditContent() {
         }
         return true;
       });
+
+      console.log('✅ 유효한 파일들:', validFiles.map(f => f.name));
 
       if (validFiles.length === 0) return;
 
@@ -108,13 +112,23 @@ function BoardEditContent() {
       }
 
       try {
-        // 이미지 리사이징 처리
-        const resizedImages = await resizeImages(validFiles, {
+        console.log('🔄 이미지 리사이징 시작...');
+        
+        // 타임아웃 설정 (20초)
+        const resizePromise = resizeImages(validFiles, {
           maxWidth: 1200,
           maxHeight: 1200,
           quality: 0.8,
           format: 'webp'
         });
+        
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('리사이징 타임아웃')), 20000);
+        });
+        
+        const resizedImages = await Promise.race([resizePromise, timeoutPromise]) as File[];
+
+        console.log('✅ 리사이징 완료:', resizedImages.map(f => f.name));
 
         // 리사이징 결과 로깅
         validFiles.forEach((originalFile, index) => {
@@ -129,14 +143,26 @@ function BoardEditContent() {
         });
 
         const newImages = [...images, ...resizedImages];
+        console.log('📋 새로운 이미지 배열:', newImages.map(f => f.name));
         setImages(newImages);
         
         // 이미지 URL 생성
         const newUrls = newImages.map(file => URL.createObjectURL(file));
+        console.log('🔗 생성된 URL 개수:', newUrls.length);
         setImageUrls(prev => [...existingImages.filter(img => !removedImages.includes(img)), ...newUrls]);
+        
+        console.log('✅ 이미지 추가 완료');
       } catch (error) {
-        console.error('이미지 리사이징 실패:', error);
-        showToast('이미지 처리 중 오류가 발생했습니다.', 'error');
+        console.error('❌ 이미지 리사이징 실패:', error);
+        showToast('이미지 리사이징에 실패했습니다. 원본 파일을 사용합니다.', 'warning');
+        
+        // 리사이징 실패 시 원본 파일 사용
+        console.log('🔄 원본 파일로 대체...');
+        const newImages = [...images, ...validFiles];
+        setImages(newImages);
+        const newUrls = newImages.map(file => URL.createObjectURL(file));
+        setImageUrls(prev => [...existingImages.filter(img => !removedImages.includes(img)), ...newUrls]);
+        console.log('✅ 원본 파일로 이미지 추가 완료');
       }
     }
   };
@@ -380,15 +406,17 @@ function BoardEditContent() {
                     </div>
                     <button
                       onClick={() => {
-                        if (index < existingImages.length - removedImages.length) {
+                        // 현재 표시된 이미지들 중에서 기존 이미지와 새 이미지를 구분
+                        const remainingExistingImages = existingImages.filter(img => !removedImages.includes(img));
+                        
+                        if (index < remainingExistingImages.length) {
                           // 기존 이미지 제거
-                          const originalIndex = existingImages.findIndex(img => img === url);
-                          if (originalIndex !== -1) {
-                            handleRemoveExistingImage(existingImages[originalIndex]);
-                          }
+                          const imageUrl = remainingExistingImages[index];
+                          handleRemoveExistingImage(imageUrl);
                         } else {
                           // 새 이미지 제거
-                          handleImageRemove(index - (existingImages.length - removedImages.length));
+                          const newImageIndex = index - remainingExistingImages.length;
+                          handleImageRemove(newImageIndex);
                         }
                       }}
                       className="absolute -top-1 -right-1 w-6 h-6 text-white rounded-full flex items-center justify-center text-sm transition-colors"

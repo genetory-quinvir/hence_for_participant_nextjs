@@ -1476,17 +1476,13 @@ export async function updateBoard(eventId: string, boardType: string, postId: st
     // 내용 추가
     formData.append('content', data.content || '');
     
-    // 기존 이미지 URL들 추가
-    if (data.images) {
-      data.images.forEach((imageUrl, index) => {
-        formData.append('images', imageUrl);
-      });
-    }
+    // 기존 이미지 URL들 추가 (JSON 문자열로 전송) - 빈 배열도 전송
+    formData.append('existing_images', JSON.stringify(data.images || []));
     
     // 새 이미지 파일들 추가 (있는 경우에만)
     if (data.newImages) {
       data.newImages.forEach((image, index) => {
-        formData.append('newImages', image);
+        formData.append('images', image);
       });
     }
 

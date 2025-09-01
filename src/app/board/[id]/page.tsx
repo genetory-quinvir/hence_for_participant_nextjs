@@ -191,7 +191,8 @@ function BoardDetailContent() {
             const result = await deleteBoard(eventId, postType, post.id);
             if (result.success) {
               showToast('게시글이 삭제되었습니다.', 'success');
-              goBack();
+              // 삭제 후 목록 페이지로 이동
+              navigate(`/board/list?type=${postType}&eventId=${eventId}`);
             } else {
               showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
             }
