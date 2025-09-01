@@ -54,6 +54,23 @@ export default function RootLayout({
         <meta name="theme-color" content="#ffffff" />
         <meta name="msapplication-TileColor" content="#ffffff" />
         
+        {/* 보안 헤더 - 개발 모드에서는 완화된 정책 적용 */}
+        {process.env.NODE_ENV === 'production' ? (
+          <>
+            <meta httpEquiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api-participant.hence.events https://www.google-analytics.com; frame-src 'self' https://www.googletagmanager.com;" />
+            <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
+            <meta httpEquiv="X-Frame-Options" content="DENY" />
+            <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
+            <meta httpEquiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+          </>
+        ) : (
+          <>
+            <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
+            <meta httpEquiv="X-Frame-Options" content="DENY" />
+            <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
+          </>
+        )}
+        
         {/* 파비콘 캐시 방지를 위한 명시적 설정 */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icons/icon-192x192.png" type="image/png" sizes="192x192" />

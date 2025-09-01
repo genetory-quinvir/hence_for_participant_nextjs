@@ -22,6 +22,7 @@ import {
   ClubItem
 } from '@/types/api';
 import { apiDebugger, logger } from '@/utils/logger';
+import { checkRateLimit } from '@/utils/security';
 
 // API 기본 설정 - 직접 API 호출
 const getApiBaseUrl = () => {
@@ -450,28 +451,55 @@ export async function loginUser(email: string, password: string): Promise<LoginR
   }
 }
 
-// 토큰 저장/관리 함수들
+// 토큰 저장/관리 함수들 (보안 강화)
 export function saveTokens(accessToken: string, refreshToken?: string) {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('access_token', accessToken);
-    if (refreshToken) {
-      localStorage.setItem('refresh_token', refreshToken);
+    try {
+      // 토큰 만료 시간 설정 (accessToken: 1시간, refreshToken: 7일)
+      const accessExpiry = Date.now() + (60 * 60 * 1000); // 1시간
+      const refreshExpiry = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7일
+      
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('access_token_expiry', accessExpiry.toString());
+      
+      if (refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken);
+        localStorage.setItem('refresh_token_expiry', refreshExpiry.toString());
+      }
+      
+      logger.debug('🔑 토큰 저장 완료', { 
+        hasAccessToken: !!accessToken, 
+        hasRefreshToken: !!refreshToken 
+      });
+    } catch (error) {
+      logger.error('🔑 토큰 저장 실패:', error);
     }
-    logger.debug('🔑 토큰 저장 완료', { 
-      hasAccessToken: !!accessToken, 
-      hasRefreshToken: !!refreshToken 
-    });
   }
 }
 
 export function getAccessToken(): string | null {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('access_token');
-    // 로그 레벨을 INFO로 변경하여 DEBUG 로그 줄임
-    if (process.env.NODE_ENV === 'development') {
-      logger.debug('🔑 Access Token 조회', { hasToken: !!token, length: token?.length || 0 });
+    try {
+      const token = localStorage.getItem('access_token');
+      const expiry = localStorage.getItem('access_token_expiry');
+      
+      // 토큰 만료 확인
+      if (token && expiry && Date.now() > parseInt(expiry)) {
+        logger.warn('🔑 Access Token 만료됨');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('access_token_expiry');
+        return null;
+      }
+      
+      // 로그 레벨을 INFO로 변경하여 DEBUG 로그 줄임
+      if (process.env.NODE_ENV === 'development') {
+        logger.debug('🔑 Access Token 조회', { hasToken: !!token, length: token?.length || 0 });
+      }
+      return token;
+    } catch (error) {
+      logger.error('🔑 Access Token 조회 실패:', error);
+      return null;
     }
-    return token;
   }
   return null;
 }

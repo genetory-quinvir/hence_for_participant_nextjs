@@ -8,6 +8,7 @@ import { createPost } from "@/lib/api";
 import { useSimpleNavigation } from "@/utils/navigation";
 import { useToast } from "@/components/common/Toast";
 import { resizeImages, isSupportedImageFormat, getFileSizeInMB } from "@/utils/imageResizer";
+import { sanitizeContent, validateInputLength, validateFileUpload, checkRateLimit } from "@/utils/security";
 
 function BoardWriteContent() {
   const { navigate, goBack, replace } = useSimpleNavigation();
@@ -30,6 +31,12 @@ function BoardWriteContent() {
   };
 
   const handleSubmit = async () => {
+    // Rate limiting 체크
+    if (!checkRateLimit('board_write', 5, 60000)) { // 1분에 5회 제한
+      showToast('너무 빠른 요청입니다. 잠시 후 다시 시도해주세요.', 'warning');
+      return;
+    }
+
     if (boardType === 'notice' && !title.trim()) {
       showToast('제목을 입력해주세요.', 'warning');
       return;
@@ -40,6 +47,16 @@ function BoardWriteContent() {
       return;
     }
 
+    // 입력 길이 검증
+    if (!validateInputLength(content, 1000)) {
+      showToast('내용이 너무 깁니다. 1000자 이내로 작성해주세요.', 'warning');
+      return;
+    }
+
+    // 내용 sanitization
+    const sanitizedContent = sanitizeContent(content.trim());
+    const sanitizedTitle = title ? sanitizeContent(title.trim()) : null;
+
     try {
       setIsSubmitting(true);
       
@@ -49,8 +66,8 @@ function BoardWriteContent() {
       const result = await createPost(
         eventId,
         boardType, // board_type을 동적으로 설정
-        boardType === 'notice' ? title.trim() : null, // 공지사항은 별도 제목 사용
-        content.trim(),
+        boardType === 'notice' ? sanitizedTitle : null, // 공지사항은 별도 제목 사용
+        sanitizedContent,
         images
       );
       
@@ -83,10 +100,11 @@ function BoardWriteContent() {
     console.log('📁 선택된 파일들:', files.map(f => ({ name: f.name, size: f.size, type: f.type })));
     
     if (files.length > 0) {
-      // 파일 검증
+      // 파일 검증 (보안 강화)
       const validFiles = files.filter(file => {
-        if (!isSupportedImageFormat(file)) {
-          showToast(`${file.name}: 지원하지 않는 파일 형식입니다.`, 'warning');
+        const validation = validateFileUpload(file);
+        if (!validation.valid) {
+          showToast(`${file.name}: ${validation.error}`, 'warning');
           return false;
         }
         return true;
