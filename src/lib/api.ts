@@ -1944,7 +1944,7 @@ export async function useCoupon(eventId: string, couponId: string, vendorId?: st
   }
 }
 
-export async function getFeaturedEvent(eventId: string, day: number = 1): Promise<FeaturedResponse> {
+export async function getFeaturedEvent(eventId: string, day: number = 1, accessToken?: string): Promise<FeaturedResponse> {
   try {
     // 네트워크 상태 체크 (클라이언트 사이드에서만)
     if (typeof window !== 'undefined' && !navigator.onLine) {
@@ -1958,12 +1958,19 @@ export async function getFeaturedEvent(eventId: string, day: number = 1): Promis
     const url = `${API_BASE_URL}/featured/${eventId}?day=${day}`;
     console.log('getFeaturedEvent 직접 fetch 호출:', url);
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'accept': 'application/json',
+    };
+
+    // accessToken이 있으면 Authorization 헤더 추가
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
     const response = await fetchWithRetry(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'accept': 'application/json',
-      },
+      headers,
     });
 
     if (!response) {

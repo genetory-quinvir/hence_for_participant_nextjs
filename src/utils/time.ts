@@ -5,17 +5,17 @@
 export const getFormattedTime = (dateString: string): string => {
   try {
     // 개발 환경에서만 디버깅 로그 출력
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🕐 getFormattedTime 입력값:', dateString);
-    }
+    // if (process.env.NODE_ENV === 'development') {
+    //   console.log('🕐 getFormattedTime 입력값:', dateString);
+    // }
     
     // 서버에서 오는 시간을 Date 객체로 변환
     const serverDate = new Date(dateString);
     
     // 개발 환경에서만 상세 로그 출력
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🕐 서버 시간:', serverDate.toISOString());
-    }
+    // if (process.env.NODE_ENV === 'development') {
+    //   console.log('🕐 서버 시간:', serverDate.toISOString());
+    // }
 
     // mm. dd a hh:mm 형식으로 반환
     return serverDate.toLocaleString('ko-KR', {

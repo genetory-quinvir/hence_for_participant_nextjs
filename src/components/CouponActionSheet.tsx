@@ -37,16 +37,58 @@ export default function CouponActionSheet({
   // 액션시트가 열렸을 때 body에 스타일 적용
   useEffect(() => {
     if (isOpen) {
-      // 간단하게 body overflow만 hidden으로 설정
+      // 모바일에서 스크롤 완전 차단
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      const originalPosition = window.getComputedStyle(document.body).position;
+      const originalTop = window.getComputedStyle(document.body).top;
+      
+      // 현재 스크롤 위치 저장
+      const scrollY = window.scrollY;
+      
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      
+      // 터치 이벤트 방지
+      document.body.style.touchAction = 'none';
+      
+      // 스타일 복원을 위한 함수 저장
+      (document.body as any)._originalStyles = {
+        overflow: originalStyle,
+        position: originalPosition,
+        top: originalTop,
+        scrollY: scrollY
+      };
     } else {
-      // body overflow 복원
-      document.body.style.overflow = '';
+      // 스타일 복원
+      if ((document.body as any)._originalStyles) {
+        const { overflow, position, top, scrollY } = (document.body as any)._originalStyles;
+        document.body.style.overflow = overflow;
+        document.body.style.position = position;
+        document.body.style.top = top;
+        document.body.style.width = '';
+        document.body.style.touchAction = '';
+        
+        // 스크롤 위치 복원
+        window.scrollTo(0, scrollY);
+        
+        delete (document.body as any)._originalStyles;
+      }
     }
 
     // 컴포넌트 언마운트 시 스타일 복원
     return () => {
-      document.body.style.overflow = '';
+      if ((document.body as any)._originalStyles) {
+        const { overflow, position, top, scrollY } = (document.body as any)._originalStyles;
+        document.body.style.overflow = overflow;
+        document.body.style.position = position;
+        document.body.style.top = top;
+        document.body.style.width = '';
+        document.body.style.touchAction = '';
+        window.scrollTo(0, scrollY);
+        delete (document.body as any)._originalStyles;
+      }
     };
   }, [isOpen]);
 
@@ -55,18 +97,22 @@ export default function CouponActionSheet({
   }
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.6)',
-      zIndex: 9999,
-      display: 'flex',
-      alignItems: 'flex-end',
-      justifyContent: 'center'
-    }}>
+    <div 
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'center'
+      }}
+      onTouchMove={(e) => e.preventDefault()} // 터치 스크롤 방지
+      onWheel={(e) => e.preventDefault()} // 휠 스크롤 방지
+    >
       <div style={{
         width: '100%',
         maxWidth: '700px',

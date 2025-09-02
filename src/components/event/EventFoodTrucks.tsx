@@ -2,16 +2,18 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { VendorItem } from "@/types/api";
+import { VendorItem, CouponItem } from "@/types/api";
 
 interface EventFoodTrucksProps {
   vendors: VendorItem[];
   eventId?: string;
+  coupons?: CouponItem[];
 }
 
 export default function EventFoodTrucks({ 
   vendors, 
-  eventId = 'default-event'
+  eventId = 'default-event',
+  coupons = []
 }: EventFoodTrucksProps) {
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -20,6 +22,27 @@ export default function EventFoodTrucks({
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   const displayVendors = vendors.filter(vendor => vendor.id);
+
+  // 벤더별 쿠폰 사용 여부 확인
+  const getVendorCouponStatus = (vendorId: string) => {
+    const vendorCoupons = coupons.filter(coupon => 
+      coupon.category === vendorId || coupon.id === vendorId
+    );
+    
+    if (vendorCoupons.length === 0) {
+      return { hasCoupon: false, isUsed: false };
+    }
+    
+    const usedCoupons = vendorCoupons.filter(coupon => coupon.isUsed);
+    const availableCoupons = vendorCoupons.filter(coupon => !coupon.isUsed);
+    
+    return {
+      hasCoupon: true,
+      isUsed: usedCoupons.length > 0,
+      availableCount: availableCoupons.length,
+      usedCount: usedCoupons.length
+    };
+  };
 
   // 모바일 체크
   useEffect(() => {
@@ -99,19 +122,37 @@ export default function EventFoodTrucks({
             </svg>
           </button>
         )}
-        {displayVendors.map((vendor) => (
-          <div
-            key={vendor.id}
-            className="flex-shrink-0 w-80 rounded-xl overflow-hidden cursor-pointer flex flex-col"
-            style={{ 
-              scrollSnapAlign: 'start',
-              backgroundColor: 'white',
-            }}
-            onClick={() => {
-              const url = `/foodtrucks/${vendor.id}?eventId=${eventId}`;
-              router.push(url);
-            }}
-          >
+        {displayVendors.map((vendor) => {
+          const couponStatus = getVendorCouponStatus(vendor.id || '');
+          
+          return (
+            <div
+              key={vendor.id}
+              className="flex-shrink-0 w-80 rounded-xl overflow-hidden cursor-pointer flex flex-col relative"
+              style={{ 
+                scrollSnapAlign: 'start',
+                backgroundColor: 'white',
+              }}
+              onClick={() => {
+                const url = `/foodtrucks/${vendor.id}?eventId=${eventId}`;
+                router.push(url);
+              }}
+            >
+            {/* 쿠폰 상태 배지 */}
+            {couponStatus.hasCoupon && (
+              <div className="absolute top-3 right-3 z-10">
+                {couponStatus.isUsed ? (
+                  <div className="bg-gray-500 text-white text-xs px-2 py-1 rounded-full">
+                    사용완료
+                  </div>
+                ) : (
+                  <div className="bg-purple-600 text-white text-xs px-2 py-1 rounded-full">
+                    쿠폰 {couponStatus.availableCount}개
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="w-full aspect-[5/3] overflow-hidden relative p-3">
               {vendor.thumbImageUrl ? (
                 <img 
@@ -159,7 +200,8 @@ export default function EventFoodTrucks({
               </div>
             </div>
           </div>
-        ))}
+        );
+        })}
       </div>
     </div>
   );

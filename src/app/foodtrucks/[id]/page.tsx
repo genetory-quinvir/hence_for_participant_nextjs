@@ -12,12 +12,14 @@ import ImageGallery from "@/components/common/ImageGallery";
 import CouponActionSheet from "@/components/CouponActionSheet";
 import { useToast } from "@/components/common/Toast";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 function FoodTruckDetailContent() {
   const params = useParams();
   const { navigate, goBack } = useSimpleNavigation();
   const searchParams = useSearchParams();
   const { currentDay } = useDay();
+  const { isAuthenticated, accessToken } = useAuth();
   const [vendor, setVendor] = useState<VendorItem | null>(null);
   const [featuredData, setFeaturedData] = useState<FeaturedItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,6 @@ function FoodTruckDetailContent() {
   const [selectedCoupon, setSelectedCoupon] = useState<CouponItem | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<VendorItem | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
-  const [usedCoupons, setUsedCoupons] = useState<Set<string>>(new Set());
   const eventId = searchParams.get('eventId') || 'default-event';
   const vendorId = params.id as string;
   const hasCalledApi = useRef(false);
@@ -78,8 +79,8 @@ function FoodTruckDetailContent() {
           }
 
           // 이벤트 정보와 쿠폰 정보 가져오기
-          console.log('🔄 이벤트 정보 요청:', { eventId, currentDay });
-          const eventResult = await getFeaturedEvent(eventId, currentDay);
+          console.log('🔄 이벤트 정보 요청:', { eventId, currentDay, isAuthenticated });
+          const eventResult = await getFeaturedEvent(eventId, currentDay, isAuthenticated && accessToken ? accessToken : undefined);
           
           if (eventResult.success && eventResult.featured) {
             setFeaturedData(eventResult.featured);
@@ -154,10 +155,6 @@ function FoodTruckDetailContent() {
     setSelectedVendor(vendor);
   };
 
-  const markCouponAsUsed = (couponId: string) => {
-    setUsedCoupons(prev => new Set(prev).add(couponId));
-  };
-
   const handleUseSelectedVendor = async () => {
     if (!selectedCoupon) return;
     
@@ -169,7 +166,16 @@ function FoodTruckDetailContent() {
       const result = await useCoupon(eventId, selectedCoupon.id!, selectedVendor?.id);
       if (result.success) {
         showToast(selectedCoupon.discountType === 'EXCHANGE' ? '교환권이 사용되었습니다!' : '쿠폰이 사용되었습니다!', 'success');
-        markCouponAsUsed(selectedCoupon.id!);
+        
+        // 쿠폰 사용 후 최신 상태를 위해 API 재호출
+        try {
+          const updatedEventResult = await getFeaturedEvent(eventId, currentDay, accessToken || undefined);
+          if (updatedEventResult.success && updatedEventResult.featured) {
+            setFeaturedData(updatedEventResult.featured);
+          }
+        } catch (error) {
+          console.error('쿠폰 상태 업데이트 실패:', error);
+        }
       } else if (result.error === 'AUTH_REQUIRED') {
         showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
         router.push('/sign');
@@ -435,9 +441,18 @@ function FoodTruckDetailContent() {
                       ? 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)' :
                       'linear-gradient(135deg, #6b7280 0%, #9ca3af 100%)'
                   }}
-                >
-                  {/* 쿠폰 구멍 */}
-                  <div className="absolute inset-0 pointer-events-none">
+                                                    >
+                    {/* 쿠폰 사용 상태 배지 */}
+                    {coupon.isUsed && (
+                      <div className="absolute top-2 right-2 z-20">
+                        <div className="bg-gray-500 text-white text-xs px-2 py-1 rounded-full">
+                          사용완료
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 쿠폰 구멍 */}
+                    <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gray-100 rounded-full -translate-x-3"></div>
                     <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gray-100 rounded-full translate-x-3"></div>
                   </div>
@@ -502,7 +517,7 @@ function FoodTruckDetailContent() {
 
                       <button
                         className={`px-4 py-2 mr-2 rounded-lg text-sm font-semibold transition-colors shadow-lg flex-shrink-0 ${
-                          coupon.status?.toLowerCase() === 'active' && !coupon.isUsed && !usedCoupons.has(coupon.id!)
+                          coupon.status?.toLowerCase() === 'active' && !coupon.isUsed
                             ? coupon.discountType === 'PERCENTAGE'
                               ? 'bg-purple-600 bg-opacity-80 text-white hover:bg-opacity-90'
                               : coupon.discountType === 'FIXED_AMOUNT'
@@ -512,11 +527,11 @@ function FoodTruckDetailContent() {
                               : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white'
                             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                         }`}
-                        disabled={coupon.status?.toLowerCase() !== 'active' || coupon.isUsed || usedCoupons.has(coupon.id!)}
+                        disabled={coupon.status?.toLowerCase() !== 'active' || coupon.isUsed}
                         onClick={() => handleCouponUse(coupon)}
                       >
                         {couponLoading ? '처리 중...' : 
-                         coupon.isUsed || usedCoupons.has(coupon.id!) ? '사용완료' :
+                         coupon.isUsed ? '사용완료' :
                          coupon.status?.toLowerCase() === 'active' ? '사용하기' : '사용불가'}
                       </button>
                     </div>

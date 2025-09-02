@@ -247,7 +247,7 @@ const ErrorDisplay = ({ error, onRetry }: { error: string; onRetry: () => void }
 export default function EventPageContent({ onRequestNotificationPermission }: EventPageContentProps) {
   const { navigate } = useSimpleNavigation();
   const searchParams = useSearchParams();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, accessToken } = useAuth();
   const { currentDay } = useDay();
   
   // 상태 관리
@@ -348,8 +348,8 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
 
     const fetchData = async () => {
       try {
-        console.log('getFeaturedEvent API 호출 시작:', { eventId, currentDay });
-        const featuredResult = await getFeaturedEvent(eventId, currentDay);
+        console.log('getFeaturedEvent API 호출 시작:', { eventId, currentDay, isAuthenticated });
+        const featuredResult = await getFeaturedEvent(eventId, currentDay, isAuthenticated && accessToken ? accessToken : undefined);
         console.log('getFeaturedEvent API 응답:', featuredResult);
         
         if (!isMounted.current) {
@@ -567,6 +567,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
             <EventFoodTrucks 
               vendors={featuredData.vendors} 
               eventId={safeEventId}
+              coupons={featuredData.coupons}
             />
           </EventSection>
         )}
