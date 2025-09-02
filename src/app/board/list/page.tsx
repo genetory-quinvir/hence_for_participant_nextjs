@@ -536,7 +536,6 @@ function BoardListContent() {
                 <PostHeader 
                   nickname={post.user?.nickname}
                   profileImageUrl={post.user?.profileImageUrl || undefined}
-                  createdAt={post.createdAt}
                   className="mb-6"
                   showMoreButton={true}
                   isNotice={type === 'notice'}
