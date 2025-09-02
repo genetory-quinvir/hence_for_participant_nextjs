@@ -189,13 +189,16 @@ function BoardWriteContent() {
   };
 
   const handleImageLibrary = () => {
+    console.log('🖼️ 이미지 라이브러리 버튼 클릭됨');
+    
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.multiple = true;
     
-    // 아이폰에서 파일 선택 이벤트 처리 개선
+    // 이벤트 핸들러 함수 정의
     const handleFileChange = (e: Event) => {
+      console.log('🎯 파일 선택 이벤트 발생!', e);
       const target = e.target as HTMLInputElement;
       if (target.files && target.files.length > 0) {
         console.log('📁 파일 선택됨:', target.files.length, '개');
@@ -205,32 +208,55 @@ function BoardWriteContent() {
       }
     };
     
+    // 기존 방식과 새로운 방식 모두 사용 (안전성 강화)
     input.onchange = handleFileChange;
+    input.addEventListener('change', handleFileChange);
     
-    // 아이폰에서 input.click() 실패 시 대체 방법
+    // DOM에 추가하여 안전하게 클릭
+    input.style.position = 'absolute';
+    input.style.left = '-9999px';
+    input.style.opacity = '0';
+    input.style.pointerEvents = 'none';
+    document.body.appendChild(input);
+    
+    console.log('🖱️ input 클릭 시도...');
+    
     try {
       input.click();
+      console.log('✅ input.click() 성공');
     } catch (error) {
       console.log('⚠️ input.click() 실패, 대체 방법 시도:', error);
-      // 아이폰에서 input을 DOM에 추가 후 클릭
-      input.style.position = 'absolute';
-      input.style.left = '-9999px';
-      document.body.appendChild(input);
+      // 포인터 이벤트 활성화 후 다시 시도
+      input.style.pointerEvents = 'auto';
       input.click();
-      setTimeout(() => document.body.removeChild(input), 1000);
     }
+    
+    // 클릭 후 DOM에서 제거 (안전하게)
+    setTimeout(() => {
+      try {
+        if (document.body.contains(input)) {
+          document.body.removeChild(input);
+          console.log('🧹 input DOM에서 제거 완료');
+        }
+      } catch (error) {
+        console.log('⚠️ input DOM 제거 실패:', error);
+      }
+    }, 2000);
     
     setShowActionSheet(false);
   };
 
   const handleCamera = () => {
+    console.log('📸 카메라 버튼 클릭됨');
+    
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.capture = 'environment';
     
-    // 아이폰에서 카메라 이벤트 처리 개선
+    // 이벤트 핸들러 함수 정의
     const handleFileChange = (e: Event) => {
+      console.log('🎯 카메라 이벤트 발생!', e);
       const target = e.target as HTMLInputElement;
       if (target.files && target.files.length > 0) {
         console.log('📸 카메라 촬영 완료:', target.files.length, '개');
@@ -240,20 +266,40 @@ function BoardWriteContent() {
       }
     };
     
+    // 기존 방식과 새로운 방식 모두 사용 (안전성 강화)
     input.onchange = handleFileChange;
+    input.addEventListener('change', handleFileChange);
     
-    // 아이폰에서 input.click() 실패 시 대체 방법
+    // DOM에 추가하여 안전하게 클릭
+    input.style.position = 'absolute';
+    input.style.left = '-9999px';
+    input.style.opacity = '0';
+    input.style.pointerEvents = 'none';
+    document.body.appendChild(input);
+    
+    console.log('📸 카메라 input 클릭 시도...');
+    
     try {
       input.click();
+      console.log('✅ 카메라 input.click() 성공');
     } catch (error) {
       console.log('⚠️ 카메라 input.click() 실패, 대체 방법 시도:', error);
-      // 아이폰에서 input을 DOM에 추가 후 클릭
-      input.style.position = 'absolute';
-      input.style.left = '-9999px';
-      document.body.appendChild(input);
+      // 포인터 이벤트 활성화 후 다시 시도
+      input.style.pointerEvents = 'auto';
       input.click();
-      setTimeout(() => document.body.removeChild(input), 1000);
     }
+    
+    // 클릭 후 DOM에서 제거 (안전하게)
+    setTimeout(() => {
+      try {
+        if (document.body.contains(input)) {
+          document.body.removeChild(input);
+          console.log('🧹 카메라 input DOM에서 제거 완료');
+        }
+      } catch (error) {
+        console.log('⚠️ 카메라 input DOM 제거 실패:', error);
+      }
+    }, 2000);
     
     setShowActionSheet(false);
   };
@@ -431,7 +477,7 @@ function BoardWriteContent() {
                         : 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
                     }`}
                   >
-                    {isSubmitting ? '작성 중...' : (boardType === 'notice' ? '공지 등록' : '올리기')}
+                    {isSubmitting ? '작성 중' : (boardType === 'notice' ? '공지 등록' : '올리기')}
                   </button>
                 </div>
               </div>
