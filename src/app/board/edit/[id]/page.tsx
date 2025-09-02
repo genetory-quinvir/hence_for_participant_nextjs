@@ -168,32 +168,118 @@ function BoardEditContent() {
   };
 
   const handleImageLibrary = () => {
+    console.log('🖼️ 이미지 라이브러리 버튼 클릭됨 (수정)');
+    
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.multiple = true;
-    input.onchange = (e) => {
+    
+    // 이벤트 핸들러 함수 정의
+    const handleFileChange = (e: Event) => {
+      console.log('🎯 파일 선택 이벤트 발생! (수정)', e);
       const target = e.target as HTMLInputElement;
-      if (target.files) {
+      if (target.files && target.files.length > 0) {
+        console.log('📁 파일 선택됨:', target.files.length, '개');
         handleImageSelect({ target } as React.ChangeEvent<HTMLInputElement>);
+      } else {
+        console.log('⚠️ 파일이 선택되지 않음');
       }
     };
-    input.click();
+    
+    // 기존 방식과 새로운 방식 모두 사용 (안전성 강화)
+    input.onchange = handleFileChange;
+    input.addEventListener('change', handleFileChange);
+    
+    // DOM에 추가하여 안전하게 클릭
+    input.style.position = 'absolute';
+    input.style.left = '-9999px';
+    input.style.opacity = '0';
+    input.style.pointerEvents = 'none';
+    document.body.appendChild(input);
+    
+    console.log('🖱️ input 클릭 시도... (수정)');
+    
+    try {
+      input.click();
+      console.log('✅ input.click() 성공 (수정)');
+    } catch (error) {
+      console.log('⚠️ input.click() 실패, 대체 방법 시도 (수정):', error);
+      // 포인터 이벤트 활성화 후 다시 시도
+      input.style.pointerEvents = 'auto';
+      input.click();
+    }
+    
+    // 클릭 후 DOM에서 제거 (안전하게)
+    setTimeout(() => {
+      try {
+        if (document.body.contains(input)) {
+          document.body.removeChild(input);
+          console.log('🧹 input DOM에서 제거 완료 (수정)');
+        }
+      } catch (error) {
+        console.log('⚠️ input DOM 제거 실패 (수정):', error);
+      }
+    }, 2000);
+    
     setShowActionSheet(false);
   };
 
   const handleCamera = () => {
+    console.log('📸 카메라 버튼 클릭됨 (수정)');
+    
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.capture = 'environment';
-    input.onchange = (e) => {
+    
+    // 이벤트 핸들러 함수 정의
+    const handleFileChange = (e: Event) => {
+      console.log('🎯 카메라 이벤트 발생! (수정)', e);
       const target = e.target as HTMLInputElement;
-      if (target.files) {
+      if (target.files && target.files.length > 0) {
+        console.log('📸 카메라 촬영 완료:', target.files.length, '개');
         handleImageSelect({ target } as React.ChangeEvent<HTMLInputElement>);
+      } else {
+        console.log('⚠️ 카메라 촬영 실패 또는 취소됨');
       }
     };
-    input.click();
+    
+    // 기존 방식과 새로운 방식 모두 사용 (안전성 강화)
+    input.onchange = handleFileChange;
+    input.addEventListener('change', handleFileChange);
+    
+    // DOM에 추가하여 안전하게 클릭
+    input.style.position = 'absolute';
+    input.style.left = '-9999px';
+    input.style.opacity = '0';
+    input.style.pointerEvents = 'none';
+    document.body.appendChild(input);
+    
+    console.log('📸 카메라 input 클릭 시도... (수정)');
+    
+    try {
+      input.click();
+      console.log('✅ 카메라 input.click() 성공 (수정)');
+    } catch (error) {
+      console.log('⚠️ 카메라 input.click() 실패, 대체 방법 시도 (수정):', error);
+      // 포인터 이벤트 활성화 후 다시 시도
+      input.style.pointerEvents = 'auto';
+      input.click();
+    }
+    
+    // 클릭 후 DOM에서 제거 (안전하게)
+    setTimeout(() => {
+      try {
+        if (document.body.contains(input)) {
+          document.body.removeChild(input);
+          console.log('🧹 카메라 input DOM에서 제거 완료 (수정)');
+        }
+      } catch (error) {
+        console.log('⚠️ 카메라 input DOM 제거 실패 (수정):', error);
+      }
+    }, 2000);
+    
     setShowActionSheet(false);
   };
 
