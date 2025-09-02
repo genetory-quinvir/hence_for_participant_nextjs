@@ -47,17 +47,19 @@ export function usePWA() {
     };
   }, []);
 
-  // Service Worker 등록
+  // Service Worker 등록 (Firebase FCM 비활성화)
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/firebase-messaging-sw.js')
-        .then((registration) => {
-          console.log('Firebase SW registered: ', registration);
-        })
-        .catch((registrationError) => {
-          console.log('Firebase SW registration failed: ', registrationError);
-        });
+      // navigator.serviceWorker
+      //   .register('/firebase-messaging-sw.js')
+      //   .then((registration) => {
+      //     console.log('Firebase SW registered: ', registration);
+      //   })
+      //   .catch((registrationError) => {
+      //       console.log('Firebase SW registration failed: ', registrationError);
+      //     });
+      
+      console.log('🚫 Firebase Cloud Messaging Service Worker 등록이 비활성화되었습니다');
     }
   }, []);
 
@@ -74,35 +76,35 @@ export function usePWA() {
     }
   };
 
-  // 포그라운드 메시지 리스너
+  // 포그라운드 메시지 리스너 (Firebase FCM 비활성화)
   useEffect(() => {
     if (notificationPermission === 'granted') {
-      console.log('🔔 포그라운드 메시지 리스너 설정 중...');
-      const messagePromise = onMessageListener();
-      if (messagePromise && typeof messagePromise.then === 'function') {
-        messagePromise
-          .then((payload: any) => {
-            console.log('📨 포그라운드 메시지 수신:', payload);
-            console.log('📨 메시지 데이터:', payload.data);
-            console.log('📨 알림 정보:', payload.notification);
-            
-            // 포그라운드에서도 알림 표시
-            if (payload.notification) {
-              const { title, body } = payload.notification;
-              if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(title, {
-                  body,
-                  icon: '/icons/icon-192x192.png',
-                  badge: '/icons/icon-72x72.png',
-                  tag: 'hence-event-notification'
-                });
-              }
-            }
-          })
-          .catch((err: any) => {
-            console.error('❌ 포그라운드 메시지 수신 오류:', err);
-          });
-      }
+      console.log('🚫 Firebase FCM 포그라운드 메시지 리스너가 비활성화되었습니다');
+      // const messagePromise = onMessageListener();
+      // if (messagePromise && typeof messagePromise.then === 'function') {
+      //   messagePromise
+      //     .then((payload: any) => {
+      //       console.log('📨 포그라운드 메시지 수신:', payload);
+      //       console.log('📨 메시지 데이터:', payload.data);
+      //       console.log('📨 알림 정보:', payload.notification);
+      //       
+      //       // 포그라운드에서도 알림 표시
+      //       if (payload.notification) {
+      //         const { title, body } = payload.notification;
+      //         if ('Notification' in window && Notification.permission === 'granted') {
+      //           new Notification(title, {
+      //             body,
+      //             icon: '/icons/icon-192x192.png',
+      //             badge: '/icons/icon-72x72.png',
+      //             tag: 'hence-event-notification'
+      //           });
+      //         }
+      //       }
+      //     })
+      //     .catch((err: any) => {
+      //         console.error('❌ 포그라운드 메시지 수신 오류:', err);
+      //       });
+      // }
     }
   }, [notificationPermission]);
 
