@@ -416,7 +416,7 @@ function BoardWriteContent() {
                   {/* 이미지 업로드 정보 */}
                   <div className="text-xs text-gray-500">
                     <div>최대 5개, 자동 최적화</div>
-                    <div>지원 형식: JPG, PNG, GIF, WebP</div>
+                    <div>JPG, PNG, GIF, WebP</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
