@@ -353,22 +353,22 @@ function ProfilePageContent() {
           const result = await deleteBoard(selectedPost.eventId, selectedPost.type.toLowerCase(), selectedPost.id);
           
           if (result.success) {
-            showToast('게시글이 삭제되었습니다.', 'success');
+            // showToast('게시글이 삭제되었습니다.', 'success');
             // 게시글 목록에서 제거
             setUserPosts(prev => prev.filter(post => post.id !== selectedPost.id));
             // 통계 업데이트
             setProfileData(prev => prev ? { ...prev, postCount: (prev.postCount || 1) - 1 } : prev);
           } else {
             if (result.error?.includes('로그인이 만료')) {
-              showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+              // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
               navigate('/sign');
             } else {
-              showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
+              // showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
             }
           }
         } catch (error) {
           console.error('게시글 삭제 오류:', error);
-          showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+          // showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
         } finally {
           setIsDeleting(false);
         }
@@ -389,22 +389,22 @@ function ProfilePageContent() {
           const result = await deleteComment(selectedComment.eventId, 'free', selectedComment.postId || '', selectedComment.id);
           
           if (result.success) {
-            showToast('댓글이 삭제되었습니다.', 'success');
+            // showToast('댓글이 삭제되었습니다.', 'success');
             // 댓글 목록에서 제거
             setUserComments(prev => prev.filter(comment => comment.id !== selectedComment.id));
             // 통계 업데이트
             setProfileData(prev => prev ? { ...prev, commentCount: (prev.commentCount || 1) - 1 } : prev);
           } else {
             if (result.error?.includes('로그인이 만료')) {
-              showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+              // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
               navigate('/sign');
             } else {
-              showToast(result.error || '댓글 삭제에 실패했습니다.', 'error');
+              // showToast(result.error || '댓글 삭제에 실패했습니다.', 'error');
             }
           }
         } catch (error) {
           console.error('댓글 삭제 오류:', error);
-          showToast('댓글 삭제 중 오류가 발생했습니다.', 'error');
+          // showToast('댓글 삭제 중 오류가 발생했습니다.', 'error');
         } finally {
           setIsDeleting(false);
         }

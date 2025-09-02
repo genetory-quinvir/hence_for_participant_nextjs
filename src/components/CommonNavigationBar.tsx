@@ -39,9 +39,9 @@ export default function CommonNavigationBar({
         minHeight: fixedHeight ? height : '44px'
       }}
     >
-      <div className="flex items-center justify-between h-full px-2">
+      <div className="relative flex items-center justify-between h-full px-2">
         {/* 왼쪽 버튼 */}
-        <div className="flex items-center">
+        <div className="flex items-center z-10">
           {leftButton ? (
             <button
               onClick={onLeftClick}
@@ -55,12 +55,12 @@ export default function CommonNavigationBar({
         </div>
 
         {/* 가운데 타이틀 */}
-        <div className="flex-1 text-center">
-          <h1 className={`text-md font-semibold ${textColor} text-black`}>{title}</h1>
+        <div className="absolute left-1/2 transform -translate-x-1/2 text-center z-0">
+          <h1 className={`text-md font-semibold ${textColor}`}>{title}</h1>
         </div>
 
         {/* 오른쪽 버튼 */}
-        <div className="flex items-center">
+        <div className="flex items-center z-10">
           {rightButton ? (
             onRightClick ? (
               <button

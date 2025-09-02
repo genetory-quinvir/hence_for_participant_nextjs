@@ -606,7 +606,7 @@ export async function refreshAccessToken(): Promise<{ success: boolean; accessTo
   }
 }
 
-// 공통 API 래퍼 함수 (토큰 갱신 포함)
+// 공통 API 래퍼 함수 (토큰 갱신 및 자동 재시도 포함)
 export async function apiRequest<T>(
   url: string, 
   options: RequestInit = {}
@@ -765,19 +765,24 @@ export async function apiRequest<T>(
   // 첫 번째 요청 시도
   let response = await makeRequest(accessToken);
 
-  // 401 에러가 발생하면 토큰 갱신 시도 (안드로이드에서는 제한적으로)
+  // 401 에러가 발생하면 토큰 갱신 시도
   if (response.status === 401) {
+    logger.info('🔄 401 에러 감지, 토큰 갱신 시도');
     
-    
-    // 안드로이드에서는 토큰 갱신을 한 번만 시도
-    const refreshResult = await refreshAccessToken();
-    
-    if (refreshResult.success && refreshResult.accessToken) {
+    try {
+      // 토큰 갱신 시도
+      const refreshResult = await refreshAccessToken();
       
-      accessToken = refreshResult.accessToken;
-      response = await makeRequest(accessToken);
-    } else {
-      
+      if (refreshResult.success && refreshResult.accessToken) {
+        logger.info('✅ 토큰 갱신 성공, 재시도');
+        accessToken = refreshResult.accessToken;
+        response = await makeRequest(accessToken);
+      } else {
+        logger.warn('❌ 토큰 갱신 실패, AUTH_REQUIRED 반환');
+        return { success: false, error: 'AUTH_REQUIRED' };
+      }
+    } catch (error) {
+      logger.error('💥 토큰 갱신 중 오류', error);
       return { success: false, error: 'AUTH_REQUIRED' };
     }
   }
@@ -1109,6 +1114,35 @@ export async function getBoardList(eventId: string, boardType: string, cursor?: 
         }
       };
     } else {
+      // AUTH_REQUIRED 에러인 경우 자동 재시도
+      if (result.error === 'AUTH_REQUIRED') {
+        logger.info('🔄 getBoardList AUTH_REQUIRED, 자동 재시도');
+        try {
+          const retryResult = await apiRequest<any>(url, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${getAccessToken()}`,
+            },
+          });
+          
+          if (retryResult.success && retryResult.data) {
+            logger.info('✅ getBoardList 재시도 성공');
+            const responseData = retryResult.data.data || retryResult.data;
+            return {
+              success: true,
+              data: {
+                items: responseData.items || [],
+                hasNext: responseData.pagination?.hasNext || responseData.hasNext || false,
+                total: responseData.pagination?.totalCount || responseData.total || 0,
+                nextCursor: responseData.pagination?.nextCursor || null
+              }
+            };
+          }
+        } catch (retryError) {
+          logger.error('💥 getBoardList 재시도 실패', retryError);
+        }
+      }
+      
       return {
         success: false,
         error: result.error || '게시글 목록을 불러오는데 실패했습니다.',

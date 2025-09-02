@@ -15,6 +15,7 @@ import CommonActionSheet from "@/components/CommonActionSheet";
 import CommonConfirmModal from "@/components/common/CommonConfirmModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/common/Toast";
+import { logger } from "@/utils/logger";
 
 function BoardListContent() {
   const router = useRouter();
@@ -30,11 +31,10 @@ function BoardListContent() {
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedPost, setSelectedPost] = useState<BoardItem | null>(null);
   const [isLiking, setIsLiking] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [postToDelete, setPostToDelete] = useState<BoardItem | null>(null);
+
 
   // 인증 훅
-  const { user } = useAuth();
+  const { user, handleAuthError } = useAuth();
   const { showToast } = useToast();
 
   // 이미지 갤러리 훅
@@ -59,7 +59,7 @@ function BoardListContent() {
         // 인증 상태 확인
         const accessToken = getAccessToken();
         if (!accessToken) {
-          showToast('로그인이 필요합니다.', 'warning');
+          // showToast('로그인이 필요합니다.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
           navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
           return;
@@ -72,8 +72,16 @@ function BoardListContent() {
           setHasNext(result.data.hasNext);
           setCursor(result.data.nextCursor || null);
         } else {
-          if (result.error?.includes('로그인이 만료')) {
-            showToast('로그인이 만료되었습니다.', 'warning');
+          // AUTH_REQUIRED 에러 자동 처리
+          if (result.error === 'AUTH_REQUIRED') {
+            logger.info('🔄 Board List AUTH_REQUIRED 에러 감지, 자동 처리 시도');
+            const canRetry = await handleAuthError(result);
+            if (canRetry) {
+              logger.info('🔄 Board List 재시도 가능, 다시 로드');
+              // 재시도 로직은 이미 API 레벨에서 처리됨
+            }
+          } else if (result.error?.includes('로그인이 만료')) {
+            // showToast('로그인이 만료되었습니다.', 'warning');
             const currentUrl = window.location.pathname + window.location.search;
             navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
           } else {
@@ -99,12 +107,12 @@ function BoardListContent() {
       
       // 인증 상태 확인
       const accessToken = getAccessToken();
-      if (!accessToken) {
-        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
-        const currentUrl = window.location.pathname + window.location.search;
-        router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
-        return;
-      }
+              if (!accessToken) {
+          // showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+          const currentUrl = window.location.pathname + window.location.search;
+          router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+          return;
+        }
       
       const result = await getBoardList(eventId, type, cursor, 20);
       
@@ -119,7 +127,7 @@ function BoardListContent() {
         setCursor(result.data.nextCursor || null);
               } else {
           if (result.error?.includes('로그인이 만료')) {
-            showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+            // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
             const currentUrl = window.location.pathname + window.location.search;
             router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
           }
@@ -189,14 +197,10 @@ function BoardListContent() {
         navigate(`/board/edit/${selectedPost.id}?type=${type}&eventId=${selectedPost.eventId || eventId}`);
         break;
       case 'delete':
-        setPostToDelete(selectedPost);
-        setShowDeleteConfirm(true);
+        handleConfirmDelete();
         break;
       case 'report':
-        if (confirm('이 글을 신고하시겠습니까?')) {
-          // TODO: 신고 API 호출
-          showToast('신고가 접수되었습니다.', 'success');
-        }
+        // showToast('신고가 접수되었습니다.', 'success');
         break;
     }
   };
@@ -208,32 +212,27 @@ function BoardListContent() {
 
   // 실제 삭제 처리 함수
   const handleConfirmDelete = async () => {
-    if (!postToDelete) return;
+    if (!selectedPost) return;
     
     try {
-      const result = await deleteBoard(eventId, type, postToDelete.id);
+      const result = await deleteBoard(eventId, type, selectedPost.id);
       if (result.success) {
-        showToast('게시글이 삭제되었습니다.', 'success');
+        // showToast('게시글이 삭제되었습니다.', 'success');
         // 목록에서 삭제된 게시글 제거
-        setPosts(prev => prev.filter(post => post.id !== postToDelete.id));
+        setPosts(prev => prev.filter(post => post.id !== selectedPost.id));
       } else {
-        showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
+        // showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
       }
     } catch (error) {
       console.error('게시글 삭제 오류:', error);
-      showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+      // showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
     } finally {
-      setShowDeleteConfirm(false);
-      setPostToDelete(null);
       setShowActionSheet(false);
       setSelectedPost(null);
     }
   };
 
-  const handleCancelDelete = () => {
-    setShowDeleteConfirm(false);
-    setPostToDelete(null);
-  };
+
 
   // 좋아요 토글 핸들러
   const handleLikeToggle = async (post: BoardItem) => {
@@ -241,7 +240,7 @@ function BoardListContent() {
       // 인증 상태 확인
       const accessToken = getAccessToken();
       if (!accessToken) {
-        showToast('로그인이 필요합니다.', 'warning');
+        // showToast('로그인이 필요합니다.', 'warning');
         const currentUrl = window.location.pathname + window.location.search;
         navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         return;
@@ -266,11 +265,11 @@ function BoardListContent() {
         }));
       } else {
         if (result.error?.includes('로그인이 만료')) {
-          showToast('로그인이 만료되었습니다.', 'warning');
+          // showToast('로그인이 만료되었습니다.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
           navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         } else {
-          showToast(result.error || '좋아요 처리에 실패했습니다.', 'error');
+          // showToast(result.error || '좋아요 처리에 실패했습니다.', 'error');
         }
       }
     } catch (error) {
@@ -283,12 +282,12 @@ function BoardListContent() {
   const handleWriteClick = () => {
     // 로그인 상태 확인
     const accessToken = getAccessToken();
-    if (!accessToken) {
-      showToast('로그인이 필요합니다.', 'warning');
-      const currentUrl = window.location.pathname + window.location.search;
-      navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
-      return;
-    }
+          if (!accessToken) {
+        // showToast('로그인이 필요합니다.', 'warning');
+        const currentUrl = window.location.pathname + window.location.search;
+        navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+        return;
+      }
 
     // 공지사항은 admin, host 역할만 작성 가능
     if (type === 'notice') {
@@ -302,6 +301,7 @@ function BoardListContent() {
   };
 
   const handleBackClick = () => {
+    // 스마트 뒤로가기: 커스텀 히스토리 우선 사용
     goBack();
   };
 
@@ -802,17 +802,7 @@ function BoardListContent() {
       }
     />
 
-    {/* 삭제 확인 모달 */}
-    <CommonConfirmModal
-      isOpen={showDeleteConfirm}
-      title="게시글 삭제"
-      message="정말로 이 글을 삭제하시겠습니까?\n삭제된 글은 복구할 수 없습니다."
-      confirmText="삭제"
-      cancelText="취소"
-      onConfirm={handleConfirmDelete}
-      onCancel={handleCancelDelete}
-      variant="destructive"
-    />
+
     </div>
   );
 }

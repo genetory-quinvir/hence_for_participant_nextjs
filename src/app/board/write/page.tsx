@@ -417,9 +417,6 @@ function BoardWriteContent() {
                   <div className="text-xs text-gray-500">
                     <div>최대 5개, 자동 최적화</div>
                     <div>지원 형식: JPG, PNG, GIF, WebP</div>
-                    <div className="text-purple-600 font-medium">
-                      {/iPad|iPhone|iPod/.test(navigator.userAgent) ? '🍎 iOS 최적화' : '📱 안드로이드/데스크톱'}
-                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">

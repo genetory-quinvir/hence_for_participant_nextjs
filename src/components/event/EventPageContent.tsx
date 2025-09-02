@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import CommonProfileView from "@/components/common/CommonProfileView";
 import { useAuth } from "@/contexts/AuthContext";
-import { getFeaturedEvent } from "@/lib/api";
+import { getFeaturedEvent, getAccessToken } from "@/lib/api";
 import { useDay } from "@/contexts/DayContext";
 import { FeaturedItem } from "@/types/api";
 import EventHero from "@/components/event/EventHero";
@@ -429,6 +429,24 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
     navigate("/");
   }, [navigate]);
 
+  // featured 데이터 새로고침 함수
+  const handleRefreshFeatured = useCallback(async () => {
+    try {
+      console.log('EventCommunity에서 featured 데이터 새로고침 시작');
+      const accessToken = isAuthenticated ? (await getAccessToken()) || undefined : undefined;
+      const featuredResult = await getFeaturedEvent(safeEventId, currentDay, accessToken);
+      
+      if (featuredResult?.success && featuredResult.featured) {
+        console.log('featured 데이터 새로고침 성공:', featuredResult.featured);
+        setFeaturedData(featuredResult.featured);
+      } else {
+        console.log('featured 데이터 새로고침 실패:', featuredResult?.error);
+      }
+    } catch (error) {
+      console.error('featured 데이터 새로고침 중 오류:', error);
+    }
+  }, [safeEventId, currentDay, isAuthenticated]);
+
   // 프로필 버튼 렌더링
   const renderProfileButton = useCallback(() => {
     if (user) {
@@ -592,6 +610,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
             eventId={safeEventId}
             showViewAllButton={true}
             onViewAllClick={handleNavigateToBoard}
+            onRefresh={handleRefreshFeatured}
           />
         )}
 

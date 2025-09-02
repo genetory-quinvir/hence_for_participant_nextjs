@@ -24,6 +24,8 @@ interface AuthContextType extends AuthState {
   logout: () => void;
   updateUser: (user: User) => void;
   checkAuthStatus: () => Promise<boolean>;
+  refreshAccessToken: () => Promise<string | null>;
+  handleAuthError: (error: any) => Promise<boolean>;
 }
 
 // 기본값
@@ -278,6 +280,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return null;
   };
 
+  // Access Token 자동 갱신
+  const refreshAccessToken = useCallback(async (): Promise<string | null> => {
+    try {
+      logger.info('🔄 Access Token 자동 갱신 시작');
+      
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        logger.warn('❌ Refresh Token이 없어서 토큰 갱신 불가');
+        return null;
+      }
+
+      // refreshAccessToken API 호출
+      const { refreshAccessToken: refreshTokenAPI } = await import('@/lib/api');
+      const result = await refreshTokenAPI();
+      
+      if (result.success && result.accessToken) {
+        logger.info('✅ Access Token 갱신 성공');
+        
+        // 새로운 토큰으로 상태 업데이트
+        setAuthState(prev => ({
+          ...prev,
+          accessToken: result.accessToken || null
+        }));
+        
+        return result.accessToken;
+      } else {
+        logger.warn('❌ Access Token 갱신 실패', result.error);
+        return null;
+      }
+    } catch (error) {
+      logger.error('💥 Access Token 갱신 중 오류', error);
+      return null;
+    }
+  }, []);
+
+  // AUTH_REQUIRED 에러 자동 처리
+  const handleAuthError = useCallback(async (error: any): Promise<boolean> => {
+    try {
+      // AUTH_REQUIRED 에러인지 확인
+      const isAuthRequired = error?.error === 'AUTH_REQUIRED' || 
+                           error?.message?.includes('AUTH_REQUIRED') ||
+                           error?.includes('AUTH_REQUIRED');
+      
+      if (!isAuthRequired) {
+        logger.info('🔍 AUTH_REQUIRED 에러가 아님, 다른 에러 처리');
+        return false;
+      }
+
+      logger.info('🔐 AUTH_REQUIRED 에러 감지, 자동 토큰 갱신 시도');
+      
+      // 토큰 갱신 시도
+      const newAccessToken = await refreshAccessToken();
+      
+      if (newAccessToken) {
+        logger.info('✅ 토큰 갱신 성공, 재시도 가능');
+        return true; // 재시도 가능
+      } else {
+        logger.warn('❌ 토큰 갱신 실패, 로그인 필요');
+        // 로그인 페이지로 리다이렉트
+        if (typeof window !== 'undefined') {
+          const currentUrl = window.location.pathname + window.location.search;
+          window.location.href = `/sign?redirect=${encodeURIComponent(currentUrl)}`;
+        }
+        return false; // 재시도 불가
+      }
+    } catch (error) {
+      logger.error('💥 AUTH_REQUIRED 에러 처리 중 오류', error);
+      return false;
+    }
+  }, [refreshAccessToken]);
+
   // 초기 인증 상태 확인
   useEffect(() => {
     const initializeAuth = async () => {
@@ -294,6 +367,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     updateUser,
     checkAuthStatus,
+    refreshAccessToken,
+    handleAuthError,
   };
 
   return (

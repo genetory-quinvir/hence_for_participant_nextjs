@@ -36,8 +36,7 @@ function BoardDetailContent() {
   const [selectedComment, setSelectedComment] = useState<CommentItem | null>(null);
   const [commentContent, setCommentContent] = useState('');
   const [isLiking, setIsLiking] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showCommentDeleteConfirm, setShowCommentDeleteConfirm] = useState(false);
+
 
   // 이미지 갤러리 훅
   const { isOpen, images, initialIndex, openGallery, closeGallery } = useImageGallery();
@@ -104,7 +103,7 @@ function BoardDetailContent() {
       // 인증 상태 확인
       const accessToken = getAccessToken();
       if (!accessToken) {
-        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+        // showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
         const currentUrl = window.location.pathname + window.location.search;
         navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         return;
@@ -125,16 +124,16 @@ function BoardDetailContent() {
         setCommentContent('');
       } else {
         if (result.error?.includes('로그인이 만료')) {
-          showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+          // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
           navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         } else {
-          showToast(result.error || '댓글 작성에 실패했습니다.', 'error');
+          // showToast(result.error || '댓글 작성에 실패했습니다.', 'error');
         }
       }
     } catch (error) {
       console.error('댓글 작성 오류:', error);
-      showToast('댓글 작성 중 오류가 발생했습니다.', 'error');
+      // showToast('댓글 작성 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -142,6 +141,7 @@ function BoardDetailContent() {
 
   // 액션 핸들러들
   const handleBackClick = () => {
+    // 스마트 뒤로가기: 커스텀 히스토리 우선 사용
     goBack();
   };
 
@@ -160,12 +160,10 @@ function BoardDetailContent() {
         navigate(`/board/edit/${post.id}?type=${postType}&eventId=${eventId}`);
         break;
       case 'delete':
-        setShowDeleteConfirm(true);
+        handleConfirmDelete();
         break;
       case 'report':
-        if (confirm('이 글을 신고하시겠습니까?')) {
-      
-        }
+        // showToast('신고가 접수되었습니다.', 'success');
         break;
     }
   };
@@ -173,6 +171,43 @@ function BoardDetailContent() {
   const handleCloseActionSheet = () => {
     setShowActionSheet(false);
   };
+
+  // 게시글 삭제 확인 핸들러
+  const handleConfirmDelete = async () => {
+    if (!post) return;
+    
+    try {
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        // showToast('로그인이 필요합니다.', 'warning');
+        return;
+      }
+
+      const eventId = searchParams.get('eventId') || 'default-event';
+      const postId = params.id as string;
+      
+      const result = await deleteBoard(eventId, postType, postId);
+      
+      if (result.success) {
+        // showToast('게시글이 삭제되었습니다.', 'success');
+        // 게시글 목록 페이지로 이동
+        navigate(`/board/list?type=${postType}&eventId=${eventId}`);
+      } else {
+        if (result.error?.includes('로그인이 만료')) {
+          // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+          const currentUrl = window.location.pathname + window.location.search;
+          navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+        } else {
+          // showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('게시글 삭제 오류:', error);
+      // showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+    }
+  };
+
+
 
   const handleCommentMoreClick = (comment: CommentItem) => {
     setSelectedComment(comment);
@@ -186,13 +221,51 @@ function BoardDetailContent() {
     
     switch (action) {
       case 'delete':
-        setShowCommentDeleteConfirm(true);
+        handleConfirmCommentDelete();
         break;
       case 'report':
-        showToast('신고가 접수되었습니다.', 'success');
+        // showToast('신고가 접수되었습니다.', 'success');
         break;
     }
   };
+
+  // 댓글 삭제 확인 핸들러
+  const handleConfirmCommentDelete = async () => {
+    if (!selectedComment) return;
+    
+    try {
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        // showToast('로그인이 필요합니다.', 'warning');
+        return;
+      }
+
+      const eventId = searchParams.get('eventId') || 'default-event';
+      const postId = params.id as string;
+      
+      const result = await deleteComment(eventId, postType, postId, selectedComment.id);
+      
+      if (result.success) {
+        // 댓글 목록에서 삭제된 댓글 제거
+        setComments(prev => prev.filter(comment => comment.id !== selectedComment.id));
+        // showToast('댓글이 삭제되었습니다.', 'success');
+        setSelectedComment(null);
+      } else {
+        if (result.error?.includes('로그인이 만료')) {
+          // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+          const currentUrl = window.location.pathname + window.location.search;
+          navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+        } else {
+          // showToast(result.error || '댓글 삭제에 실패했습니다.', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('댓글 삭제 오류:', error);
+      // showToast('댓글 삭제 중 오류가 발생했습니다.', 'error');
+    }
+  };
+
+
 
   const handleCloseCommentActionSheet = () => {
     setShowCommentActionSheet(false);
@@ -214,7 +287,7 @@ function BoardDetailContent() {
       // 인증 상태 확인
       const accessToken = getAccessToken();
       if (!accessToken) {
-        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+        // showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
         const currentUrl = window.location.pathname + window.location.search;
         navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         return;
@@ -238,16 +311,16 @@ function BoardDetailContent() {
         });
       } else {
         if (result.error?.includes('로그인이 만료')) {
-          showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+          // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
           navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         } else {
-          showToast(result.error || '좋아요 처리에 실패했습니다.', 'error');
+          // showToast(result.error || '좋아요 처리에 실패했습니다.', 'error');
         }
       }
     } catch (error) {
       console.error('좋아요 토글 오류:', error);
-      showToast('좋아요 처리 중 오류가 발생했습니다.', 'error');
+      // showToast('좋아요 처리 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsLiking(false);
     }
@@ -731,6 +804,8 @@ function BoardDetailContent() {
         isOpen={isOpen}
         onClose={closeGallery}
       />
+
+
       </div>
     </div>
   );

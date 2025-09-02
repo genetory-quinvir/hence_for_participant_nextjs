@@ -63,45 +63,46 @@ export default function EventCommunity({
   const handleEdit = () => {
     if (!selectedPost) return;
     
+    // 수정 페이지로 이동하기 전에 액션시트 닫기
+    setShowActionSheet(false);
+    
+    // 수정 페이지로 이동
     const url = `/board/edit/${selectedPost.id}?eventId=${selectedPost.eventId || 'default-event'}&type=free`;
     router.push(url);
-    setShowActionSheet(false);
   };
 
   // 삭제 핸들러
   const handleDelete = async () => {
     if (!selectedPost) return;
     
-    if (confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
-      try {
-        const result = await deleteBoard(
-          selectedPost.eventId || 'default-event',
-          'free',
-          selectedPost.id!
-        );
-        
-        if (result.success) {
-          showToast('게시글이 삭제되었습니다.', 'success');
-          // 목록 새로고침
-          if (onRefresh) {
-            onRefresh();
-          }
-        } else {
-          showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
+    try {
+      const result = await deleteBoard(
+        selectedPost.eventId || 'default-event',
+        'free',
+        selectedPost.id!
+      );
+      
+      if (result.success) {
+        // showToast('게시글이 삭제되었습니다.', 'success');
+        // 목록 새로고침
+        if (onRefresh) {
+          onRefresh();
         }
-      } catch (error) {
-        console.error('삭제 오류:', error);
-        showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+      } else {
+        // showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
       }
-      setShowActionSheet(false);
+    } catch (error) {
+      console.error('삭제 오류:', error);
+      // showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
     }
+    setShowActionSheet(false);
   };
 
   // 신고 핸들러
   const handleReport = () => {
     if (!selectedPost) return;
     
-    showToast('게시글이 신고되었습니다. 검토 후 처리하겠습니다.', 'success');
+    // showToast('게시글이 신고되었습니다. 검토 후 처리하겠습니다.', 'success');
     setShowActionSheet(false);
   };
 
@@ -414,11 +415,11 @@ export default function EventCommunity({
             ? [
                 // 내 글인 경우: 편집/삭제
                 {
-                  label: "편집",
+                  label: "수정하기",
                   onClick: handleEdit
                 },
                 {
-                  label: "삭제",
+                  label: "삭제하기",
                   onClick: handleDelete,
                   variant: 'destructive'
                 }
@@ -426,9 +427,8 @@ export default function EventCommunity({
             : [
                 // 남의 글인 경우: 신고
                 {
-                  label: "신고",
-                  onClick: handleReport,
-                  variant: 'destructive'
+                  label: "신고하기",
+                  onClick: handleReport
                 }
               ]
         }

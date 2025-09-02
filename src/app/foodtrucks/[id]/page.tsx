@@ -108,7 +108,7 @@ function FoodTruckDetailContent() {
   const handleCouponUse = async (coupon: CouponItem) => {
     const accessToken = getAccessToken();
     if (!accessToken) {
-      showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+      // showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
       router.push('/sign');
       return;
     }
@@ -138,13 +138,13 @@ function FoodTruckDetailContent() {
           
           setShowVendorSheet(true);
         } else if (result.error === 'AUTH_REQUIRED') {
-          showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+          // showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
           router.push('/sign');
         } else {
-          showToast(result.error || '사용 가능한 벤더를 불러오는데 실패했습니다.', 'error');
+          // showToast(result.error || '사용 가능한 벤더를 불러오는데 실패했습니다.', 'error');
         }
       } catch (error) {
-        showToast('사용 가능한 벤더를 불러오는데 실패했습니다.', 'error');
+        // showToast('사용 가능한 벤더를 불러오는데 실패했습니다.', 'error');
       } finally {
         setCouponLoading(false);
       }
@@ -165,7 +165,7 @@ function FoodTruckDetailContent() {
       // useCoupon은 API 함수이므로 React Hook 규칙에 위배되지 않음
       const result = await useCoupon(eventId, selectedCoupon.id!, selectedVendor?.id);
       if (result.success) {
-        showToast(selectedCoupon.discountType === 'EXCHANGE' ? '교환권이 사용되었습니다!' : '쿠폰이 사용되었습니다!', 'success');
+        // showToast(selectedCoupon.discountType === 'EXCHANGE' ? '교환권이 사용되었습니다!' : '쿠폰이 사용되었습니다!', 'success');
         
         // 쿠폰 사용 후 최신 상태를 위해 API 재호출
         try {
@@ -177,13 +177,13 @@ function FoodTruckDetailContent() {
           console.error('쿠폰 상태 업데이트 실패:', error);
         }
       } else if (result.error === 'AUTH_REQUIRED') {
-        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+        // showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
         router.push('/sign');
       } else {
-        showToast(result.error || (selectedCoupon.discountType === 'EXCHANGE' ? '교환권 사용에 실패했습니다.' : '쿠폰 사용에 실패했습니다.'), 'error');
+        // showToast(result.error || (selectedCoupon.discountType === 'EXCHANGE' ? '교환권 사용에 실패했습니다.' : '쿠폰 사용에 실패했습니다.'), 'error');
       }
     } catch (error) {
-      showToast(selectedCoupon.discountType === 'EXCHANGE' ? '교환권 사용 중 오류가 발생했습니다.' : '쿠폰 사용 중 오류가 발생했습니다.', 'error');
+      // showToast(selectedCoupon.discountType === 'EXCHANGE' ? '교환권 사용 중 오류가 발생했습니다.' : '쿠폰 사용 중 오류가 발생했습니다.', 'error');
     } finally {
       setCouponLoading(false);
       setSelectedCoupon(null);

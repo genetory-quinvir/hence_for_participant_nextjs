@@ -39,10 +39,8 @@ export default function SettingsPage() {
   }, [isAuthenticated, user]);
 
   const handleLogout = () => {
-    if (confirm("로그아웃하시겠습니까?")) {
-      logout();
-      navigate("/");
-    }
+    logout();
+    navigate("/");
   };
 
   const handleBackClick = () => {
