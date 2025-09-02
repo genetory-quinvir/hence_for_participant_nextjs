@@ -216,15 +216,13 @@ function BoardEditContent() {
       }
     };
     
-    // 기존 방식과 새로운 방식 모두 사용 (안전성 강화)
+    // 이벤트 핸들러를 먼저 바인딩
     input.onchange = handleFileChange;
-    input.addEventListener('change', handleFileChange);
     
-    // DOM에 추가하여 안전하게 클릭
+    // DOM에 추가
     input.style.position = 'absolute';
     input.style.left = '-9999px';
     input.style.opacity = '0';
-    input.style.pointerEvents = 'none';
     document.body.appendChild(input);
     
     console.log('🖱️ input 클릭 시도... (수정)');
@@ -234,8 +232,10 @@ function BoardEditContent() {
       console.log('✅ input.click() 성공 (수정)');
     } catch (error) {
       console.log('⚠️ input.click() 실패, 대체 방법 시도 (수정):', error);
-      // 포인터 이벤트 활성화 후 다시 시도
-      input.style.pointerEvents = 'auto';
+      // 아이폰에서 input을 DOM에 추가 후 클릭
+      input.style.position = 'absolute';
+      input.style.left = '-9999px';
+      document.body.appendChild(input);
       input.click();
     }
     
@@ -249,7 +249,7 @@ function BoardEditContent() {
       } catch (error) {
         console.log('⚠️ input DOM 제거 실패 (수정):', error);
       }
-    }, 2000);
+    }, 1000);
     
     setShowActionSheet(false);
   };
@@ -274,15 +274,13 @@ function BoardEditContent() {
       }
     };
     
-    // 기존 방식과 새로운 방식 모두 사용 (안전성 강화)
+    // 이벤트 핸들러를 먼저 바인딩
     input.onchange = handleFileChange;
-    input.addEventListener('change', handleFileChange);
     
-    // DOM에 추가하여 안전하게 클릭
+    // DOM에 추가
     input.style.position = 'absolute';
     input.style.left = '-9999px';
     input.style.opacity = '0';
-    input.style.pointerEvents = 'none';
     document.body.appendChild(input);
     
     console.log('📸 카메라 input 클릭 시도... (수정)');
@@ -292,8 +290,10 @@ function BoardEditContent() {
       console.log('✅ 카메라 input.click() 성공 (수정)');
     } catch (error) {
       console.log('⚠️ 카메라 input.click() 실패, 대체 방법 시도 (수정):', error);
-      // 포인터 이벤트 활성화 후 다시 시도
-      input.style.pointerEvents = 'auto';
+      // 아이폰에서 input을 DOM에 추가 후 클릭
+      input.style.position = 'absolute';
+      input.style.left = '-9999px';
+      document.body.appendChild(input);
       input.click();
     }
     
@@ -307,7 +307,7 @@ function BoardEditContent() {
       } catch (error) {
         console.log('⚠️ 카메라 input DOM 제거 실패 (수정):', error);
       }
-    }, 2000);
+    }, 1000);
     
     setShowActionSheet(false);
   };

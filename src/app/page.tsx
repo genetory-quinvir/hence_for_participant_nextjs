@@ -81,7 +81,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="h-screen w-full relative overflow-hidden" style={{ height: '100dvh' }}>
+    <div className="h-screen w-full relative overflow-hidden" style={{ height: '100dvh' }} data-dl-page="main">
       {/* 백그라운드 그라데이션 */}
       <div 
         className="fixed inset-0 w-full h-full"

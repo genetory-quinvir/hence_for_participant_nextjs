@@ -54,6 +54,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#ffffff" />
         <meta name="msapplication-TileColor" content="#ffffff" />
         
+        {/* 네이버 사이트 인증 */}
+        <meta name="naver-site-verification" content="4afd96e24973c07a6fb2a2d880093d4565c629e9" />
+        
         {/* 보안 헤더 - 개발 모드에서는 완화된 정책 적용 */}
         {process.env.NODE_ENV === 'production' ? (
           <>
@@ -89,6 +92,13 @@ export default function RootLayout({
           />
         </noscript>
         {/* End Google Tag Manager (noscript) */}
+        
+        {/* GTM/GA dataLayer 자동계측 스크립트 */}
+        <Script 
+          id="dl-auto" 
+          src="/dl-auto.v20250903.js" 
+          strategy="afterInteractive" 
+        />
         
         <div className="mx-auto w-full max-w-lg min-h-screen bg-white" style={{ maxWidth: '700px' }}>
           <AuthProvider>

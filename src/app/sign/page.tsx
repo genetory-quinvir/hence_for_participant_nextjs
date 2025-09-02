@@ -127,7 +127,7 @@ function SignContent() {
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-white text-black overflow-hidden">
+    <div className="fixed inset-0 w-full h-full bg-white text-black overflow-hidden" data-dl-page="login">
       <div className="w-full max-w-[700px] mx-auto h-full flex flex-col overflow-hidden">
         {/* 네비게이션바 */}
         <CommonNavigationBar
@@ -166,7 +166,7 @@ function SignContent() {
           </div>
 
           {/* 로그인 폼 */}
-          <form onSubmit={handleLogin} noValidate>
+          <form onSubmit={handleLogin} noValidate data-dl-submit="email_login_start">
             <div className="space-y-6 mb-6">
               {/* 이메일 입력 */}
               <div>
@@ -273,6 +273,10 @@ function SignContent() {
               type="button"
               onClick={handleSignUp}
               className="text-black text-sm"
+              data-dl-event="signup_button_click"
+              data-cta-id="go_signup"
+              data-dest="/signup"
+              data-from-step="login_page"
             >
               계정이 없으신가요? <span className="text-purple-700 font-bold hover:text-purple-800">회원가입</span>
             </button>
@@ -293,6 +297,9 @@ function SignContent() {
                 type="button"
                 className="w-12 h-12 rounded-full flex items-center justify-center transition-opacity hover:opacity-80 bg-white overflow-hidden"
                 onClick={() => handleSocialLogin('kakao')}
+                data-dl-event="auth_cta_click"
+                data-provider="kakao"
+                aria-label="카카오 로그인"
               >
                 <img 
                   src="/images/icon_kakao.png" 
@@ -306,6 +313,9 @@ function SignContent() {
                 type="button"
                 className="w-12 h-12 rounded-full flex items-center justify-center transition-opacity hover:opacity-80 bg-white overflow-hidden"
                 onClick={() => handleSocialLogin('naver')}
+                data-dl-event="auth_cta_click"
+                data-provider="naver"
+                aria-label="네이버 로그인"
               >
                 <img 
                   src="/images/icon_naver.png" 
@@ -319,6 +329,9 @@ function SignContent() {
                 type="button"
                 className="w-12 h-12 rounded-full flex items-center justify-center transition-opacity hover:opacity-80 bg-white overflow-hidden"
                 onClick={() => handleSocialLogin('google')}
+                data-dl-event="auth_cta_click"
+                data-provider="google"
+                aria-label="구글 로그인"
               >
                 <img 
                   src="/images/icon_google.png" 

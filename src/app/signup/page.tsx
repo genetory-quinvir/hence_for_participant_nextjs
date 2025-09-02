@@ -110,7 +110,7 @@ function SignupContent() {
 
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-white text-black overflow-hidden">
+    <div className="fixed inset-0 w-full h-full bg-white text-black overflow-hidden" data-dl-page="signup">
       <div className="w-full max-w-[700px] mx-auto h-full flex flex-col overflow-hidden">
         {/* 네비게이션바 */}
         <CommonNavigationBar
@@ -149,7 +149,7 @@ function SignupContent() {
           </div>
 
           {/* 회원가입 폼 */}
-          <form onSubmit={handleSignup} noValidate>
+          <form onSubmit={handleSignup} noValidate data-dl-submit="email_signup_start">
             <div className="space-y-6 mb-6">
               {/* 이메일 입력 */}
               <div>

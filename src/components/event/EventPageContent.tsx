@@ -488,7 +488,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 text-black relative overflow-x-hidden">
+    <div className="min-h-screen bg-gray-100 text-black relative overflow-x-hidden" data-dl-page="event-detail" data-logged-in={isAuthenticated ? "true" : "false"}>
       {/* 메인 컨텐츠 */}
       <main 
         className={`w-full min-h-screen overflow-y-auto overflow-x-hidden ${
@@ -651,6 +651,8 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
       {!isAuthenticated && (
         <div 
           className="fixed inset-0 flex items-center justify-center z-40"
+          data-dl-expose="login_modal_view"
+          data-from-step="event_detail"
           style={{
             backgroundColor: 'rgba(0, 0, 0, 0.4)',
             position: 'fixed',
@@ -671,12 +673,20 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
                   onClick={handleGoToMain}
                   className="flex-1 py-3 px-4 rounded-lg text-gray-600 font-normal transition-colors"
                   style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+                  data-dl-event="go_main_click"
+                  data-cta-id="go_main"
+                  data-dest="/"
+                  data-from-step="login_modal"
                 >
                   메인으로 돌아가기
                 </button>
                 <button
                   onClick={() => navigate(`/sign?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)}
                   className="flex-1 py-3 px-4 rounded-lg font-bold transition-colors bg-purple-600 hover:bg-purple-700 text-white"
+                  data-dl-event="login_cta_click"
+                  data-cta-id="login"
+                  data-dest="/sign"
+                  data-from-step="login_modal"
                 >
                   로그인하기
                 </button>
