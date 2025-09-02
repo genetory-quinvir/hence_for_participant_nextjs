@@ -66,10 +66,17 @@ function BoardEditContent() {
             return;
           }
           
-          setPost(postData);
-          setContent(postData.content || "");
-          setExistingImages(postData.images || []);
-          setImageUrls(postData.images || []);
+                  setPost(postData);
+        setContent(postData.content || "");
+        setExistingImages(postData.images || []);
+        // 기존 이미지가 있으면 그대로, 없으면 빈 배열로 초기화
+        setImageUrls(postData.images || []);
+        
+        console.log('📝 게시글 데이터 로드 완료:', {
+          content: postData.content,
+          existingImages: postData.images || [],
+          imageUrls: postData.images || []
+        });
         } else {
           setError(result.error || "게시글을 불러오는데 실패했습니다.");
         }
@@ -149,7 +156,18 @@ function BoardEditContent() {
         // 이미지 URL 생성
         const newUrls = newImages.map(file => URL.createObjectURL(file));
         console.log('🔗 생성된 URL 개수:', newUrls.length);
-        setImageUrls(prev => [...existingImages.filter(img => !removedImages.includes(img)), ...newUrls]);
+        
+        // 기존 이미지와 새 이미지 URL을 합쳐서 설정
+        const remainingExistingImages = existingImages.filter(img => !removedImages.includes(img));
+        const finalImageUrls = [...remainingExistingImages, ...newUrls];
+        
+        console.log('🖼️ 최종 이미지 URL 구성:', {
+          remainingExistingImages: remainingExistingImages.length,
+          newUrls: newUrls.length,
+          finalImageUrls: finalImageUrls.length
+        });
+        
+        setImageUrls(finalImageUrls);
         
         console.log('✅ 이미지 추가 완료');
       } catch (error) {
@@ -161,7 +179,18 @@ function BoardEditContent() {
         const newImages = [...images, ...validFiles];
         setImages(newImages);
         const newUrls = newImages.map(file => URL.createObjectURL(file));
-        setImageUrls(prev => [...existingImages.filter(img => !removedImages.includes(img)), ...newUrls]);
+        
+        // 기존 이미지와 새 이미지 URL을 합쳐서 설정
+        const remainingExistingImages = existingImages.filter(img => !removedImages.includes(img));
+        const finalImageUrls = [...remainingExistingImages, ...newUrls];
+        
+        console.log('🖼️ 원본 파일로 최종 이미지 URL 구성:', {
+          remainingExistingImages: remainingExistingImages.length,
+          newUrls: newUrls.length,
+          finalImageUrls: finalImageUrls.length
+        });
+        
+        setImageUrls(finalImageUrls);
         console.log('✅ 원본 파일로 이미지 추가 완료');
       }
     }
@@ -285,18 +314,38 @@ function BoardEditContent() {
 
   // 이미지 제거
   const handleImageRemove = (index: number) => {
+    console.log('🗑️ 새 이미지 제거 시도:', { index, imagesCount: images.length });
+    
     const newImages = images.filter((_, i) => i !== index);
     setImages(newImages);
     
-    // URL 정리
-    const removedUrl = imageUrls[existingImages.length - removedImages.length + index];
+    // URL 정리 - 기존 이미지 개수를 고려하여 정확한 인덱스 계산
+    const remainingExistingImages = existingImages.filter(img => !removedImages.includes(img));
+    const removedUrl = imageUrls[remainingExistingImages.length + index];
+    
+    console.log('🔗 제거할 URL 정보:', {
+      remainingExistingImages: remainingExistingImages.length,
+      index,
+      removedUrl,
+      isBlob: removedUrl?.startsWith('blob:')
+    });
+    
     if (removedUrl && removedUrl.startsWith('blob:')) {
       URL.revokeObjectURL(removedUrl);
+      console.log('🧹 blob URL 정리 완료');
     }
     
     // 이미지 URL 업데이트
-    const newUrls = [...existingImages.filter(img => !removedImages.includes(img)), ...newImages.map(file => URL.createObjectURL(file))];
-    setImageUrls(newUrls);
+    const newUrls = newImages.map(file => URL.createObjectURL(file));
+    const finalImageUrls = [...remainingExistingImages, ...newUrls];
+    
+    console.log('🖼️ 이미지 제거 후 URL 구성:', {
+      remainingExistingImages: remainingExistingImages.length,
+      newUrls: newUrls.length,
+      finalImageUrls: finalImageUrls.length
+    });
+    
+    setImageUrls(finalImageUrls);
   };
 
   // 기존 이미지 제거
