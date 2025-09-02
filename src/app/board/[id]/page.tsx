@@ -9,6 +9,7 @@ import CommonNavigationBar from "@/components/CommonNavigationBar";
 import CommonProfileView from "@/components/common/CommonProfileView";
 import { useSimpleNavigation } from "@/utils/navigation";
 import CommonActionSheet from "@/components/CommonActionSheet";
+import CommonConfirmModal from "@/components/common/CommonConfirmModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/common/Toast";
 import { useImageGallery } from "@/hooks/useImageGallery";
@@ -35,6 +36,8 @@ function BoardDetailContent() {
   const [selectedComment, setSelectedComment] = useState<CommentItem | null>(null);
   const [commentContent, setCommentContent] = useState('');
   const [isLiking, setIsLiking] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCommentDeleteConfirm, setShowCommentDeleteConfirm] = useState(false);
 
   // 이미지 갤러리 훅
   const { isOpen, images, initialIndex, openGallery, closeGallery } = useImageGallery();
@@ -157,22 +160,7 @@ function BoardDetailContent() {
         navigate(`/board/edit/${post.id}?type=${postType}&eventId=${eventId}`);
         break;
       case 'delete':
-        if (confirm('정말로 이 글을 삭제하시겠습니까?')) {
-          try {
-            const eventId = searchParams.get('eventId') || 'default-event';
-            const result = await deleteBoard(eventId, postType, post.id);
-            if (result.success) {
-              showToast('게시글이 삭제되었습니다.', 'success');
-              // 삭제 후 목록 페이지로 이동
-              navigate(`/board/list?type=${postType}&eventId=${eventId}`);
-            } else {
-              showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
-            }
-          } catch (error) {
-            console.error('게시글 삭제 오류:', error);
-            showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
-          }
-        }
+        setShowDeleteConfirm(true);
         break;
       case 'report':
         if (confirm('이 글을 신고하시겠습니까?')) {
@@ -198,32 +186,7 @@ function BoardDetailContent() {
     
     switch (action) {
       case 'delete':
-        if (confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
-          try {
-            const eventId = searchParams.get('eventId') || 'default-event';
-            const postId = params.id as string;
-            const result = await deleteComment(eventId, postType, postId, selectedComment.id);
-            if (result.success) {
-              showToast('댓글이 삭제되었습니다.', 'success');
-              // 댓글 목록 새로고침
-              const commentsResult = await getComments(eventId, postType, postId);
-              if (commentsResult.success && commentsResult.data) {
-                setComments(commentsResult.data);
-              }
-            } else {
-              if (result.error?.includes('로그인이 만료')) {
-                showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
-                const currentUrl = window.location.pathname + window.location.search;
-                navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
-              } else {
-                showToast(result.error || '댓글 삭제에 실패했습니다.', 'error');
-              }
-            }
-          } catch (error) {
-            console.error('댓글 삭제 오류:', error);
-            showToast('댓글 삭제 중 오류가 발생했습니다.', 'error');
-          }
-        }
+        setShowCommentDeleteConfirm(true);
         break;
       case 'report':
         showToast('신고가 접수되었습니다.', 'success');

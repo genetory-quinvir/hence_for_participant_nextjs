@@ -123,16 +123,28 @@ function BoardWriteContent() {
       try {
         console.log('🔄 이미지 리사이징 시작...');
         
-        // 타임아웃 설정 (20초)
-        const resizePromise = resizeImages(validFiles, {
+        // 아이폰 최적화된 리사이징 옵션
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const resizeOptions = isIOS ? {
+          maxWidth: 800,
+          maxHeight: 800,
+          quality: 0.7,
+          format: 'jpeg' as const
+        } : {
           maxWidth: 1200,
           maxHeight: 1200,
           quality: 0.8,
-          format: 'webp'
-        });
+          format: 'webp' as const
+        };
+        
+        console.log(`📱 디바이스: ${isIOS ? 'iOS' : 'Android/Desktop'}, 리사이징 옵션:`, resizeOptions);
+        
+        // 타임아웃 설정 (아이폰에서는 더 짧게)
+        const timeoutMs = isIOS ? 15000 : 20000;
+        const resizePromise = resizeImages(validFiles, resizeOptions);
         
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('리사이징 타임아웃')), 20000);
+          setTimeout(() => reject(new Error('리사이징 타임아웃')), timeoutMs);
         });
         
         const resizedImages = await Promise.race([resizePromise, timeoutPromise]) as File[];
@@ -181,13 +193,33 @@ function BoardWriteContent() {
     input.type = 'file';
     input.accept = 'image/*';
     input.multiple = true;
-    input.onchange = (e) => {
+    
+    // 아이폰에서 파일 선택 이벤트 처리 개선
+    const handleFileChange = (e: Event) => {
       const target = e.target as HTMLInputElement;
-      if (target.files) {
+      if (target.files && target.files.length > 0) {
+        console.log('📁 파일 선택됨:', target.files.length, '개');
         handleImageSelect({ target } as React.ChangeEvent<HTMLInputElement>);
+      } else {
+        console.log('⚠️ 파일이 선택되지 않음');
       }
     };
-    input.click();
+    
+    input.onchange = handleFileChange;
+    
+    // 아이폰에서 input.click() 실패 시 대체 방법
+    try {
+      input.click();
+    } catch (error) {
+      console.log('⚠️ input.click() 실패, 대체 방법 시도:', error);
+      // 아이폰에서 input을 DOM에 추가 후 클릭
+      input.style.position = 'absolute';
+      input.style.left = '-9999px';
+      document.body.appendChild(input);
+      input.click();
+      setTimeout(() => document.body.removeChild(input), 1000);
+    }
+    
     setShowActionSheet(false);
   };
 
@@ -196,13 +228,33 @@ function BoardWriteContent() {
     input.type = 'file';
     input.accept = 'image/*';
     input.capture = 'environment';
-    input.onchange = (e) => {
+    
+    // 아이폰에서 카메라 이벤트 처리 개선
+    const handleFileChange = (e: Event) => {
       const target = e.target as HTMLInputElement;
-      if (target.files) {
+      if (target.files && target.files.length > 0) {
+        console.log('📸 카메라 촬영 완료:', target.files.length, '개');
         handleImageSelect({ target } as React.ChangeEvent<HTMLInputElement>);
+      } else {
+        console.log('⚠️ 카메라 촬영 실패 또는 취소됨');
       }
     };
-    input.click();
+    
+    input.onchange = handleFileChange;
+    
+    // 아이폰에서 input.click() 실패 시 대체 방법
+    try {
+      input.click();
+    } catch (error) {
+      console.log('⚠️ 카메라 input.click() 실패, 대체 방법 시도:', error);
+      // 아이폰에서 input을 DOM에 추가 후 클릭
+      input.style.position = 'absolute';
+      input.style.left = '-9999px';
+      document.body.appendChild(input);
+      input.click();
+      setTimeout(() => document.body.removeChild(input), 1000);
+    }
+    
     setShowActionSheet(false);
   };
 
@@ -363,8 +415,11 @@ function BoardWriteContent() {
                   
                   {/* 이미지 업로드 정보 */}
                   <div className="text-xs text-gray-500">
-                    <div>최대 5개, WebP로 자동 변환</div>
+                    <div>최대 5개, 자동 최적화</div>
                     <div>지원 형식: JPG, PNG, GIF, WebP</div>
+                    <div className="text-purple-600 font-medium">
+                      {/iPad|iPhone|iPod/.test(navigator.userAgent) ? '🍎 iOS 최적화' : '📱 안드로이드/데스크톱'}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">

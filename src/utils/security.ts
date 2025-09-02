@@ -39,12 +39,6 @@ export function validateFileUpload(file: File): { valid: boolean; error?: string
     return { valid: false, error: '지원하지 않는 파일 형식입니다.' };
   }
 
-  // 파일명 검증 (특수문자 제거)
-  const safeName = file.name.replace(/[^a-zA-Z0-9가-힣._-]/g, '');
-  if (safeName !== file.name) {
-    return { valid: false, error: '파일명에 특수문자가 포함되어 있습니다.' };
-  }
-
   return { valid: true };
 }
 

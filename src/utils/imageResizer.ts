@@ -7,7 +7,7 @@ interface ResizeOptions {
   format?: 'jpeg' | 'webp';
 }
 
-// 기본 리사이징 옵션
+// 기본 리사이징 옵션 (아이폰 최적화)
 const DEFAULT_OPTIONS: ResizeOptions = {
   maxWidth: 1200,
   maxHeight: 1200,
@@ -15,12 +15,40 @@ const DEFAULT_OPTIONS: ResizeOptions = {
   format: 'webp'
 };
 
-// WebP 지원 여부 확인
+// 아이폰 최적화된 옵션
+const getIOSOptimizedOptions = (): ResizeOptions => {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (isIOS) {
+    return {
+      maxWidth: 800, // 아이폰에서는 더 작은 크기
+      maxHeight: 800,
+      quality: 0.7, // 더 낮은 품질로 메모리 절약
+      format: 'jpeg' // 아이폰에서는 JPEG 사용
+    };
+  }
+  return DEFAULT_OPTIONS;
+};
+
+// WebP 지원 여부 확인 (아이폰 최적화)
 function isWebPSupported(): boolean {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    
+    // 아이폰 Safari에서 WebP 지원 확인
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      // 아이폰에서는 JPEG 사용 권장
+      console.log('🍎 iOS 감지: JPEG 형식 사용');
+      return false;
+    }
+    
+    return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+  } catch (error) {
+    console.log('⚠️ WebP 지원 확인 실패, JPEG 사용:', error);
+    return false;
+  }
 }
 
 // 이미지 리사이징 함수
@@ -28,7 +56,9 @@ export async function resizeImage(
   file: File, 
   options: ResizeOptions = {}
 ): Promise<File> {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
+  // 아이폰 최적화된 옵션 적용
+  const iosOptions = getIOSOptimizedOptions();
+  const opts = { ...iosOptions, ...options };
   
   // WebP 지원 여부 확인 및 대체
   let targetFormat = opts.format;

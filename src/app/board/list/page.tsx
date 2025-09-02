@@ -12,6 +12,7 @@ import Image from "next/image";
 import { useImageGallery } from "@/hooks/useImageGallery";
 import ImageGallery from "@/components/common/ImageGallery";
 import CommonActionSheet from "@/components/CommonActionSheet";
+import CommonConfirmModal from "@/components/common/CommonConfirmModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/common/Toast";
 
@@ -29,6 +30,8 @@ function BoardListContent() {
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedPost, setSelectedPost] = useState<BoardItem | null>(null);
   const [isLiking, setIsLiking] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<BoardItem | null>(null);
 
   // 인증 훅
   const { user } = useAuth();
@@ -186,20 +189,8 @@ function BoardListContent() {
         navigate(`/board/edit/${selectedPost.id}?type=${type}&eventId=${selectedPost.eventId || eventId}`);
         break;
       case 'delete':
-        if (confirm('정말로 이 글을 삭제하시겠습니까?')) {
-          try {
-            const result = await deleteBoard(eventId, type, selectedPost.id);
-            if (result.success) {
-              showToast('게시글이 삭제되었습니다.', 'success');
-              // 목록에서 삭제된 게시글 제거
-              setPosts(prev => prev.filter(post => post.id !== selectedPost.id));
-                    } else {
-          showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
-        }
-      } catch (error) {
-        showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
-      }
-        }
+        setPostToDelete(selectedPost);
+        setShowDeleteConfirm(true);
         break;
       case 'report':
         if (confirm('이 글을 신고하시겠습니까?')) {
@@ -213,6 +204,35 @@ function BoardListContent() {
   const handleCloseActionSheet = () => {
     setShowActionSheet(false);
     setSelectedPost(null);
+  };
+
+  // 실제 삭제 처리 함수
+  const handleConfirmDelete = async () => {
+    if (!postToDelete) return;
+    
+    try {
+      const result = await deleteBoard(eventId, type, postToDelete.id);
+      if (result.success) {
+        showToast('게시글이 삭제되었습니다.', 'success');
+        // 목록에서 삭제된 게시글 제거
+        setPosts(prev => prev.filter(post => post.id !== postToDelete.id));
+      } else {
+        showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
+      }
+    } catch (error) {
+      console.error('게시글 삭제 오류:', error);
+      showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setShowDeleteConfirm(false);
+      setPostToDelete(null);
+      setShowActionSheet(false);
+      setSelectedPost(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setPostToDelete(null);
   };
 
   // 좋아요 토글 핸들러
@@ -772,7 +792,7 @@ function BoardListContent() {
                 label: "신고하기",
                 icon: (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
                 ),
                 onClick: () => handleActionClick('report'),
@@ -780,6 +800,18 @@ function BoardListContent() {
               }
             ]
       }
+    />
+
+    {/* 삭제 확인 모달 */}
+    <CommonConfirmModal
+      isOpen={showDeleteConfirm}
+      title="게시글 삭제"
+      message="정말로 이 글을 삭제하시겠습니까?\n삭제된 글은 복구할 수 없습니다."
+      confirmText="삭제"
+      cancelText="취소"
+      onConfirm={handleConfirmDelete}
+      onCancel={handleCancelDelete}
+      variant="destructive"
     />
     </div>
   );
