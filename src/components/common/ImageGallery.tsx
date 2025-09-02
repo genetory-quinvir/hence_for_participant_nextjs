@@ -84,8 +84,6 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
 
   // 터치 이벤트 핸들러
   const handleTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
-    
     if (e.touches.length === 2) {
       // 핀치 줌 시작
       handlePinchZoom(e.touches);
@@ -97,8 +95,6 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
-    
     if (e.touches.length === 2) {
       // 핀치 줌 처리
       handlePinchZoom(e.touches);
@@ -142,8 +138,6 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault();
-    
     if (e.touches.length === 0) {
       // 모든 터치가 끝났을 때
       setIsDragging(false);
@@ -225,6 +219,27 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
+        
+        /* 터치 동작 제어 */
+        .image-gallery-container {
+          touch-action: none;
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          -khtml-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+          user-select: none;
+        }
+        
+        .image-gallery-container img {
+          touch-action: none;
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          -khtml-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+          user-select: none;
+        }
       `}</style>
       {/* 네비게이션바 */}
       <div className="absolute top-0 left-0 right-0 z-[10000]">
@@ -278,6 +293,7 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
       {/* 이미지 컨테이너 */}
       <div 
         ref={containerRef}
+        className="image-gallery-container"
         style={{
           position: 'relative',
           width: '100%',
