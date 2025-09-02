@@ -16,6 +16,8 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [initialDistance, setInitialDistance] = useState(0);
+  const [initialScale, setInitialScale] = useState(1);
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -45,16 +47,67 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
     setPosition({ x: 0, y: 0 });
   }, [initialIndex, isOpen]);
 
-  // 줌 기능
-  const handleZoom = (delta: number) => {
-    const newScale = Math.max(0.5, Math.min(3, scale + delta));
+  // 두 터치 포인트 간의 거리 계산
+  const getDistance = (touches: any) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  // 핀치 줌 처리
+  const handlePinchZoom = (touches: any) => {
+    if (touches.length !== 2) return;
+    
+    const distance = getDistance(touches);
+    if (initialDistance === 0) {
+      setInitialDistance(distance);
+      setInitialScale(scale);
+      return;
+    }
+    
+    const scaleFactor = distance / initialDistance;
+    const newScale = Math.max(0.5, Math.min(3, initialScale * scaleFactor));
     setScale(newScale);
     
     // 줌 아웃 시 위치 초기화
     if (newScale <= 1) {
       setPosition({ x: 0, y: 0 });
-    } else {
-      // 줌 인 시 현재 위치가 새로운 스케일에서 유효한지 확인
+    }
+  };
+
+  // 터치 이벤트 정리
+  const resetTouchState = () => {
+    setInitialDistance(0);
+    setInitialScale(1);
+  };
+
+  // 터치 이벤트 핸들러
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    
+    if (e.touches.length === 2) {
+      // 핀치 줌 시작
+      handlePinchZoom(e.touches);
+    } else if (e.touches.length === 1 && scale > 1) {
+      // 드래그 시작 (확대된 상태에서만)
+      setIsDragging(true);
+      setDragStart({ x: e.touches[0].clientX - position.x, y: e.touches[0].clientY - position.y });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    
+    if (e.touches.length === 2) {
+      // 핀치 줌 처리
+      handlePinchZoom(e.touches);
+    } else if (e.touches.length === 1 && isDragging && scale > 1) {
+      // 드래그 처리
+      const newX = e.touches[0].clientX - dragStart.x;
+      const newY = e.touches[0].clientY - dragStart.y;
+      
+      // 이미지와 컨테이너 크기 계산
       const containerRect = containerRef.current?.getBoundingClientRect();
       const imageRect = imageRef.current?.getBoundingClientRect();
       
@@ -66,9 +119,9 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
         const originalImageWidth = imageRect.width / scale;
         const originalImageHeight = imageRect.height / scale;
         
-        // 새로운 스케일 적용된 이미지 크기
-        const scaledImageWidth = originalImageWidth * newScale;
-        const scaledImageHeight = originalImageHeight * newScale;
+        // 스케일 적용된 이미지 크기
+        const scaledImageWidth = originalImageWidth * scale;
+        const scaledImageHeight = originalImageHeight * scale;
         
         // 경계 제한 계산 - 이미지가 화면을 벗어나지 않도록
         const maxX = Math.max(0, (scaledImageWidth - containerWidth) / 2);
@@ -76,9 +129,9 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
         const minX = -maxX;
         const minY = -maxY;
         
-        // 현재 위치를 새로운 경계 내로 제한
-        const limitedX = Math.max(minX, Math.min(maxX, position.x));
-        const limitedY = Math.max(minY, Math.min(maxY, position.y));
+        // 위치를 경계 내로 제한
+        const limitedX = Math.max(minX, Math.min(maxX, newX));
+        const limitedY = Math.max(minY, Math.min(maxY, newY));
         
         setPosition({
           x: limitedX,
@@ -88,84 +141,17 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
     }
   };
 
-  // 휠 이벤트로 줌
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.2 : 0.2;
-    handleZoom(delta);
-  };
-
-  // 더블클릭/더블탭으로 줌 토글
-  const handleDoubleClick = () => {
-    if (scale > 1) {
-      setScale(1);
-      setPosition({ x: 0, y: 0 });
-    } else {
-      setScale(2);
-    }
-  };
-
-  // 터치/마우스 이벤트 핸들러
-  const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
-    if (scale <= 1) return; // 확대되지 않은 상태에서는 드래그 불가
-    
-    setIsDragging(true);
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    setDragStart({ x: clientX - position.x, y: clientY - position.y });
-  };
-
-  const handleTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!isDragging || scale <= 1) return;
+  const handleTouchEnd = (e: React.TouchEvent) => {
     e.preventDefault();
     
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    
-    // 새로운 위치 계산
-    const newX = clientX - dragStart.x;
-    const newY = clientY - dragStart.y;
-    
-    // 이미지와 컨테이너 크기 계산
-    const containerRect = containerRef.current?.getBoundingClientRect();
-    const imageRect = imageRef.current?.getBoundingClientRect();
-    
-    if (containerRect && imageRect) {
-      const containerWidth = containerRect.width;
-      const containerHeight = containerRect.height;
-      
-      // 원본 이미지 크기 (스케일 적용 전)
-      const originalImageWidth = imageRect.width / scale;
-      const originalImageHeight = imageRect.height / scale;
-      
-      // 스케일 적용된 이미지 크기
-      const scaledImageWidth = originalImageWidth * scale;
-      const scaledImageHeight = originalImageHeight * scale;
-      
-      // 경계 제한 계산 - 이미지가 화면을 벗어나지 않도록
-      const maxX = Math.max(0, (scaledImageWidth - containerWidth) / 2);
-      const maxY = Math.max(0, (scaledImageHeight - containerHeight) / 2);
-      const minX = -maxX;
-      const minY = -maxY;
-      
-      // 위치를 경계 내로 제한
-      const limitedX = Math.max(minX, Math.min(maxX, newX));
-      const limitedY = Math.max(minY, Math.min(maxY, newY));
-      
-      setPosition({
-        x: limitedX,
-        y: limitedY
-      });
-    } else {
-      setPosition({
-        x: newX,
-        y: newY
-      });
+    if (e.touches.length === 0) {
+      // 모든 터치가 끝났을 때
+      setIsDragging(false);
+      resetTouchState();
+    } else if (e.touches.length === 1) {
+      // 한 손가락만 남았을 때
+      resetTouchState();
     }
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
   };
 
   // 이미지 변경
@@ -224,7 +210,8 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
         zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        pointerEvents: 'auto'
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -300,10 +287,9 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
           justifyContent: 'center',
           overflow: 'hidden'
         }}
-        onWheel={handleWheel}
-        onTouchStart={handleSwipeStart}
-        onTouchMove={handleSwipeMove}
-        onTouchEnd={handleSwipeEnd}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <img
           ref={imageRef}
@@ -315,11 +301,6 @@ export default function ImageGallery({ images, initialIndex = 0, isOpen, onClose
             cursor: isDragging ? 'grabbing' : scale > 1 ? 'grab' : 'default',
             transition: isDragging ? 'none' : 'transform 0.2s ease-in-out'
           }}
-          onDoubleClick={handleDoubleClick}
-          onMouseDown={handleTouchStart}
-          onMouseMove={handleTouchMove}
-          onMouseUp={handleTouchEnd}
-          onMouseLeave={handleTouchEnd}
           draggable={false}
         />
       </div>
