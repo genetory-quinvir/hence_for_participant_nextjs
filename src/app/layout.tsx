@@ -60,7 +60,7 @@ export default function RootLayout({
         {/* 보안 헤더 - 개발 모드에서는 완화된 정책 적용 */}
         {process.env.NODE_ENV === 'production' ? (
           <>
-            <meta httpEquiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api-participant.hence.events https://www.google-analytics.com; frame-src 'self' https://www.googletagmanager.com;" />
+            <meta httpEquiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com; connect-src 'self' https://api-participant.hence.events https://www.google-analytics.com; frame-src 'self' https://www.googletagmanager.com;" />
             <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
             <meta httpEquiv="X-Frame-Options" content="DENY" />
             <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
