@@ -1474,6 +1474,33 @@ export async function createComment(eventId: string, boardType: string, postId: 
   }
 }
 
+// 댓글 삭제 API
+export async function deleteComment(eventId: string, boardType: string, postId: string, commentId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}/comments/${commentId}`, {
+      method: 'DELETE',
+    });
+
+    if (result.success) {
+      logger.info('✅ 댓글 삭제 성공', { commentId });
+      return {
+        success: true,
+      };
+    } else {
+      return {
+        success: false,
+        error: result.error || '댓글 삭제에 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    apiDebugger.logError(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}/comments/${commentId}`, error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
+
 
 
 // 게시글 수정 API

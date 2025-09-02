@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { BoardItem, CommentItem } from "@/types/api";
-import { getBoardDetail, getComments, createComment, getAccessToken, deleteBoard, toggleLike } from "@/lib/api";
+import { getBoardDetail, getComments, createComment, deleteComment, getAccessToken, deleteBoard, toggleLike } from "@/lib/api";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import CommonProfileView from "@/components/common/CommonProfileView";
 import { useSimpleNavigation } from "@/utils/navigation";
@@ -30,6 +30,8 @@ function BoardDetailContent() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showCommentActionSheet, setShowCommentActionSheet] = useState(false);
+  const [selectedComment, setSelectedComment] = useState<CommentItem | null>(null);
   const [commentContent, setCommentContent] = useState('');
   const [isLiking, setIsLiking] = useState(false);
 
@@ -212,6 +214,56 @@ function BoardDetailContent() {
 
   const handleCloseActionSheet = () => {
     setShowActionSheet(false);
+  };
+
+  const handleCommentMoreClick = (comment: CommentItem) => {
+    setSelectedComment(comment);
+    setShowCommentActionSheet(true);
+  };
+
+  const handleCommentActionClick = async (action: 'delete' | 'report') => {
+    if (!selectedComment) return;
+    
+    setShowCommentActionSheet(false);
+    
+    switch (action) {
+      case 'delete':
+        if (confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
+          try {
+            const eventId = searchParams.get('eventId') || 'default-event';
+            const postId = params.id as string;
+            const result = await deleteComment(eventId, postType, postId, selectedComment.id);
+            if (result.success) {
+              showToast('댓글이 삭제되었습니다.', 'success');
+              // 댓글 목록 새로고침
+              const commentsResult = await getComments(eventId, postType, postId);
+              if (commentsResult.success && commentsResult.data) {
+                setComments(commentsResult.data);
+              }
+            } else {
+              if (result.error?.includes('로그인이 만료')) {
+                showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+                const currentUrl = window.location.pathname + window.location.search;
+                navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
+              } else {
+                showToast(result.error || '댓글 삭제에 실패했습니다.', 'error');
+              }
+            }
+          } catch (error) {
+            console.error('댓글 삭제 오류:', error);
+            showToast('댓글 삭제 중 오류가 발생했습니다.', 'error');
+          }
+        }
+        break;
+      case 'report':
+        showToast('신고가 접수되었습니다.', 'success');
+        break;
+    }
+  };
+
+  const handleCloseCommentActionSheet = () => {
+    setShowCommentActionSheet(false);
+    setSelectedComment(null);
   };
 
   // 이미지 클릭 핸들러
@@ -618,13 +670,35 @@ function BoardDetailContent() {
                   />
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <span className="text-black font-bold text-sm">
-                        {comment.user?.nickname || '익명'}
-                      </span>
-                      <span className="text-gray-400 text-xs font-medium">
-                        {comment.createdAt ? getRelativeTime(comment.createdAt) : ''}
-                      </span>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-black font-bold text-sm">
+                          {comment.user?.nickname || '익명'}
+                        </span>
+                        <span className="text-gray-400 text-xs font-medium">
+                          {comment.createdAt ? getRelativeTime(comment.createdAt) : ''}
+                        </span>
+                      </div>
+                      
+                      {/* 댓글 더보기 버튼 */}
+                      <button
+                        onClick={() => handleCommentMoreClick(comment)}
+                        className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                      >
+                        <svg 
+                          className="w-4 h-4 text-gray-500" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" 
+                          />
+                        </svg>
+                      </button>
                     </div>
                     <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
                       {comment.content}
@@ -683,6 +757,35 @@ function BoardDetailContent() {
             {
               label: "신고하기",
               onClick: () => handleActionClick('report')
+            }
+          ]
+        }
+      />
+
+      {/* 댓글 액션 시트 */}
+      <CommonActionSheet
+        isOpen={showCommentActionSheet}
+        onClose={handleCloseCommentActionSheet}
+        items={
+          selectedComment && user ? (
+            selectedComment.user?.id === user.id
+              ? [
+                  {
+                    label: "삭제하기",
+                    onClick: () => handleCommentActionClick('delete'),
+                    variant: 'destructive'
+                  }
+                ]
+              : [
+                  {
+                    label: "신고하기",
+                    onClick: () => handleCommentActionClick('report')
+                  }
+                ]
+          ) : [
+            {
+              label: "신고하기",
+              onClick: () => handleCommentActionClick('report')
             }
           ]
         }
