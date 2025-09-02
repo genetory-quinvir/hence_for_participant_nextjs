@@ -4,8 +4,10 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import CommonProfileView from "@/components/common/CommonProfileView";
+import CommonActionSheet from "@/components/CommonActionSheet";
 import { UserItem, BoardItem, CommentItem } from "@/types/api";
-import { getUserProfile, getUserPosts, getUserComments } from "@/lib/api";
+import { getUserProfile, getUserPosts, getUserComments, deleteBoard, deleteComment } from "@/lib/api";
+import { getFormattedTime } from "@/utils/time";
 import PostHeader from "@/components/common/PostHeader";
 import Image from "next/image";
 import { useSimpleNavigation } from "@/utils/navigation";
@@ -29,7 +31,7 @@ const SkeletonCard = () => (
       <div className="flex items-center mb-3">
         <SkeletonPulse className="w-8 h-8 rounded-full mr-3" />
         <div className="flex-1">
-          <SkeletonPulse className="w-20 h-4 mb-1" />
+          <SkeletonPulse className="w-20 h4 mb-1" />
           <SkeletonPulse className="w-16 h-3" />
         </div>
       </div>
@@ -61,38 +63,7 @@ const LoadingSkeleton = ({ count = 3 }: { count?: number }) => (
   </div>
 );
 
-// 날짜 포맷팅 유틸리티
-const formatDate = (dateString: string) => {
-  const koreaTimeZone = 'Asia/Seoul';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('ko-KR', {
-    timeZone: koreaTimeZone,
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-};
 
-// 상대적 시간 표시 유틸리티
-const getRelativeTime = (dateString: string): string => {
-  const koreaTimeZone = 'Asia/Seoul';
-  const now = new Date().toLocaleString('en-US', { timeZone: koreaTimeZone });
-  const nowDate = new Date(now);
-  const inputDate = new Date(dateString).toLocaleString('en-US', { timeZone: koreaTimeZone });
-  const date = new Date(inputDate);
-  
-  const diffInSeconds = Math.floor((nowDate.getTime() - date.getTime()) / 1000);
-
-  if (diffInSeconds < 60) return `${diffInSeconds}초 전`;
-  
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-  
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}시간 전`;
-  
-  return date.toLocaleDateString('ko-KR', { timeZone: koreaTimeZone });
-};
 
 // 프로바이더 아이콘 컴포넌트
 const ProviderIcon = ({ provider }: { provider?: string }) => {
@@ -154,6 +125,13 @@ function ProfilePageContent() {
   const isMounted = useRef(false);
   const hasLoadedProfile = useRef(false);
   const hasLoadedActivity = useRef(false);
+  
+  // 삭제 관련 상태
+  const [showPostActionSheet, setShowPostActionSheet] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<BoardItem | null>(null);
+  const [showCommentActionSheet, setShowCommentActionSheet] = useState(false);
+  const [selectedComment, setSelectedComment] = useState<CommentItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // 메모이제이션된 값들
   const finalUserData = useMemo(() => profileData || user, [profileData, user]);
@@ -350,6 +328,101 @@ function ProfilePageContent() {
     goBack();
   }, [goBack]);
 
+  // 게시글 더보기 클릭 핸들러
+  const handlePostMoreClick = useCallback((post: BoardItem) => {
+    setSelectedPost(post);
+    setShowPostActionSheet(true);
+  }, []);
+
+  // 댓글 더보기 클릭 핸들러
+  const handleCommentMoreClick = useCallback((comment: CommentItem) => {
+    setSelectedComment(comment);
+    setShowCommentActionSheet(true);
+  }, []);
+
+  // 게시글 액션 클릭 핸들러
+  const handlePostActionClick = useCallback(async (action: 'delete') => {
+    if (!selectedPost) return;
+    
+    setShowPostActionSheet(false);
+    
+    if (action === 'delete') {
+      if (confirm('정말로 이 글을 삭제하시겠습니까?')) {
+        try {
+          setIsDeleting(true);
+          const result = await deleteBoard(selectedPost.eventId, selectedPost.type.toLowerCase(), selectedPost.id);
+          
+          if (result.success) {
+            showToast('게시글이 삭제되었습니다.', 'success');
+            // 게시글 목록에서 제거
+            setUserPosts(prev => prev.filter(post => post.id !== selectedPost.id));
+            // 통계 업데이트
+            setProfileData(prev => prev ? { ...prev, postCount: (prev.postCount || 1) - 1 } : prev);
+          } else {
+            if (result.error?.includes('로그인이 만료')) {
+              showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+              navigate('/sign');
+            } else {
+              showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
+            }
+          }
+        } catch (error) {
+          console.error('게시글 삭제 오류:', error);
+          showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+        } finally {
+          setIsDeleting(false);
+        }
+      }
+    }
+  }, [selectedPost, showToast, navigate]);
+
+  // 댓글 액션 클릭 핸들러
+  const handleCommentActionClick = useCallback(async (action: 'delete') => {
+    if (!selectedComment) return;
+    
+    setShowCommentActionSheet(false);
+    
+    if (action === 'delete') {
+      if (confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
+        try {
+          setIsDeleting(true);
+          const result = await deleteComment(selectedComment.eventId, 'free', selectedComment.postId || '', selectedComment.id);
+          
+          if (result.success) {
+            showToast('댓글이 삭제되었습니다.', 'success');
+            // 댓글 목록에서 제거
+            setUserComments(prev => prev.filter(comment => comment.id !== selectedComment.id));
+            // 통계 업데이트
+            setProfileData(prev => prev ? { ...prev, commentCount: (prev.commentCount || 1) - 1 } : prev);
+          } else {
+            if (result.error?.includes('로그인이 만료')) {
+              showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+              navigate('/sign');
+            } else {
+              showToast(result.error || '댓글 삭제에 실패했습니다.', 'error');
+            }
+          }
+        } catch (error) {
+          console.error('댓글 삭제 오류:', error);
+          showToast('댓글 삭제 중 오류가 발생했습니다.', 'error');
+        } finally {
+          setIsDeleting(false);
+        }
+      }
+    }
+  }, [selectedComment, showToast, navigate]);
+
+  // 액션 시트 닫기 핸들러들
+  const handleClosePostActionSheet = useCallback(() => {
+    setShowPostActionSheet(false);
+    setSelectedPost(null);
+  }, []);
+
+  const handleCloseCommentActionSheet = useCallback(() => {
+    setShowCommentActionSheet(false);
+    setSelectedComment(null);
+  }, []);
+
   // 탭 스크롤 함수
   const scrollActiveTabToCenter = useCallback((tab: TabType) => {
     setTimeout(() => {
@@ -461,17 +534,17 @@ function ProfilePageContent() {
                     
                     {/* 게시글 헤더 (커뮤니티에서만 표시) */}
                     {post.type !== 'NOTICE' && (
-                      <PostHeader 
-                        nickname={post.user?.nickname}
-                        profileImageUrl={post.user?.profileImageUrl || undefined}
-                        createdAt={post.createdAt}
-                        className=""
-                        showMoreButton={true}
-                        isNotice={post.type === 'NOTICE'}
-                        onMoreClick={() => {
-                          // TODO: 더보기 메뉴 표시
-                        }}
-                      />
+                      <>
+                        {/* 디버깅용 시간 표시 */}
+                        <PostHeader 
+                          nickname={post.user?.nickname}
+                          profileImageUrl={post.user?.profileImageUrl || undefined}
+                          className=""
+                          showMoreButton={true}
+                          isNotice={post.type === 'NOTICE'}
+                          onMoreClick={() => handlePostMoreClick(post)}
+                        />
+                      </>
                     )}
                     
                     {/* 공지사항인 경우 EventNotice 스타일 적용 */}
@@ -487,7 +560,7 @@ function ProfilePageContent() {
                             }}
                           />
                           <span className="text-xs text-gray-500 font-regular">
-                            {post.createdAt ? getRelativeTime(post.createdAt) : ''}
+                            {post.createdAt ? getFormattedTime(post.createdAt) : ''}
                           </span>
                         </div>
                         
@@ -538,29 +611,38 @@ function ProfilePageContent() {
                     
                     {/* 액션 버튼 - 고정 높이 */}
                     <div className="mt-auto pt-3 mb-2">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center">
-                          <svg 
-                            className={`w-4 h-4 mr-1 ${post.isLiked ? 'text-purple-600' : 'text-black'}`} 
-                            style={{ opacity: post.isLiked ? 1 : 0.6 }} 
-                            fill="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                          </svg>
-                          <span className={`text-xs font-regular ${post.isLiked ? 'text-purple-600' : 'text-black'}`} style={{ opacity: post.isLiked ? 1 : 0.8 }}>
-                            {post.likeCount || 0}
-                          </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center">
+                            <svg 
+                              className={`w-4 h-4 mr-1 ${post.isLiked ? 'text-purple-600' : 'text-black'}`} 
+                              style={{ opacity: post.isLiked ? 1 : 0.6 }} 
+                              fill="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                            <span className={`text-xs font-regular ${post.isLiked ? 'text-purple-600' : 'text-black'}`} style={{ opacity: post.isLiked ? 1 : 0.8 }}>
+                              {post.likeCount || 0}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-black mr-1" style={{ opacity: 0.6 }}>
+                              <path fillRule="evenodd" d="M5.337 21.718a6.707 6.707 0 0 1-.533-.074.75.75 0 0 1-.44-1.223 3.73 3.73 0 0 0 .814-1.686c.023-.115-.022-.317-.254-.543C3.274 16.587 2.25 14.41 2.25 12c0-5.03 4.428-9 9.75-9s9.75 3.97 9.75 9c0 5.03-4.428 9-9.75 9-.833 0-1.643-.097-2.417-.279a6.721 6.721 0 0 1-4.246.997Z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-xs font-regular text-black" style={{ opacity: 0.8 }}>
+                              {post.commentCount || 0}
+                            </span>
+                          </div>
                         </div>
                         
-                        <div className="flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-black mr-1" style={{ opacity: 0.6 }}>
-                            <path fillRule="evenodd" d="M5.337 21.718a6.707 6.707 0 0 1-.533-.074.75.75 0 0 1-.44-1.223 3.73 3.73 0 0 0 .814-1.686c.023-.115-.022-.317-.254-.543C3.274 16.587 2.25 14.41 2.25 12c0-5.03 4.428-9 9.75-9s9.75 3.97 9.75 9c0 5.03-4.428 9-9.75 9-.833 0-1.643-.097-2.417-.279a6.721 6.721 0 0 1-4.246.997Z" clipRule="evenodd" />
-                          </svg>
-                          <span className="text-xs font-regular text-black" style={{ opacity: 0.8 }}>
-                            {post.commentCount || 0}
+                        {/* 날짜 - 오른쪽 정렬 */}
+                        {post.createdAt && (
+                          <span className="text-xs text-gray-500 font-regular">
+                            {getFormattedTime(post.createdAt)}
                           </span>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -609,16 +691,41 @@ function ProfilePageContent() {
                     <div className="absolute" style={{ bottom: '0px', left: '0px', right: '0px', borderBottom: '1px solid rgb(229, 231, 235)' }}></div>
                     
                     {/* 댓글 헤더 */}
-                    <PostHeader 
-                      nickname={comment.user?.nickname}
-                      profileImageUrl={comment.user?.profileImageUrl || undefined}
-                      createdAt={comment.createdAt}
-                      className="mb-3"
-                      showMoreButton={true}
-                      onMoreClick={() => {
-                        // TODO: 댓글 더보기 메뉴 표시
-                      }}
-                    />
+                    <>
+                      {/* 디버깅용 시간 표시 */}                      
+                      {/* 댓글 헤더 - 글 디테일과 동일한 방식 */}
+                      <div className="flex items-center space-x-3 mb-3">
+                        <CommonProfileView
+                          profileImageUrl={comment.user?.profileImageUrl}
+                          nickname={comment.user?.nickname || '익명'}
+                          size="md"
+                          showBorder={true}
+                        />
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                              <span className="text-black font-semibold text-sm">
+                                {comment.user?.nickname || '익명'}
+                              </span>
+                            </div>
+                            
+                            {/* 댓글 더보기 버튼 */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCommentMoreClick(comment);
+                              }}
+                              className="flex-shrink-0 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                            >
+                              <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
                     
                     {/* 댓글 내용 */}
                     <div className="flex-1">
@@ -627,15 +734,24 @@ function ProfilePageContent() {
                       </div>
                     </div>
                     
-                    {/* 원본 게시글 보기 링크 */}
+                    {/* 원본 게시글 보기 링크와 날짜 */}
                     <div className="mt-auto pt-3 mb-2">
-                      <div className="flex items-center">
-                        <svg className="w-4 h-4 text-black mr-1" style={{ opacity: 0.6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                        <span className="text-xs font-regular text-black" style={{ opacity: 0.8 }}>
-                          원본 게시글 보기
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <svg className="w-4 h-4 text-black mr-1" style={{ opacity: 0.6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                          <span className="text-xs font-regular text-black" style={{ opacity: 0.8 }}>
+                            원본 게시글 보기
+                          </span>
+                        </div>
+                        
+                        {/* 날짜 - 오른쪽 정렬 */}
+                        {comment.createdAt && (
+                          <span className="text-xs text-gray-500 font-regular">
+                            {getFormattedTime(comment.createdAt)}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -795,6 +911,32 @@ function ProfilePageContent() {
             </div>
           </div>
         </main>
+
+        {/* 게시글 액션 시트 */}
+        <CommonActionSheet
+          isOpen={showPostActionSheet}
+          onClose={handleClosePostActionSheet}
+          items={[
+            {
+              label: "삭제하기",
+              onClick: () => handlePostActionClick('delete'),
+              variant: 'destructive'
+            }
+          ]}
+        />
+
+        {/* 댓글 액션 시트 */}
+        <CommonActionSheet
+          isOpen={showCommentActionSheet}
+          onClose={handleCloseCommentActionSheet}
+          items={[
+            {
+              label: "삭제하기",
+              onClick: () => handleCommentActionClick('delete'),
+              variant: 'destructive'
+            }
+          ]}
+        />
       </div>
     </div>
   );

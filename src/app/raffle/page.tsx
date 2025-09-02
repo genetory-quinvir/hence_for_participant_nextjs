@@ -417,7 +417,7 @@ function RaffleContent() {
                 <h3 className="text-black font-bold text-xl ml-2">이미 응모가 완료되었습니다!</h3>
               </div>
               <p className="text-black text-sm" style={{ opacity: 0.7 }}>
-                이미 이 이벤트에 응모하셨습니다.<br />
+                이미 해당 이벤트에 응모하셨습니다.<br />
                 당첨 발표를 기다려주세요!
               </p>
             </div>

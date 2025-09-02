@@ -5,7 +5,6 @@ import CommonProfileView from "./CommonProfileView";
 
 interface PostHeaderProps {
   nickname?: string;
-  createdAt?: string;
   size?: 'sm' | 'md';
   className?: string;
   showMoreButton?: boolean;
@@ -14,42 +13,8 @@ interface PostHeaderProps {
   profileImageUrl?: string;
 }
 
-// 상대적 시간 표시 함수 - 한국 시간 기준
-const getRelativeTime = (dateString: string): string => {
-  // 한국 시간대 설정 (KST: UTC+9)
-  const koreaTimeZone = 'Asia/Seoul';
-  
-  // 현재 시간을 한국 시간으로 변환
-  const now = new Date().toLocaleString('en-US', { timeZone: koreaTimeZone });
-  const nowDate = new Date(now);
-  
-  // 입력된 날짜를 한국 시간으로 변환
-  const inputDate = new Date(dateString).toLocaleString('en-US', { timeZone: koreaTimeZone });
-  const date = new Date(inputDate);
-  
-  const diffInSeconds = Math.floor((nowDate.getTime() - date.getTime()) / 1000);
-
-  if (diffInSeconds < 60) {
-    return `${diffInSeconds}초 전`;
-  }
-
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) {
-    return `${diffInMinutes}분 전`;
-  }
-
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) {
-    return `${diffInHours}시간 전`;
-  }
-
-  // 24시간 이상 지난 경우 한국 시간 기준으로 날짜 표시
-  return date.toLocaleDateString('ko-KR', { timeZone: koreaTimeZone });
-};
-
 export default function PostHeader({ 
   nickname, 
-  createdAt, 
   size = 'md',
   className = '',
   showMoreButton = false,
@@ -58,7 +23,6 @@ export default function PostHeader({
   profileImageUrl
 }: PostHeaderProps) {
   const displayName = nickname || '익명';
-  const initial = displayName.charAt(0).toUpperCase();
   
   const isSmall = size === 'sm';
   
@@ -88,11 +52,6 @@ export default function PostHeader({
                   {displayName}
                 </span>
               </div>
-              <span className={`text-black ${
-                isSmall ? 'text-xs' : 'text-xs'
-              }`} style={{ opacity: 0.6 }}>
-                {createdAt ? getRelativeTime(createdAt) : ''}
-              </span>
             </div>
           </div>
         </>
@@ -112,11 +71,6 @@ export default function PostHeader({
                 isSmall ? 'text-xs' : 'text-sm'
               }`}>
                 {displayName}
-              </span>
-              <span className={`text-black ${
-                isSmall ? 'text-xs' : 'text-xs'
-              }`} style={{ opacity: 0.6 }}>
-                {createdAt ? getRelativeTime(createdAt) : ''}
               </span>
             </div>
           </div>

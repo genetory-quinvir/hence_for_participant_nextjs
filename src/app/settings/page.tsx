@@ -187,12 +187,12 @@ export default function SettingsPage() {
           <div className="px-4 py-6">
             <h2 className="text-lg font-bold text-black mb-4">앱 정보</h2>
             <div className="bg-white">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handleContactDeveloper}>
+              {/* <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handleContactDeveloper}>
                 <span className="text-sm text-gray-600">개발자에게 연락하기</span>
                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-              </div>
+              </div> */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50" onClick={handleTermsOfService}>
                 <span className="text-sm text-gray-600">이용약관</span>
                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
