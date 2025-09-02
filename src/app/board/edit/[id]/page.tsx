@@ -391,11 +391,19 @@ function BoardEditContent() {
         removedImages
       });
       
+      // updateBoard API에 맞는 데이터 구조로 전송
       const updateData = {
         content: content.trim(),
-        images: finalImages,
-        newImages: images // 새로 추가된 이미지 파일들
+        images: finalImages,        // 기존 이미지 URL 배열
+        newImages: images          // 새로 추가된 이미지 File 배열
       };
+      
+      console.log('📤 수정 데이터:', {
+        content: content.trim(),
+        images: finalImages,
+        newImagesCount: images.length,
+        removedImages
+      });
       
       const result = await updateBoard(eventId, postType, postId, updateData);
       
@@ -595,7 +603,7 @@ function BoardEditContent() {
                 {/* 이미지 업로드 정보 */}
                 <div className="text-xs text-gray-500">
                   <div>최대 5개, WebP로 자동 변환</div>
-                  <div>지원 형식: JPG, PNG, GIF, WebP</div>
+                  <div>JPG, PNG, GIF, WebP</div>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
@@ -604,7 +612,7 @@ function BoardEditContent() {
                 </span>
                 <button
                   onClick={handleSubmit}
-                  className={`text-md font-semibold transition-all duration-200 px-6 py-3 rounded-lg ${
+                  className={`text-md font-semibold transition-all duration-200 px-4 py-3 rounded-lg whitespace-nowrap ${
                     isSubmitting || !content.trim()
                       ? 'text-gray-400 cursor-not-allowed bg-gray-300'
                       : 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
