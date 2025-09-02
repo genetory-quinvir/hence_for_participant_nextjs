@@ -31,7 +31,7 @@ export default function EventCarousel({ onEventClick, onEntryClick }: EventCarou
           console.log('📱 안드로이드 크롬 - EventCarousel 네트워크 상태 확인:', navigator.onLine);
           if (!navigator.onLine) {
             setError('네트워크 연결을 확인해주세요.');
-            showToast('네트워크 연결을 확인해주세요.', 'error');
+            // showToast('네트워크 연결을 확인해주세요.', 'error');
             setLoading(false);
             return;
           }
