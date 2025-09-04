@@ -4,28 +4,9 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
-  // 보안 헤더 설정
-  if (process.env.NODE_ENV === 'production') {
-    // X-Frame-Options: 클릭재킹 공격 방지
-    response.headers.set('X-Frame-Options', 'DENY');
-    
-    // X-Content-Type-Options: MIME 타입 스니핑 방지
-    response.headers.set('X-Content-Type-Options', 'nosniff');
-    
-    // X-XSS-Protection: XSS 공격 방지 (레거시 브라우저 지원)
-    response.headers.set('X-XSS-Protection', '1; mode=block');
-    
-    // Referrer-Policy: 리퍼러 정보 제어
-    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    
-    // Permissions-Policy: 브라우저 기능 제어
-    response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  } else {
-    // 개발 모드에서는 기본 보안 헤더만 설정
-    response.headers.set('X-Content-Type-Options', 'nosniff');
-    response.headers.set('X-Frame-Options', 'DENY');
-  }
-
+  // 보안 헤더는 next.config.ts에서 통합 관리
+  // 미들웨어에서는 추가적인 라우팅 로직만 처리
+  
   return response;
 }
 
