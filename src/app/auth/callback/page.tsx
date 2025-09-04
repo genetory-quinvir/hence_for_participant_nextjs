@@ -10,19 +10,12 @@ function AuthCallbackContent() {
   const { login } = useAuth();
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showManualForm, setShowManualForm] = useState(false);
-  const [manualUserInfo, setManualUserInfo] = useState({
-    social_user_id: '',
-    email: '',
-    name: '',
-    nickname: ''
-  });
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successData, setSuccessData] = useState<any>(null);
 
   useEffect(() => {
-    // 중복 호출 방지
-    if (isProcessing || showSuccessMessage || error) {
+    // 중복 호출 방지 - isProcessing이 true인 경우에만 실행
+    if (showSuccessMessage || error) {
       return;
     }
 
@@ -32,10 +25,24 @@ function AuthCallbackContent() {
         const provider = searchParams.get('provider');
         const isNewUser = searchParams.get('isNewUser') === 'true';
         const clientRedirectUrl = searchParams.get('clientRedirect');
+        const socialUserId = searchParams.get('social_user_id');
+        const email = searchParams.get('email');
+        const name = searchParams.get('name');
+        const nickname = searchParams.get('nickname');
         
-        console.log('🔍 소셜 로그인 파라미터:', { code, provider, isNewUser });
+        console.log('🔍 소셜 로그인 파라미터:', { 
+          code, 
+          provider, 
+          isNewUser, 
+          socialUserId, 
+          email, 
+          name, 
+          nickname,
+          clientRedirectUrl 
+        });
 
         if (!code || !provider) {
+          console.error('❌ 필수 파라미터 누락:', { code: !!code, provider: !!provider });
           setError('인증 정보가 올바르지 않습니다.');
           return;
         }
@@ -50,13 +57,19 @@ function AuthCallbackContent() {
           body: JSON.stringify({
             code,
             provider: provider.toUpperCase(),
-            isNewUser
+            isNewUser,
+            social_user_id: socialUserId,
+            email,
+            name,
+            nickname,
+            clientRedirect: clientRedirectUrl
           }),
         });
 
         if (!loginResponse.ok) {
-          console.error('❌ 소셜 로그인 실패:', loginResponse.status);
-          setError('소셜 로그인에 실패했습니다.');
+          const errorData = await loginResponse.json().catch(() => ({}));
+          console.error('❌ 소셜 로그인 실패:', loginResponse.status, errorData);
+          setError(errorData.error || '소셜 로그인에 실패했습니다.');
           return;
         }
 
@@ -95,76 +108,6 @@ function AuthCallbackContent() {
 
     processCallback();
   }, [searchParams, login, isProcessing, showSuccessMessage, error]);
-
-  // 수동 사용자 정보 입력 처리
-  const handleManualLogin = async () => {
-    if (!manualUserInfo.social_user_id || !manualUserInfo.email) {
-      setError('소셜 사용자 ID와 이메일은 필수입니다.');
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      const code = searchParams.get('code');
-      const provider = searchParams.get('provider');
-      const isNewUser = searchParams.get('isNewUser') === 'true';
-      const clientRedirectUrl = searchParams.get('clientRedirect');
-
-      // 내부 API를 통해 수동 입력된 사용자 데이터로 로그인/회원가입 처리
-      const loginResponse = await fetch('/api/auth/callback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code,
-          provider: provider?.toUpperCase(),
-          isNewUser,
-          // 수동 입력된 사용자 정보 (필요한 경우에만)
-          social_user_id: manualUserInfo.social_user_id,
-          email: manualUserInfo.email,
-          name: manualUserInfo.name,
-          nickname: manualUserInfo.nickname
-        }),
-      });
-
-      if (!loginResponse.ok) {
-        setError('수동 로그인에 실패했습니다.');
-        return;
-      }
-
-      const loginResult = await loginResponse.json();
-
-      // 토큰 저장
-      if (loginResult.access_token) {
-        saveTokens(loginResult.access_token, loginResult.refresh_token);
-      }
-      
-      // 사용자 정보 저장
-      const userData = loginResult.data || loginResult;
-      login(
-        {
-          id: userData.id || '1',
-          name: userData.nickname || userData.name || '사용자',
-          email: userData.email || '',
-          profileImage: userData.profileImage || '',
-          clientRedirectUrl: clientRedirectUrl
-        },
-        loginResult.access_token || '',
-        loginResult.refresh_token || ''
-      );
-      
-      setSuccessData({ userData, clientRedirectUrl });
-      setShowSuccessMessage(true);
-      setIsProcessing(false);
-      
-      console.log('✅ 수동 로그인 성공!');
-    } catch (error) {
-      setError('수동 로그인 처리 중 오류가 발생했습니다.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   // 성공 메시지 화면
   if (showSuccessMessage) {
@@ -219,101 +162,12 @@ function AuthCallbackContent() {
             {error}
           </div>
           
-          <div className="space-y-3">
-            <button
-              onClick={() => window.location.href = '/sign'}
-              className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              로그인 페이지로 이동
-            </button>
-            
-            <button
-              onClick={() => {
-                setError('');
-                setShowManualForm(true);
-              }}
-              className="w-full bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              수동 입력으로 시도
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 수동 입력 폼
-  if (showManualForm) {
-    return (
-      <div className="min-h-screen bg-white text-black flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <div className="text-lg mb-4">수동 사용자 정보 입력</div>
-          <div className="text-sm mb-6 text-gray-600">
-            소셜 로그인에서 필요한 정보를 수동으로 입력해주세요.
-          </div>
-          
-          <div className="space-y-4 text-left">
-            <div>
-              <label className="block text-sm font-medium mb-1">소셜 사용자 ID *</label>
-              <input
-                type="text"
-                value={manualUserInfo.social_user_id}
-                onChange={(e) => setManualUserInfo(prev => ({ ...prev, social_user_id: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="소셜 사용자 ID"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">이메일 *</label>
-              <input
-                type="email"
-                value={manualUserInfo.email}
-                onChange={(e) => setManualUserInfo(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="이메일"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">이름</label>
-              <input
-                type="text"
-                value={manualUserInfo.name}
-                onChange={(e) => setManualUserInfo(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="사용자 이름"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">닉네임</label>
-              <input
-                type="text"
-                value={manualUserInfo.nickname}
-                onChange={(e) => setManualUserInfo(prev => ({ ...prev, nickname: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="닉네임"
-              />
-            </div>
-          </div>
-          
-          <div className="mt-6 space-y-3">
-            <button
-              onClick={handleManualLogin}
-              disabled={isProcessing}
-              className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
-            >
-              {isProcessing ? '처리 중...' : '로그인 시도'}
-            </button>
-            
-            <button
-              onClick={() => setShowManualForm(false)}
-              className="w-full bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              취소
-            </button>
-          </div>
+          <button
+            onClick={() => window.location.href = '/sign'}
+            className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            로그인 페이지로 이동
+          </button>
         </div>
       </div>
     );

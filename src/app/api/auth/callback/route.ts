@@ -5,9 +5,27 @@ export async function POST(request: NextRequest) {
     console.log('🚀 소셜 로그인 API 호출됨');
     
     const body = await request.json();
-    const { code, provider, isNewUser } = body;
+    const { 
+      code, 
+      provider, 
+      isNewUser, 
+      social_user_id, 
+      email, 
+      name, 
+      nickname, 
+      clientRedirect 
+    } = body;
     
-    console.log('📋 받은 파라미터:', { code, provider, isNewUser });
+    console.log('📋 받은 파라미터:', { 
+      code, 
+      provider, 
+      isNewUser, 
+      social_user_id, 
+      email, 
+      name, 
+      nickname, 
+      clientRedirect 
+    });
 
     if (!code || !provider) {
       return NextResponse.json(
@@ -26,16 +44,22 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         code,
         provider: provider.toUpperCase(),
-        isNewUser
+        isNewUser,
+        social_user_id,
+        email,
+        name,
+        nickname,
+        clientRedirect
       }),
     });
 
     console.log('📊 백엔드 응답 상태:', response.status);
 
     if (!response.ok) {
-      console.error('❌ 백엔드 호출 실패:', response.status);
+      const errorText = await response.text();
+      console.error('❌ 백엔드 호출 실패:', response.status, errorText);
       return NextResponse.json(
-        { success: false, error: '소셜 로그인에 실패했습니다.' },
+        { success: false, error: `소셜 로그인에 실패했습니다. (${response.status})` },
         { status: response.status }
       );
     }
