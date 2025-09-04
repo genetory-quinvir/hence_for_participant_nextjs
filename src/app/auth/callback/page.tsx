@@ -10,12 +10,10 @@ function AuthCallbackContent() {
   const { login } = useAuth();
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [successData, setSuccessData] = useState<any>(null);
 
   useEffect(() => {
-    // 중복 호출 방지 - isProcessing이 true인 경우에만 실행
-    if (showSuccessMessage || error) {
+    // 중복 호출 방지 - error가 있는 경우에만 실행 중단
+    if (error) {
       return;
     }
 
@@ -172,11 +170,14 @@ function AuthCallbackContent() {
           loginResult.refresh_token || ''
         );
 
-        setSuccessData({ userData: finalUserData, clientRedirectUrl });
-        setShowSuccessMessage(true);
-        setIsProcessing(false);
-        
         console.log('🎉 소셜 로그인 완료!');
+        
+        // 로그인 완료 후 이전 화면으로 리다이렉트
+        if (clientRedirectUrl) {
+          window.location.href = clientRedirectUrl;
+        } else {
+          window.location.href = '/';
+        }
       } catch (error) {
         console.error('❌ 소셜 로그인 처리 오류:', error);
         
@@ -194,50 +195,8 @@ function AuthCallbackContent() {
     };
 
     processCallback();
-  }, [searchParams, login, isProcessing, showSuccessMessage, error]);
+  }, [searchParams, login, error]);
 
-  // 성공 메시지 화면
-  if (showSuccessMessage) {
-    return (
-      <div className="min-h-screen bg-white text-black flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <div className="text-green-500 text-lg mb-4">✅ 로그인 성공!</div>
-          <div className="text-sm mb-6" style={{ opacity: 0.7 }}>
-            소셜 로그인이 성공적으로 완료되었습니다.
-          </div>
-          
-          {successData?.userData && (
-            <div className="mb-6 p-4 bg-green-50 rounded-lg text-left">
-              <h3 className="font-semibold text-green-800 mb-2">로그인된 사용자 정보</h3>
-              <div className="text-sm space-y-1">
-                <div><span className="font-medium">ID:</span> {successData.userData.id || '없음'}</div>
-                <div><span className="font-medium">이메일:</span> {successData.userData.email || '없음'}</div>
-                <div><span className="font-medium">이름:</span> {successData.userData.name || '없음'}</div>
-                <div><span className="font-medium">닉네임:</span> {successData.userData.nickname || '없음'}</div>
-              </div>
-            </div>
-          )}
-          
-          <div className="text-xs text-gray-500 mb-6">
-            콘솔에서 상세한 로그를 확인할 수 있습니다. (F12 → Console)
-          </div>
-          
-          <button
-            onClick={() => {
-              if (successData?.clientRedirectUrl) {
-                window.location.href = successData.clientRedirectUrl;
-              } else {
-                window.location.href = '/';
-              }
-            }}
-            className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            계속하기
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // 에러 화면
   if (error) {
