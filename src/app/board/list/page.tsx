@@ -200,7 +200,7 @@ function BoardListContent() {
         handleConfirmDelete();
         break;
       case 'report':
-        // showToast('신고가 접수되었습니다.', 'success');
+        showToast('신고가 접수되었습니다.', 'success');
         break;
     }
   };

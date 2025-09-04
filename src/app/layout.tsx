@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { DayProvider } from "@/contexts/DayContext";
 import { ToastProvider } from "@/components/common/Toast";
 import { ForegroundMessageHandler } from "@/components/common/ForegroundMessageHandler";
+import { GlobalErrorHandler } from '@/components/GlobalErrorHandler';
 
 export const metadata: Metadata = {
   title: "HENCE X 서울과학기술대학교",
@@ -99,14 +100,15 @@ export default function RootLayout({
         />
         
         <div className="mx-auto w-full max-w-lg min-h-screen bg-white" style={{ maxWidth: '700px' }}>
-          <AuthProvider>
-            <DayProvider>
-              <ToastProvider>
-                <ForegroundMessageHandler />
-                {children}
-              </ToastProvider>
-            </DayProvider>
-          </AuthProvider>
+                  <AuthProvider>
+          <DayProvider>
+            <ToastProvider>
+              <GlobalErrorHandler />
+              <ForegroundMessageHandler />
+              {children}
+            </ToastProvider>
+          </DayProvider>
+        </AuthProvider>
         </div>
         
         {/* Google Tag Manager */}

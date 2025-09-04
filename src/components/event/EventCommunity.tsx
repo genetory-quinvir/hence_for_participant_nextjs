@@ -102,7 +102,7 @@ export default function EventCommunity({
   const handleReport = () => {
     if (!selectedPost) return;
     
-    // showToast('게시글이 신고되었습니다. 검토 후 처리하겠습니다.', 'success');
+    showToast('게시글이 신고되었습니다. 검토 후 처리하겠습니다.', 'success');
     setShowActionSheet(false);
   };
 
