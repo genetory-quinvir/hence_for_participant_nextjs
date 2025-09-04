@@ -34,7 +34,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    logger.error('💥 ErrorBoundary에서 에러 발생:', error, errorInfo);
+    logger.error('💥 ErrorBoundary에서 에러 발생:', { error, errorInfo });
     
     // 부모 컴포넌트에 에러 알림
     if (this.props.onError) {
