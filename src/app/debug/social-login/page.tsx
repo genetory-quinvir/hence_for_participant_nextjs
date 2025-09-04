@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function SocialLoginDebugPage() {
+function SocialLoginDebugContent() {
   const searchParams = useSearchParams();
   const [debugResult, setDebugResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -163,5 +163,26 @@ export default function SocialLoginDebugPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// 로딩 컴포넌트
+function SocialLoginDebugLoading() {
+  return (
+    <div className="min-h-screen bg-white text-black flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+        <p className="text-sm" style={{ opacity: 0.7 }}>디버깅 페이지 로딩 중...</p>
+      </div>
+    </div>
+  );
+}
+
+// 메인 컴포넌트
+export default function SocialLoginDebugPage() {
+  return (
+    <Suspense fallback={<SocialLoginDebugLoading />}>
+      <SocialLoginDebugContent />
+    </Suspense>
   );
 }
