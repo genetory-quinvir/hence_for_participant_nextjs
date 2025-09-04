@@ -83,7 +83,7 @@ function AuthCallbackContent() {
         console.log('👤 사용자 정보로 로그인/회원가입 처리...');
         
         // verify 결과에서 사용자 정보 추출
-        const userData = verifyResult.user;
+        const userData = verifyResult.data.user;
         
         console.log('📋 userData:', userData);
         
@@ -93,6 +93,13 @@ function AuthCallbackContent() {
         const userProvider = userData.provider;
         const userName = userData.name;
         const userNickname = userData.nickname;
+        
+        // 콘솔에 추출된 데이터 찍기
+        console.log('🎯 추출된 핵심 데이터:', {
+          email: userEmail,
+          id: userId,
+          provider: userProvider
+        });
         
         console.log('📋 추출된 사용자 정보:', {
           email: userEmail,
