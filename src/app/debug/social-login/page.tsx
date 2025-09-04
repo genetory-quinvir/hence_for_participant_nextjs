@@ -73,7 +73,6 @@ function SocialLoginDebugContent() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          code,
           provider: provider?.toUpperCase() || 'GOOGLE',
           isNewUser
         }),
@@ -87,7 +86,7 @@ function SocialLoginDebugContent() {
         endpoint: 'verify',
         url: verifyUrl,
         method: 'POST',
-        requestBody: { code, provider: provider?.toUpperCase() || 'GOOGLE', isNewUser },
+        requestBody: { provider: provider?.toUpperCase() || 'GOOGLE', isNewUser },
         status: response.status,
         data: result
       });

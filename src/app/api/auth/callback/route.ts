@@ -43,7 +43,6 @@ export async function POST(request: NextRequest) {
     // 1단계: code로 사용자 정보 조회
     const verifyUrl = `https://api.hence.events/api/v1/auth/social/verify/${code}`;
     const verifyRequestBody = {
-      code,
       provider: provider.toUpperCase(),
       isNewUser
     };
@@ -61,13 +60,40 @@ export async function POST(request: NextRequest) {
 
     const verifyResult = await verifyResponse.json();
     console.log('👤 사용자 정보 조회 결과:', verifyResult);
+    console.log('✅ verify 성공! 사용자 정보:', {
+      hasData: !!verifyResult.data,
+      hasId: !!verifyResult.id,
+      hasEmail: !!(verifyResult.data?.email || verifyResult.email),
+      hasName: !!(verifyResult.data?.name || verifyResult.name),
+      hasNickname: !!(verifyResult.data?.nickname || verifyResult.nickname)
+    });
 
     if (!verifyResponse.ok) {
       console.error('❌ 사용자 정보 조회 실패:', {
         status: verifyResponse.status,
         statusText: verifyResponse.statusText,
-        responseData: verifyResult
+        responseData: verifyResult,
+        requestUrl: verifyUrl,
+        requestBody: verifyRequestBody
       });
+      
+      // 401 에러인 경우 특별 처리
+      if (verifyResponse.status === 401) {
+        console.error('🔐 401 Unauthorized - 인증 실패. code가 유효하지 않거나 만료되었을 수 있습니다.');
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: '인증 실패: code가 유효하지 않거나 만료되었습니다.',
+            details: {
+              status: verifyResponse.status,
+              statusText: verifyResponse.statusText,
+              response: verifyResult,
+              suggestion: '새로운 소셜 로그인을 시도해주세요.'
+            }
+          },
+          { status: verifyResponse.status }
+        );
+      }
       
       return NextResponse.json(
         { 
@@ -76,7 +102,9 @@ export async function POST(request: NextRequest) {
           details: {
             status: verifyResponse.status,
             statusText: verifyResponse.statusText,
-            response: verifyResult
+            response: verifyResult,
+            requestUrl: verifyUrl,
+            requestBody: verifyRequestBody
           }
         },
         { status: verifyResponse.status }
