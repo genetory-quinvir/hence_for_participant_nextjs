@@ -24,41 +24,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 필수 파라미터 검증 - social_user_id와 email이 없으면 에러
+    // 필수 파라미터 검증 - code와 provider만 있으면 진행
+    // social_user_id와 email은 외부 API에서 code를 통해 조회할 예정
+    console.log('🔍 API 파라미터 검증 결과:', {
+      hasCode: !!code,
+      hasProvider: !!provider,
+      hasSocialUserId: !!social_user_id,
+      hasEmail: !!email,
+      hasName: !!name,
+      hasNickname: !!nickname
+    });
+
+    // social_user_id와 email이 없어도 code와 provider가 있으면 외부 API에서 조회 시도
     if (!social_user_id || !email) {
-      console.error('필수 파라미터 누락:', { social_user_id, email });
-      const missingFields = [];
-      if (!social_user_id) missingFields.push('social_user_id (소셜 고유 ID)');
-      if (!email) missingFields.push('email (이메일 주소)');
-      
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: `소셜 로그인에 필요한 정보가 누락되었습니다.\n\n누락된 정보:\n${missingFields.map(field => `• ${field}`).join('\n')}\n\n외부 소셜 로그인 서비스에서 이 정보들을 전달하지 않았습니다. 다시 로그인을 시도해주세요.`
-        },
-        { status: 400 }
-      );
+      console.log('⚠️ social_user_id 또는 email이 요청에 없음. 외부 API에서 code를 통해 조회를 시도합니다.');
     }
 
     // 외부 API 호출
     const externalUrl = `https://api-participant.hence.events/auth/callback`;
     console.log('외부 API URL:', externalUrl);
     
+    // 외부 API로 전송할 데이터 구성
+    const requestBody = {
+      code,
+      provider: provider.toUpperCase(),
+      isNewUser,
+      // 소셜 사용자 고유 식별자와 이메일 (있는 경우에만 포함)
+      ...(social_user_id && { social_user_id }),
+      ...(email && { email }),
+      ...(name && { name }),
+      ...(nickname && { nickname })
+    };
+
+    console.log('🚀 외부 API로 전송할 데이터:', requestBody);
+
     const response = await fetch(externalUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        code,
-        provider: provider.toUpperCase(),
-        isNewUser,
-        // 소셜 사용자 고유 식별자와 이메일 추가 (필수!)
-        social_user_id: social_user_id,
-        email: email,
-        name: name,
-        nickname: nickname
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     const result = await response.json();
@@ -100,11 +105,23 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
+      console.error('❌ 외부 API 호출 실패:', {
+        status: response.status,
+        statusText: response.statusText,
+        responseData: result,
+        requestBody: requestBody
+      });
+      
       return NextResponse.json(
         { 
           success: false, 
-          error: result.error || result.message || '로그인에 실패했습니다.',
-          details: result
+          error: result.error || result.message || `외부 API 호출 실패 (${response.status}: ${response.statusText})`,
+          details: {
+            status: response.status,
+            statusText: response.statusText,
+            response: result,
+            request: requestBody
+          }
         },
         { status: response.status }
       );

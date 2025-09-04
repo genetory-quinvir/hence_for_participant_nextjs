@@ -70,11 +70,20 @@ function AuthCallbackContent() {
           return;
         }
 
-        // 필수 파라미터 검증 - social_user_id와 email이 없으면 에러
+        // 필수 파라미터 검증 - code와 provider만 있으면 진행
+        // social_user_id와 email은 외부 API에서 code를 통해 조회할 예정
+        console.log('🔍 파라미터 검증 결과:', {
+          hasCode: !!code,
+          hasProvider: !!provider,
+          hasSocialUserId: !!socialUserId,
+          hasEmail: !!email,
+          hasName: !!name,
+          hasNickname: !!nickname
+        });
+
+        // social_user_id와 email이 없어도 code와 provider가 있으면 외부 API에서 조회 시도
         if (!socialUserId || !email) {
-          console.error('필수 파라미터 누락:', { socialUserId, email });
-          setError(`소셜 로그인에 필요한 정보가 누락되었습니다.\n\n누락된 정보:\n${!socialUserId ? '• social_user_id (소셜 고유 ID)\n' : ''}${!email ? '• email (이메일 주소)\n' : ''}\n\n외부 소셜 로그인 서비스에서 이 정보들을 전달하지 않았습니다. 다시 로그인을 시도해주세요.`);
-          return;
+          console.log('⚠️ social_user_id 또는 email이 URL 파라미터에 없음. 외부 API에서 code를 통해 조회를 시도합니다.');
         }
 
         // Next.js API 라우트를 통해 요청

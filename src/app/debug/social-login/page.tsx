@@ -32,7 +32,25 @@ function SocialLoginDebugContent() {
     const baseUrl = `http://api.hence.events/api/v1/auth/${provider}?redirect=participant&joinPlatform=participant&callbackUrl=${encodeURIComponent(callbackUrl)}`;
     
     console.log(`${provider} 테스트 URL:`, baseUrl);
+    console.log('콜백 URL:', callbackUrl);
+    
+    // 새 탭에서 열기
     window.open(baseUrl, '_blank');
+  };
+
+  const testWithCurrentParams = () => {
+    const currentUrl = window.location.href;
+    const callbackUrl = `${window.location.origin}/auth/callback`;
+    
+    console.log('현재 URL:', currentUrl);
+    console.log('콜백 URL:', callbackUrl);
+    
+    // 현재 URL에 파라미터가 있으면 콜백 페이지로 이동
+    if (window.location.search) {
+      window.location.href = callbackUrl + window.location.search;
+    } else {
+      alert('현재 URL에 파라미터가 없습니다. 먼저 소셜 로그인을 시도해주세요.');
+    }
   };
 
   return (
@@ -136,6 +154,13 @@ function SocialLoginDebugContent() {
               className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
             >
               구글 로그인 테스트
+            </button>
+            
+            <button
+              onClick={testWithCurrentParams}
+              className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+            >
+              현재 파라미터로 콜백 테스트
             </button>
           </div>
         </div>
