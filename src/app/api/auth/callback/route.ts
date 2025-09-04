@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('API 라우트 호출됨');
+    console.log('🚀 ===== 내부 API 라우트 호출됨 =====');
+    console.log('🚀 요청 URL:', request.url);
+    console.log('🚀 요청 메서드:', request.method);
+    console.log('🚀 요청 헤더:', Object.fromEntries(request.headers.entries()));
+    console.log('🚀 호출 시간:', new Date().toISOString());
     
     const body = await request.json();
     const { code, provider, isNewUser } = body;
