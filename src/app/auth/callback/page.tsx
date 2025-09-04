@@ -21,9 +21,8 @@ function AuthCallbackContent() {
   const [successData, setSuccessData] = useState<any>(null);
 
   useEffect(() => {
-    // 중복 호출 방지: 이미 처리 중이거나 완료된 경우 스킵
+    // 중복 호출 방지
     if (isProcessing || showSuccessMessage || error) {
-      console.log('⏭️ 이미 처리 중이거나 완료됨. 스킵합니다.');
       return;
     }
 
@@ -34,91 +33,88 @@ function AuthCallbackContent() {
         const isNewUser = searchParams.get('isNewUser') === 'true';
         const clientRedirectUrl = searchParams.get('clientRedirect');
         
-        console.log('✅ 내부 API 라우트를 통해 verify 및 로그인을 처리합니다.');
-        console.log('🔍 파라미터:', { code, provider, isNewUser });
+        console.log('🔍 소셜 로그인 파라미터:', { code, provider, isNewUser });
 
         if (!code || !provider) {
           setError('인증 정보가 올바르지 않습니다.');
           return;
         }
 
-        // 내부 API 라우트를 통해 처리 (CSP 문제 해결)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15초 타임아웃
-        
-        const response = await fetch('/api/auth/callback', {
+        // 1단계: 외부 API로 사용자 데이터 조회
+        console.log('📡 외부 API 호출 시작...');
+        const verifyResponse = await fetch(`https://api.hence.events/api/v1/auth/social/verify/${code}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            provider: provider.toUpperCase(),
+            isNewUser
+          }),
+        });
+
+        if (!verifyResponse.ok) {
+          console.error('❌ 외부 API 호출 실패:', verifyResponse.status);
+          setError('사용자 정보 조회에 실패했습니다.');
+          return;
+        }
+
+        const userData = await verifyResponse.json();
+        console.log('✅ 사용자 데이터 조회 성공:', userData);
+
+        // 2단계: 사용자 데이터로 로그인/회원가입 처리
+        console.log('🔐 로그인/회원가입 처리 시작...');
+        const loginResponse = await fetch('https://api-participant.hence.events/auth/callback', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             code,
-            provider,
+            provider: provider.toUpperCase(),
+            social_user_id: userData.id || userData.data?.id,
+            email: userData.email || userData.data?.email,
+            name: userData.name || userData.data?.name,
+            nickname: userData.nickname || userData.data?.nickname,
             isNewUser
           }),
-          signal: controller.signal
         });
-        
-        clearTimeout(timeoutId);
 
-        const result = await response.json();
-        
-        if (!response.ok) {
-          console.error('❌ API 호출 실패:', response.status, result);
-          setError(result.message || `API 호출 실패 (${response.status})`);
+        if (!loginResponse.ok) {
+          console.error('❌ 로그인/회원가입 실패:', loginResponse.status);
+          setError('로그인/회원가입에 실패했습니다.');
           return;
         }
 
-        console.log('✅ API 호출 성공:', result);
-        
-        // 성공 처리
-        if (result.success || result.data) {
-          console.log('✅ 로그인 성공!');
-          
-          // 토큰 저장
-          if (result.access_token || result.data?.accessToken) {
-            const accessToken = result.access_token || result.data.accessToken;
-            const refreshToken = result.refresh_token || result.data.refreshToken;
-            saveTokens(accessToken, refreshToken);
-          }
-          
-          // 사용자 정보 저장
-          const userData = result.data?.user || result.data;
-          if (userData) {
-            const accessToken = result.access_token || result.data?.accessToken;
-            const refreshToken = result.refresh_token || result.data?.refreshToken;
-            
-            login(
-              {
-                id: userData.id || '1',
-                name: userData.nickname || userData.name || '사용자',
-                email: userData.email || '',
-                profileImage: userData.profileImage || '',
-                clientRedirectUrl: clientRedirectUrl
-              },
-              accessToken || '',
-              refreshToken
-            );
-          }
-          
-          setSuccessData({ userData, clientRedirectUrl });
-          setShowSuccessMessage(true);
-          setIsProcessing(false);
-          
-          console.log('✅ 로그인 성공! 콘솔 로그를 확인한 후 "계속하기" 버튼을 클릭하세요.');
-        } else {
-          setError(result.error || result.message || '로그인에 실패했습니다.');
+        const loginResult = await loginResponse.json();
+        console.log('✅ 로그인/회원가입 성공:', loginResult);
+
+        // 3단계: 토큰 저장 및 사용자 정보 설정
+        if (loginResult.access_token) {
+          saveTokens(loginResult.access_token, loginResult.refresh_token);
         }
+
+        const finalUserData = loginResult.data || loginResult;
+        login(
+          {
+            id: finalUserData.id || '1',
+            name: finalUserData.nickname || finalUserData.name || '사용자',
+            email: finalUserData.email || '',
+            profileImage: finalUserData.profileImage || '',
+            clientRedirectUrl: clientRedirectUrl
+          },
+          loginResult.access_token || '',
+          loginResult.refresh_token || ''
+        );
+
+        setSuccessData({ userData: finalUserData, clientRedirectUrl });
+        setShowSuccessMessage(true);
+        setIsProcessing(false);
+        
+        console.log('🎉 소셜 로그인 완료!');
       } catch (error) {
-        console.error('❌ 로그인 콜백 처리 오류:', error);
-        
-        // 타임아웃 에러 처리
-        if (error instanceof Error && error.name === 'AbortError') {
-          setError('로그인 처리 시간이 초과되었습니다. 다시 시도해주세요.');
-        } else {
-          setError('로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
-        }
-        
+        console.error('❌ 소셜 로그인 처리 오류:', error);
+        setError('소셜 로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
         setIsProcessing(false);
       }
     };
@@ -140,59 +136,54 @@ function AuthCallbackContent() {
       const isNewUser = searchParams.get('isNewUser') === 'true';
       const clientRedirectUrl = searchParams.get('clientRedirect');
 
-      const response = await fetch('/api/auth/callback', {
+      // 수동 입력된 사용자 데이터로 로그인/회원가입 처리
+      const loginResponse = await fetch('https://api-participant.hence.events/auth/callback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           code,
-          provider,
-          isNewUser,
+          provider: provider?.toUpperCase(),
           social_user_id: manualUserInfo.social_user_id,
           email: manualUserInfo.email,
           name: manualUserInfo.name,
-          nickname: manualUserInfo.nickname
+          nickname: manualUserInfo.nickname,
+          isNewUser
         }),
       });
 
-      const result = await response.json();
-
-      if (response.ok && (result.success || result.data)) {
-        // 토큰 저장
-        if (result.access_token || result.data?.accessToken) {
-          const accessToken = result.access_token || result.data.accessToken;
-          const refreshToken = result.refresh_token || result.data.refreshToken;
-          saveTokens(accessToken, refreshToken);
-        }
-        
-        // 사용자 정보 저장
-        const userData = result.data?.user || result.data;
-        if (userData) {
-          const accessToken = result.access_token || result.data?.accessToken;
-          const refreshToken = result.refresh_token || result.data?.refreshToken;
-          
-          login(
-            {
-              id: userData.id || '1',
-              name: userData.nickname || userData.name || '사용자',
-              email: userData.email || '',
-              profileImage: userData.profileImage || '',
-              clientRedirectUrl: clientRedirectUrl
-            },
-            accessToken || '',
-            refreshToken
-          );
-        }
-        
-        setSuccessData({ userData, clientRedirectUrl });
-        setShowSuccessMessage(true);
-        setIsProcessing(false);
-        
-        console.log('✅ 수동 로그인 성공!');
-      } else {
-        setError(result.error || '수동 로그인에 실패했습니다.');
+      if (!loginResponse.ok) {
+        setError('수동 로그인에 실패했습니다.');
+        return;
       }
+
+      const loginResult = await loginResponse.json();
+
+      // 토큰 저장
+      if (loginResult.access_token) {
+        saveTokens(loginResult.access_token, loginResult.refresh_token);
+      }
+      
+      // 사용자 정보 저장
+      const userData = loginResult.data || loginResult;
+      login(
+        {
+          id: userData.id || '1',
+          name: userData.nickname || userData.name || '사용자',
+          email: userData.email || '',
+          profileImage: userData.profileImage || '',
+          clientRedirectUrl: clientRedirectUrl
+        },
+        loginResult.access_token || '',
+        loginResult.refresh_token || ''
+      );
+      
+      setSuccessData({ userData, clientRedirectUrl });
+      setShowSuccessMessage(true);
+      setIsProcessing(false);
+      
+      console.log('✅ 수동 로그인 성공!');
     } catch (error) {
       setError('수동 로그인 처리 중 오류가 발생했습니다.');
     } finally {
