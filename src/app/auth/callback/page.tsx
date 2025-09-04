@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { saveTokens, socialLoginOrRegister } from "@/lib/api";
+import { saveTokens, loginUser, registerUser } from "@/lib/api";
 
 function AuthCallbackContent() {
   const searchParams = useSearchParams();
@@ -120,31 +120,38 @@ function AuthCallbackContent() {
           return;
         }
 
-        // 소셜 로그인/회원가입 API 호출
-        console.log('📡 소셜 로그인/회원가입 API 호출...');
-        console.log('📤 전달할 데이터:', {
-          email: userEmail,
-          provider: userProvider,
-          socialUserId: userId,
-          name: userName,
-          nickname: userNickname
-        });
-        
-        const loginResult = await socialLoginOrRegister(
-          userEmail,
-          userProvider,
-          userId,
-          userName,
-          userNickname
-        );
+        // 기존 사용자 로그인 시도
+        console.log('📡 기존 사용자 로그인 시도...');
+        let loginResult = await loginUser(userEmail, ''); // 빈 비밀번호로 시도
 
         if (!loginResult.success) {
-          console.error('❌ 소셜 로그인/회원가입 실패:', loginResult.error);
-          setError(loginResult.error || '소셜 로그인에 실패했습니다.');
-          return;
-        }
+          // 로그인 실패 시 회원가입 진행
+          console.log('📝 로그인 실패, 회원가입 진행...');
+          console.log('📤 회원가입 데이터:', {
+            email: userEmail,
+            password: '', // 소셜 로그인은 비밀번호 없음
+            nickname: userName || userNickname || '사용자',
+            provider: userProvider
+          });
+          
+          loginResult = await registerUser(
+            userEmail,
+            '', // 빈 비밀번호
+            userName || userNickname || '사용자',
+            '', // confirmPassword도 빈 문자열
+            userProvider
+          );
 
-        console.log('✅ 소셜 로그인/회원가입 성공:', loginResult);
+          if (!loginResult.success) {
+            console.error('❌ 회원가입 실패:', loginResult.error);
+            setError(loginResult.error || '회원가입에 실패했습니다.');
+            return;
+          }
+
+          console.log('✅ 회원가입 성공:', loginResult);
+        } else {
+          console.log('✅ 기존 사용자 로그인 성공:', loginResult);
+        }
 
         // 토큰 저장
         if (loginResult.access_token) {
