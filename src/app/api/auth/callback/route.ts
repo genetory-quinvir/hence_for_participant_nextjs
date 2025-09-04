@@ -82,24 +82,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2단계: 사용자 정보가 확인되면 로그인 처리
+    // 2단계: verify된 사용자 정보로 회원가입/로그인 처리
     const externalUrl = `https://api-participant.hence.events/auth/callback`;
-    console.log('🚀 로그인 처리 URL:', externalUrl);
+    console.log('🚀 회원가입/로그인 처리 URL:', externalUrl);
     
-    // 사용자 정보와 함께 로그인 요청
+    // verify에서 가져온 사용자 정보로 회원가입/로그인 요청
     const requestBody = {
       code,
       provider: provider.toUpperCase(),
-      // verify에서 가져온 사용자 정보 포함
-      social_user_id: verifyResult.data?.id || verifyResult.id || social_user_id,
-      email: verifyResult.data?.email || verifyResult.email || email,
-      name: verifyResult.data?.name || verifyResult.name || name,
-      nickname: verifyResult.data?.nickname || verifyResult.nickname || nickname,
+      // verify에서 가져온 사용자 정보 (필수!)
+      social_user_id: verifyResult.data?.id || verifyResult.id,
+      email: verifyResult.data?.email || verifyResult.email,
+      name: verifyResult.data?.name || verifyResult.name,
+      nickname: verifyResult.data?.nickname || verifyResult.nickname,
       // 추가 정보
       ...(isNewUser !== undefined && { isNewUser })
     };
 
-    console.log('🚀 로그인 처리 요청 데이터:', requestBody);
+    console.log('🚀 회원가입/로그인 요청 데이터:', requestBody);
+    console.log('📝 verify에서 가져온 사용자 정보:', {
+      social_user_id: requestBody.social_user_id,
+      email: requestBody.email,
+      name: requestBody.name,
+      nickname: requestBody.nickname
+    });
 
     const response = await fetch(externalUrl, {
       method: 'POST',
@@ -156,9 +162,9 @@ export async function POST(request: NextRequest) {
       });
       
       // 외부 API 실패 시 대안 처리
-      // 1. verify에서 가져온 사용자 정보가 있는 경우 사용
+      // 1. verify에서 가져온 사용자 정보가 있는 경우 사용 (우선순위)
       if (verifyResult.data || verifyResult.id) {
-        console.log('🔄 외부 API 실패, verify에서 가져온 사용자 정보 사용');
+        console.log('🔄 회원가입/로그인 API 실패, verify에서 가져온 사용자 정보로 임시 로그인 처리');
         return NextResponse.json({
           success: true,
           data: {
@@ -169,7 +175,7 @@ export async function POST(request: NextRequest) {
           },
           access_token: 'temp_token_' + Date.now(), // 임시 토큰
           refresh_token: 'temp_refresh_' + Date.now(),
-          message: '외부 API 실패로 인한 임시 로그인 (verify 정보 사용)'
+          message: '회원가입/로그인 API 실패로 인한 임시 로그인 (verify 정보 사용)'
         });
       }
       

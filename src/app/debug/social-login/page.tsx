@@ -233,14 +233,23 @@ function SocialLoginDebugContent() {
 
         {/* 사용법 안내 */}
         <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h2 className="text-lg font-semibold mb-4">사용법</h2>
+          <h2 className="text-lg font-semibold mb-4">소셜 로그인 플로우</h2>
           <ol className="list-decimal list-inside space-y-2 text-sm">
-            <li>위의 소셜 로그인 테스트 버튼을 클릭하여 실제 소셜 로그인을 시도합니다.</li>
-            <li>소셜 로그인 완료 후 이 페이지로 리다이렉트되면 URL 파라미터를 확인할 수 있습니다.</li>
-            <li>필수 파라미터가 누락된 경우 빨간색으로 표시됩니다.</li>
-            <li>디버깅 엔드포인트 테스트 버튼으로 서버 측 분석도 확인할 수 있습니다.</li>
-            <li>브라우저 개발자 도구의 콘솔에서 상세한 로그를 확인하세요.</li>
+            <li><strong>소셜 로그인 시작</strong>: 위의 소셜 로그인 테스트 버튼을 클릭하여 외부 서비스로 이동</li>
+            <li><strong>인증 완료</strong>: 소셜 로그인 완료 후 콜백 URL로 리다이렉트 (code 파라미터 포함)</li>
+            <li><strong>사용자 정보 조회</strong>: code를 사용해 <code>api.hence.events/api/v1/auth/social/verify/&#123;code&#125;</code> 호출</li>
+            <li><strong>회원가입/로그인</strong>: verify된 사용자 정보로 <code>api-participant.hence.events/auth/callback</code> 호출</li>
+            <li><strong>완료</strong>: 토큰 발급 및 로그인 상태 업데이트</li>
           </ol>
+          
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+            <h3 className="font-semibold text-yellow-800 mb-2">디버깅 팁</h3>
+            <ul className="list-disc list-inside space-y-1 text-sm text-yellow-700">
+              <li>브라우저 개발자 도구의 콘솔에서 상세한 로그를 확인하세요</li>
+              <li>"Verify 엔드포인트 테스트" 버튼으로 사용자 정보 조회를 직접 테스트할 수 있습니다</li>
+              <li>필수 파라미터가 누락된 경우 빨간색으로 표시됩니다</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
