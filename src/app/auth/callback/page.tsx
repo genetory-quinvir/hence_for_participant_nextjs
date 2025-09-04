@@ -44,9 +44,27 @@ function AuthCallbackContent() {
         });
         console.log('전체 URL 파라미터:', window.location.search);
         console.log('clientRedirect 파라미터 존재 여부:', !!clientRedirectUrl);
+        
+        // URL 파라미터 디버깅을 위한 상세 로그
+        console.log('URL 파라미터 상세 분석:', {
+          hasCode: !!code,
+          hasProvider: !!provider,
+          hasSocialUserId: !!socialUserId,
+          hasEmail: !!email,
+          hasName: !!name,
+          hasNickname: !!nickname,
+          allParams: Object.fromEntries(new URLSearchParams(window.location.search))
+        });
 
         if (!code || !provider) {
           setError('인증 정보가 올바르지 않습니다.');
+          return;
+        }
+
+        // 필수 파라미터 검증 - social_user_id와 email이 없으면 에러
+        if (!socialUserId || !email) {
+          console.error('필수 파라미터 누락:', { socialUserId, email });
+          setError(`소셜 로그인에 필요한 정보가 누락되었습니다.\n\n누락된 정보:\n${!socialUserId ? '• social_user_id (소셜 고유 ID)\n' : ''}${!email ? '• email (이메일 주소)\n' : ''}\n\n외부 소셜 로그인 서비스에서 이 정보들을 전달하지 않았습니다. 다시 로그인을 시도해주세요.`);
           return;
         }
 
@@ -164,15 +182,29 @@ function AuthCallbackContent() {
   if (error) {
     return (
       <div className="min-h-screen bg-white text-black flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto px-4">
           <div className="text-red-500 text-lg mb-4">로그인 실패</div>
-          <p className="text-sm mb-4" style={{ opacity: 0.7 }}>{error}</p>
-          <button
-            onClick={() => replace('/sign')}
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            로그인 페이지로 돌아가기
-          </button>
+          <div className="text-sm mb-6" style={{ opacity: 0.7 }}>
+            {error.split('\n').map((line, index) => (
+              <div key={index} className={line.startsWith('•') ? 'text-left ml-4' : ''}>
+                {line}
+              </div>
+            ))}
+          </div>
+          <div className="space-y-2">
+            <button
+              onClick={() => replace('/sign')}
+              className="w-full px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              로그인 페이지로 돌아가기
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              다시 시도
+            </button>
+          </div>
         </div>
       </div>
     );
