@@ -360,15 +360,15 @@ function ProfilePageContent() {
             setProfileData(prev => prev ? { ...prev, postCount: (prev.postCount || 1) - 1 } : prev);
           } else {
             if (result.error?.includes('로그인이 만료')) {
-              // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+              showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
               navigate('/sign');
             } else {
-              // showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
+              showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
             }
           }
         } catch (error) {
           console.error('게시글 삭제 오류:', error);
-          // showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+          showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
         } finally {
           setIsDeleting(false);
         }
@@ -399,12 +399,12 @@ function ProfilePageContent() {
               // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
               navigate('/sign');
             } else {
-              // showToast(result.error || '댓글 삭제에 실패했습니다.', 'error');
+              showToast(result.error || '댓글 삭제에 실패했습니다.', 'error');
             }
           }
         } catch (error) {
           console.error('댓글 삭제 오류:', error);
-          // showToast('댓글 삭제 중 오류가 발생했습니다.', 'error');
+          showToast('댓글 삭제 중 오류가 발생했습니다.', 'error');
         } finally {
           setIsDeleting(false);
         }

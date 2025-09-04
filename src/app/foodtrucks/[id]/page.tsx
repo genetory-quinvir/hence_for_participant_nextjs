@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense, useCallback, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { VendorItem, FeaturedItem, CouponItem } from "@/types/api";
-import { getVendorDetail, getFeaturedEvent, getVendorsSimple, useCoupon, getAccessToken } from "@/lib/api";
+import { getVendorDetail, getFeaturedEvent, getVendorsSimple, useCoupon, getAccessToken, getCouponsList } from "@/lib/api";
 import { useDay } from "@/contexts/DayContext";
 import CommonNavigationBar from "@/components/CommonNavigationBar";
 import { useSimpleNavigation } from "@/utils/navigation";
@@ -19,7 +19,7 @@ function FoodTruckDetailContent() {
   const { navigate, goBack } = useSimpleNavigation();
   const searchParams = useSearchParams();
   const { currentDay } = useDay();
-  const { isAuthenticated, accessToken } = useAuth();
+  const { isAuthenticated, accessToken, isLoading: authLoading } = useAuth();
   const [vendor, setVendor] = useState<VendorItem | null>(null);
   const [featuredData, setFeaturedData] = useState<FeaturedItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +48,10 @@ function FoodTruckDetailContent() {
     console.log('🔄 통합 useEffect 실행:', { 
       vendorId, 
       eventId, 
-      hasCalledApi: hasCalledApi.current 
+      hasCalledApi: hasCalledApi.current,
+      authLoading,
+      isAuthenticated,
+      hasAccessToken: !!accessToken
     });
     
     // 이미 API를 호출했다면 중복 호출 방지
@@ -57,8 +60,8 @@ function FoodTruckDetailContent() {
       return;
     }
     
-    // vendorId와 eventId가 있으면 API 호출 (인증은 apiRequest에서 처리)
-    if (vendorId && eventId) {
+    // 인증 상태 로딩이 완료된 후에만 API 호출
+    if (vendorId && eventId && !authLoading) {
       hasCalledApi.current = true;
       
       const fetchData = async () => {
@@ -78,16 +81,32 @@ function FoodTruckDetailContent() {
             return;
           }
 
-          // 이벤트 정보와 쿠폰 정보 가져오기
-          console.log('🔄 이벤트 정보 요청:', { eventId, currentDay, isAuthenticated });
-          const eventResult = await getFeaturedEvent(eventId, currentDay, isAuthenticated && accessToken ? accessToken : undefined);
+          // 쿠폰 목록 조회 API로 첫 번째 쿠폰을 가져와서 푸드트럭 쿠폰으로 사용
+          console.log('🔄 쿠폰 목록 조회 API 호출 (첫 번째 쿠폰을 푸드트럭 쿠폰으로 사용)', { 
+            isAuthenticated, 
+            hasAccessToken: !!accessToken,
+            accessToken: accessToken ? 'present' : 'missing'
+          });
           
-          if (eventResult.success && eventResult.featured) {
-            setFeaturedData(eventResult.featured);
-            console.log('✅ 이벤트 정보 로드 완료:', eventResult.featured);
+          const couponsResult = await getCouponsList(eventId, 20);
+          if (couponsResult.success && couponsResult.data && couponsResult.data.length > 0) {
+            console.log('✅ 쿠폰 목록 조회 성공:', couponsResult.data);
+            console.log('🔍 첫 번째 쿠폰 정보 (isUsed 상태 포함):', { 
+              id: couponsResult.data[0].id, 
+              title: couponsResult.data[0].title, 
+              isUsed: couponsResult.data[0].isUsed, 
+              status: couponsResult.data[0].status,
+              discountType: couponsResult.data[0].discountType
+            });
+            
+            // 첫 번째 쿠폰을 푸드트럭 쿠폰으로 사용 (isUsed 상태 포함)
+            const updatedFeaturedData = {
+              coupons: [couponsResult.data[0]] // 첫 번째 쿠폰만 사용 (정확한 isUsed 상태 포함)
+            };
+            setFeaturedData(updatedFeaturedData as FeaturedItem);
+            console.log('🔄 첫 번째 쿠폰을 푸드트럭 쿠폰으로 설정 완료 (isUsed 상태:', couponsResult.data[0].isUsed, ')');
           } else {
-            console.error('❌ 이벤트 정보 로드 실패:', eventResult.error);
-            // 이벤트 정보 로드 실패는 치명적이지 않으므로 계속 진행
+            console.error('❌ 쿠폰 목록 조회 실패 또는 쿠폰 없음:', couponsResult.error);
           }
         } catch (err) {
           console.error("데이터 로드 오류:", err);
@@ -99,7 +118,7 @@ function FoodTruckDetailContent() {
       
       fetchData();
     }
-  }, [vendorId, eventId]); // 단순한 의존성 배열
+  }, [vendorId, eventId, authLoading]); // authLoading 의존성 추가
 
   const handleBackClick = () => {
     goBack();
@@ -165,13 +184,33 @@ function FoodTruckDetailContent() {
       // useCoupon은 API 함수이므로 React Hook 규칙에 위배되지 않음
       const result = await useCoupon(eventId, selectedCoupon.id!, selectedVendor?.id);
       if (result.success) {
-        // showToast(selectedCoupon.discountType === 'EXCHANGE' ? '교환권이 사용되었습니다!' : '쿠폰이 사용되었습니다!', 'success');
+        // 쿠폰 사용 성공 시 토스트 표시
+        const successMessage = selectedCoupon.discountType === 'EXCHANGE' ? '교환권이 사용되었습니다!' : '쿠폰이 사용되었습니다!';
+        showToast(successMessage, 'success');
+        console.log('✅ 쿠폰 사용 성공:', successMessage);
         
-        // 쿠폰 사용 후 최신 상태를 위해 API 재호출
+        // 쿠폰 사용 후 최신 상태를 위해 첫 번째 쿠폰을 다시 가져와서 업데이트
         try {
-          const updatedEventResult = await getFeaturedEvent(eventId, currentDay, accessToken || undefined);
-          if (updatedEventResult.success && updatedEventResult.featured) {
-            setFeaturedData(updatedEventResult.featured);
+          console.log('🔄 쿠폰 사용 후 첫 번째 쿠폰 상태 확인', { accessToken: !!accessToken });
+          const couponsResult = await getCouponsList(eventId, 20);
+          if (couponsResult.success && couponsResult.data && couponsResult.data.length > 0) {
+            console.log('✅ 쿠폰 목록 조회 성공:', couponsResult.data);
+            console.log('🔍 사용 후 첫 번째 쿠폰 상태 (isUsed 업데이트):', { 
+              id: couponsResult.data[0].id, 
+              title: couponsResult.data[0].title, 
+              isUsed: couponsResult.data[0].isUsed, 
+              status: couponsResult.data[0].status,
+              discountType: couponsResult.data[0].discountType
+            });
+            
+            // 첫 번째 쿠폰으로 업데이트 (정확한 isUsed 상태 포함)
+            const updatedFeaturedData = {
+              coupons: [couponsResult.data[0]] // 첫 번째 쿠폰만 사용 (최신 isUsed 상태)
+            };
+            setFeaturedData(updatedFeaturedData as FeaturedItem);
+            console.log('🔄 쿠폰 사용 후 첫 번째 쿠폰 상태 업데이트 완료 (isUsed:', couponsResult.data[0].isUsed, ')');
+          } else {
+            console.error('❌ 쿠폰 목록 조회 실패 또는 쿠폰 없음:', couponsResult.error);
           }
         } catch (error) {
           console.error('쿠폰 상태 업데이트 실패:', error);
@@ -180,10 +219,16 @@ function FoodTruckDetailContent() {
         // showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
         router.push('/sign');
       } else {
-        // showToast(result.error || (selectedCoupon.discountType === 'EXCHANGE' ? '교환권 사용에 실패했습니다.' : '쿠폰 사용에 실패했습니다.'), 'error');
+        // 쿠폰 사용 실패 시 에러 메시지를 토스트로 표시
+        const errorMessage = result.error || (selectedCoupon.discountType === 'EXCHANGE' ? '교환권 사용에 실패했습니다.' : '쿠폰 사용에 실패했습니다.');
+        showToast(errorMessage, 'error');
+        console.error('❌ 쿠폰 사용 실패:', result.error);
       }
     } catch (error) {
-      // showToast(selectedCoupon.discountType === 'EXCHANGE' ? '교환권 사용 중 오류가 발생했습니다.' : '쿠폰 사용 중 오류가 발생했습니다.', 'error');
+      // 예외 발생 시 에러 메시지를 토스트로 표시
+      const errorMessage = selectedCoupon.discountType === 'EXCHANGE' ? '교환권 사용 중 오류가 발생했습니다.' : '쿠폰 사용 중 오류가 발생했습니다.';
+      showToast(errorMessage, 'error');
+      console.error('❌ 쿠폰 사용 중 예외 발생:', error);
     } finally {
       setCouponLoading(false);
       setSelectedCoupon(null);
@@ -218,8 +263,8 @@ function FoodTruckDetailContent() {
     }
   };
 
-  // 로딩 상태 표시
-  if (loading) {
+  // 인증 상태 로딩 중이거나 데이터 로딩 중일 때 표시
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-white text-black flex flex-col">
         <CommonNavigationBar 
@@ -442,16 +487,7 @@ function FoodTruckDetailContent() {
                       'linear-gradient(135deg, #6b7280 0%, #9ca3af 100%)'
                   }}
                                                     >
-                    {/* 쿠폰 사용 상태 배지 */}
-                    {coupon.isUsed && (
-                      <div className="absolute top-2 right-2 z-20">
-                        <div className="bg-gray-500 text-white text-xs px-2 py-1 rounded-full">
-                          사용완료
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* 쿠폰 구멍 */}
+                  {/* 쿠폰 구멍 */}
                     <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gray-100 rounded-full -translate-x-3"></div>
                     <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gray-100 rounded-full translate-x-3"></div>

@@ -1090,9 +1090,6 @@ export async function getBoardList(eventId: string, boardType: string, cursor?: 
   
     const result = await apiRequest<any>(url, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
     });
 
     if (result.success && result.data) {
@@ -1120,9 +1117,6 @@ export async function getBoardList(eventId: string, boardType: string, cursor?: 
         try {
           const retryResult = await apiRequest<any>(url, {
             method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${getAccessToken()}`,
-            },
           });
           
           if (retryResult.success && retryResult.data) {
@@ -1291,74 +1285,25 @@ export async function createPost(eventId: string, boardType: string, title: stri
       
       console.log('🌐 API 요청 (이미지 포함):', `${API_BASE_URL}/board/${eventId}/${boardType}`);
       
-      const response = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
+      const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          // Content-Type 헤더를 설정하지 않음 (브라우저가 자동으로 multipart/form-data 설정)
-        },
         body: formData,
       });
       
-      console.log('📡 API 응답 (이미지 포함):', { status: response.status, statusText: response.statusText });
+      console.log('📡 API 응답 (이미지 포함):', { success: result.success, error: result.error });
       
-      if (response.status === 401) {
-        // 토큰 갱신 시도
-        const refreshResult = await refreshAccessToken();
-        if (refreshResult.success && refreshResult.accessToken) {
-          // 갱신된 토큰으로 재요청
-          const retryResponse = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${refreshResult.accessToken}`,
-            },
-            body: formData,
-          });
-
-          if (retryResponse.ok) {
-            const data = await retryResponse.json();
-            console.log('✅ 게시글 작성 성공 (토큰 갱신 후):', data);
-            logger.info('✅ 게시글 작성 성공 (토큰 갱신 후)', data);
-            return {
-              success: true,
-              data: data.data || data,
-            };
-          } else {
-            const errorData = await retryResponse.json();
-            console.log('❌ 게시글 작성 실패 (토큰 갱신 후):', errorData);
-            return {
-              success: false,
-              error: errorData.message || '게시글 작성에 실패했습니다.',
-            };
-          }
-        } else {
-          return { success: false, error: 'AUTH_REQUIRED' };
-        }
-      }
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ 게시글 작성 성공 (이미지 포함):', data);
-        logger.info('✅ 게시글 작성 성공 (이미지 포함)', data);
+      if (result.success && result.data) {
+        console.log('✅ 게시글 작성 성공 (이미지 포함):', result.data);
+        logger.info('✅ 게시글 작성 성공 (이미지 포함)', result.data);
         return {
           success: true,
-          data: data.data || data,
+          data: result.data.data || result.data,
         };
       } else {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch (e) {
-          errorData = { message: `HTTP ${response.status}: ${response.statusText}` };
-        }
-        console.log('❌ 게시글 작성 실패 (이미지 포함):', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData
-        });
+        console.log('❌ 게시글 작성 실패 (이미지 포함):', result.error);
         return {
           success: false,
-          error: errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+          error: result.error || '게시글 작성에 실패했습니다.',
         };
       }
     } else {
@@ -1377,12 +1322,6 @@ export async function createPost(eventId: string, boardType: string, title: stri
       formData.append('content', content);
       console.log('📝 내용 추가:', content.substring(0, 50) + '...');
       
-      // FormData를 사용하는 경우 직접 fetch 호출
-      const accessToken = getAccessToken();
-      if (!accessToken) {
-        return { success: false, error: 'AUTH_REQUIRED' };
-      }
-
       // FormData 내용 확인
       console.log('📋 FormData 내용 (이미지 없음):');
       for (let [key, value] of formData.entries()) {
@@ -1391,82 +1330,25 @@ export async function createPost(eventId: string, boardType: string, title: stri
       
       console.log('🌐 API 요청 (이미지 없음):', `${API_BASE_URL}/board/${eventId}/${boardType}`);
       
-      const response = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
+      const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
         body: formData,
       });
       
-      console.log('📡 API 응답 (이미지 없음):', { status: response.status, statusText: response.statusText });
+      console.log('📡 API 응답 (이미지 없음):', { success: result.success, error: result.error });
       
-      if (response.status === 401) {
-        // 토큰 갱신 시도
-        const refreshResult = await refreshAccessToken();
-        if (refreshResult.success && refreshResult.accessToken) {
-          // 갱신된 토큰으로 재요청
-          const retryResponse = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${refreshResult.accessToken}`,
-            },
-            body: formData,
-          });
-
-          if (retryResponse.ok) {
-            const data = await retryResponse.json();
-            console.log('✅ 게시글 작성 성공 (토큰 갱신 후):', data);
-            logger.info('✅ 게시글 작성 성공 (토큰 갱신 후)', data);
-            return {
-              success: true,
-              data: data.data || data,
-            };
-          } else {
-            const errorData = await retryResponse.json();
-            console.log('❌ 게시글 작성 실패 (토큰 갱신 후):', errorData);
-            return {
-              success: false,
-              error: errorData.message || '게시글 작성에 실패했습니다.',
-            };
-          }
-        } else {
-          return { success: false, error: 'AUTH_REQUIRED' };
-        }
-      }
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ 게시글 작성 성공 (이미지 없음):', data);
-        logger.info('✅ 게시글 작성 성공 (이미지 없음)', data);
+      if (result.success && result.data) {
+        console.log('✅ 게시글 작성 성공 (이미지 없음):', result.data);
+        logger.info('✅ 게시글 작성 성공 (이미지 없음)', result.data);
         return {
           success: true,
-          data: data.data || data,
+          data: result.data.data || result.data,
         };
       } else {
-        let errorData;
-        try {
-          errorData = await response.json();
-          console.log('❌ 서버 에러 응답 (JSON):', errorData);
-          
-          // detail 배열이 있는 경우 상세 내용 확인
-          if (errorData.detail && Array.isArray(errorData.detail)) {
-            console.log('❌ 서버 검증 오류 상세:', errorData.detail);
-            errorData.detail.forEach((detail: any, index: number) => {
-              console.log(`  오류 ${index + 1}:`, detail);
-            });
-          }
-        } catch (e) {
-          errorData = { message: `HTTP ${response.status}: ${response.statusText}` };
-        }
-        console.log('❌ 게시글 작성 실패 (이미지 없음):', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData
-        });
+        console.log('❌ 게시글 작성 실패 (이미지 없음):', result.error);
         return {
           success: false,
-          error: errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+          error: result.error || '게시글 작성에 실패했습니다.',
         };
       }
     }
@@ -1575,12 +1457,6 @@ export async function updateBoard(eventId: string, boardType: string, postId: st
       });
     }
 
-    // FormData를 사용하는 경우 직접 fetch 호출
-    const accessToken = getAccessToken();
-    if (!accessToken) {
-      return { success: false, error: 'AUTH_REQUIRED' };
-    }
-
     console.log('📤 FormData 내용:', {
       title: data.title,
       content: data.content,
@@ -1598,105 +1474,23 @@ export async function updateBoard(eventId: string, boardType: string, postId: st
       }
     }
 
-    const response = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
+    const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        // Content-Type 헤더를 설정하지 않음 (브라우저가 자동으로 multipart/form-data 설정)
-      },
       body: formData,
     });
 
-    if (response.status === 401) {
-      // 토큰 갱신 시도
-      const refreshResult = await refreshAccessToken();
-      if (refreshResult.success && refreshResult.accessToken) {
-        // 갱신된 토큰으로 재요청
-        const retryResponse = await fetch(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${refreshResult.accessToken}`,
-          },
-          body: formData,
-        });
-
-        if (retryResponse.ok) {
-          const responseData = await retryResponse.json();
-          console.log('✅ 게시글 수정 성공 (토큰 갱신 후):', responseData);
-          return {
-            success: true,
-            data: responseData.data || responseData
-          };
-        } else {
-          const errorData = await retryResponse.json();
-          return {
-            success: false,
-            error: errorData.message || '게시글 수정에 실패했습니다.'
-          };
-        }
-      } else {
-        return { success: false, error: 'AUTH_REQUIRED' };
-      }
-    }
-
-    if (response.ok) {
-      const responseData = await response.json();
-      console.log('✅ 게시글 수정 성공:', responseData);
+    if (result.success && result.data) {
+      console.log('✅ 게시글 수정 성공:', result.data);
       return {
         success: true,
-        data: responseData.data || responseData
+        data: result.data.data || result.data
       };
     } else {
-      let errorData;
-      try {
-        errorData = await response.json();
-      } catch (e) {
-        errorData = { message: `서버 오류 (${response.status})` };
-      }
-      
-      console.log('❌ 게시글 수정 실패:', errorData);
-      console.log('📊 응답 상태:', response.status, response.statusText);
-      
-      // 서버 오류에 대한 더 구체적인 메시지
-      if (response.status === 500) {
-              return {
+      console.log('❌ 게시글 수정 실패:', result.error);
+      return {
         success: false,
-        error: '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+        error: result.error || '게시글 수정에 실패했습니다.'
       };
-    }
-    
-    // 500 오류이고 새 이미지가 없는 경우 JSON 방식으로 재시도
-    if (response.status === 500 && (!data.newImages || data.newImages.length === 0)) {
-      console.log('🔄 FormData 실패, JSON 방식으로 재시도...');
-      
-      try {
-        const jsonResult = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            title: data.title,
-            content: data.content,
-            images: data.images
-          }),
-        });
-
-        if (jsonResult.success) {
-          console.log('✅ JSON 방식으로 수정 성공:', jsonResult.data);
-          return {
-            success: true,
-            data: jsonResult.data
-          };
-        } else {
-          console.log('❌ JSON 방식도 실패:', jsonResult.error);
-        }
-      } catch (jsonError) {
-        console.log('❌ JSON 방식 시도 중 오류:', jsonError);
-      }
-    }
-    
-    return {
-      success: false,
-      error: errorData.message || '게시글 수정에 실패했습니다.'
-    };
     }
   } catch (error) {
     apiDebugger.logError(`${API_BASE_URL}/board/${eventId}/${boardType}/${postId}`, error);
@@ -1944,6 +1738,52 @@ export async function getVendorsSimple(eventId: string, vendorType?: string, lim
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
+    };
+  }
+}
+
+// 쿠폰 목록 조회
+export async function getCouponsList(eventId: string, limit: number = 20): Promise<{ success: boolean; error?: string; data?: CouponItem[] }> {
+  try {
+    const result = await apiRequest<any>(`${API_BASE_URL}/coupons/${eventId}?limit=${limit}`, {
+      method: 'GET',
+    });
+
+    if (result.success && result.data) {
+      console.log('✅ 쿠폰 목록 조회 성공:', result.data);
+      
+      // 응답 데이터 구조 확인 및 안전한 배열 반환
+      let couponArray: CouponItem[] = [];
+      
+      if (result.data.data && result.data.data.items) {
+        // {"data": {"items": [...]}} 구조
+        couponArray = Array.isArray(result.data.data.items) ? result.data.data.items : [];
+      } else if (result.data.data && Array.isArray(result.data.data)) {
+        // {"data": [...]} 구조
+        couponArray = result.data.data;
+      } else if (Array.isArray(result.data)) {
+        // [...] 구조
+        couponArray = result.data;
+      } else if (result.data.items && Array.isArray(result.data.items)) {
+        // {"items": [...]} 구조
+        couponArray = result.data.items;
+      }
+      
+      return {
+        success: true,
+        data: couponArray,
+      };
+    } else {
+      return {
+        success: false,
+        error: result.error || '쿠폰 목록을 불러오는데 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('쿠폰 목록 조회 오류:', error);
+    return {
+      success: false,
+      error: '쿠폰 목록을 불러오는데 실패했습니다.',
     };
   }
 }

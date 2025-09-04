@@ -103,7 +103,7 @@ function BoardDetailContent() {
       // 인증 상태 확인
       const accessToken = getAccessToken();
       if (!accessToken) {
-        // showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
         const currentUrl = window.location.pathname + window.location.search;
         navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         return;
@@ -124,16 +124,16 @@ function BoardDetailContent() {
         setCommentContent('');
       } else {
         if (result.error?.includes('로그인이 만료')) {
-          // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+          showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
           navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         } else {
-          // showToast(result.error || '댓글 작성에 실패했습니다.', 'error');
+          showToast(result.error || '댓글 작성에 실패했습니다.', 'error');
         }
       }
     } catch (error) {
       console.error('댓글 작성 오류:', error);
-      // showToast('댓글 작성 중 오류가 발생했습니다.', 'error');
+      showToast('댓글 작성 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -179,7 +179,7 @@ function BoardDetailContent() {
     try {
       const accessToken = getAccessToken();
       if (!accessToken) {
-        // showToast('로그인이 필요합니다.', 'warning');
+        showToast('로그인이 필요합니다.', 'warning');
         return;
       }
 
@@ -194,16 +194,16 @@ function BoardDetailContent() {
         navigate(`/board/list?type=${postType}&eventId=${eventId}`);
       } else {
         if (result.error?.includes('로그인이 만료')) {
-          // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+          showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
           navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         } else {
-          // showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
+          showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
         }
       }
     } catch (error) {
       console.error('게시글 삭제 오류:', error);
-      // showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+      showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -236,7 +236,7 @@ function BoardDetailContent() {
     try {
       const accessToken = getAccessToken();
       if (!accessToken) {
-        // showToast('로그인이 필요합니다.', 'warning');
+        showToast('로그인이 필요합니다.', 'warning');
         return;
       }
 
@@ -252,16 +252,16 @@ function BoardDetailContent() {
         setSelectedComment(null);
       } else {
         if (result.error?.includes('로그인이 만료')) {
-          // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+          showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
           navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         } else {
-          // showToast(result.error || '댓글 삭제에 실패했습니다.', 'error');
+          showToast(result.error || '댓글 삭제에 실패했습니다.', 'error');
         }
       }
     } catch (error) {
       console.error('댓글 삭제 오류:', error);
-      // showToast('댓글 삭제 중 오류가 발생했습니다.', 'error');
+      showToast('댓글 삭제 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -287,7 +287,7 @@ function BoardDetailContent() {
       // 인증 상태 확인
       const accessToken = getAccessToken();
       if (!accessToken) {
-        // showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+        showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
         const currentUrl = window.location.pathname + window.location.search;
         navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         return;
@@ -311,16 +311,16 @@ function BoardDetailContent() {
         });
       } else {
         if (result.error?.includes('로그인이 만료')) {
-          // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+          showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
           navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         } else {
-          // showToast(result.error || '좋아요 처리에 실패했습니다.', 'error');
+          showToast(result.error || '좋아요 처리에 실패했습니다.', 'error');
         }
       }
     } catch (error) {
       console.error('좋아요 토글 오류:', error);
-      // showToast('좋아요 처리 중 오류가 발생했습니다.', 'error');
+      showToast('좋아요 처리 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsLiking(false);
     }

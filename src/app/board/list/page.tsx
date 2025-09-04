@@ -59,7 +59,7 @@ function BoardListContent() {
         // 인증 상태 확인
         const accessToken = getAccessToken();
         if (!accessToken) {
-          // showToast('로그인이 필요합니다.', 'warning');
+          showToast('로그인이 필요합니다.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
           navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
           return;
@@ -81,7 +81,7 @@ function BoardListContent() {
               // 재시도 로직은 이미 API 레벨에서 처리됨
             }
           } else if (result.error?.includes('로그인이 만료')) {
-            // showToast('로그인이 만료되었습니다.', 'warning');
+            showToast('로그인이 만료되었습니다.', 'warning');
             const currentUrl = window.location.pathname + window.location.search;
             navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
           } else {
@@ -108,7 +108,7 @@ function BoardListContent() {
       // 인증 상태 확인
       const accessToken = getAccessToken();
               if (!accessToken) {
-          // showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
+          showToast('로그인이 필요합니다. 로그인 페이지로 이동합니다.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
           router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
           return;
@@ -127,7 +127,7 @@ function BoardListContent() {
         setCursor(result.data.nextCursor || null);
               } else {
           if (result.error?.includes('로그인이 만료')) {
-            // showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+            showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
             const currentUrl = window.location.pathname + window.location.search;
             router.push(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
           }
@@ -221,11 +221,11 @@ function BoardListContent() {
         // 목록에서 삭제된 게시글 제거
         setPosts(prev => prev.filter(post => post.id !== selectedPost.id));
       } else {
-        // showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
+        showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
       }
     } catch (error) {
       console.error('게시글 삭제 오류:', error);
-      // showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+      showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
     } finally {
       setShowActionSheet(false);
       setSelectedPost(null);
@@ -240,7 +240,7 @@ function BoardListContent() {
       // 인증 상태 확인
       const accessToken = getAccessToken();
       if (!accessToken) {
-        // showToast('로그인이 필요합니다.', 'warning');
+        showToast('로그인이 필요합니다.', 'warning');
         const currentUrl = window.location.pathname + window.location.search;
         navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         return;
@@ -265,11 +265,11 @@ function BoardListContent() {
         }));
       } else {
         if (result.error?.includes('로그인이 만료')) {
-          // showToast('로그인이 만료되었습니다.', 'warning');
+          showToast('로그인이 만료되었습니다.', 'warning');
           const currentUrl = window.location.pathname + window.location.search;
           navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         } else {
-          // showToast(result.error || '좋아요 처리에 실패했습니다.', 'error');
+          showToast(result.error || '좋아요 처리에 실패했습니다.', 'error');
         }
       }
     } catch (error) {
@@ -283,7 +283,7 @@ function BoardListContent() {
     // 로그인 상태 확인
     const accessToken = getAccessToken();
           if (!accessToken) {
-        // showToast('로그인이 필요합니다.', 'warning');
+        showToast('로그인이 필요합니다.', 'warning');
         const currentUrl = window.location.pathname + window.location.search;
         navigate(`/sign?redirect=${encodeURIComponent(currentUrl)}`);
         return;

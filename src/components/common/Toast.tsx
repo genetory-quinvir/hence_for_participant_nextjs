@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 interface Toast {
   id: string;
@@ -65,13 +66,41 @@ interface ToastContainerProps {
 function ToastContainer({ toasts, onHide }: ToastContainerProps) {
   if (toasts.length === 0) return null;
 
-  return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 space-y-2">
-      {toasts.map((toast) => (
-        <ToastItem key={toast.id} toast={toast} onHide={onHide} />
+  const toastContent = (
+    <div 
+      className="fixed bottom-0 left-0 right-0 flex flex-col items-center justify-end" 
+      style={{ 
+        zIndex: 99999999,
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        pointerEvents: 'auto',
+        // 이벤트 페이지의 overflow hidden을 우회
+        willChange: 'transform',
+        // 어떤 상황이든 전체 너비 사용
+        width: '100vw',
+        height: 'auto',
+        padding: '16px',
+        maxWidth: 'none',
+        minWidth: '100vw',
+        // 토스트들을 컨테이너 하단에 정렬
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-end'
+      }}
+    >
+      {toasts.map((toast, index) => (
+        <div key={toast.id} style={{ marginBottom: index < toasts.length - 1 ? '8px' : '0' }}>
+          <ToastItem toast={toast} onHide={onHide} />
+        </div>
       ))}
     </div>
   );
+
+  // Portal을 사용해서 body에 직접 렌더링
+  return createPortal(toastContent, document.body);
 }
 
 interface ToastItemProps {
@@ -94,7 +123,7 @@ function ToastItem({ toast, onHide }: ToastItemProps) {
   };
 
   const getToastStyles = () => {
-    const baseStyles = "w-full shadow-lg rounded-lg pointer-events-auto overflow-hidden transition-all duration-300 transform";
+    const baseStyles = "shadow-lg rounded-lg pointer-events-auto overflow-hidden transition-all duration-300 transform";
     
     switch (toast.type) {
       case 'success':
@@ -160,25 +189,35 @@ function ToastItem({ toast, onHide }: ToastItemProps) {
           ? 'translate-y-0 opacity-100' 
           : 'translate-y-full opacity-0'
       }`}
-      style={{ backgroundColor: getBackgroundColor() }}
+      style={{ 
+        backgroundColor: getBackgroundColor(),
+        position: 'relative',
+        zIndex: 99999999,
+        minWidth: '280px',
+        maxWidth: '400px',
+        width: 'auto',
+        // 이벤트 페이지의 overflow hidden을 우회
+        transform: 'translateZ(0)',
+        willChange: 'transform'
+      }}
     >
-      <div className="p-4">
-        <div className="flex items-start">
+      <div className="px-4 py-3">
+        <div className="flex items-center">
           <div className="flex-shrink-0">
             {getIcon()}
           </div>
-          <div className="ml-3 w-0 flex-1 pt-0.5">
+          <div className="ml-3 flex-1">
             <p className="text-sm font-medium text-white">
               {toast.message}
             </p>
           </div>
-          <div className="ml-4 flex-shrink-0 flex">
+          <div className="ml-3 flex-shrink-0">
             <button
               className="rounded-md inline-flex text-white focus:outline-none"
               onClick={handleHide}
             >
               <span className="sr-only">Close</span>
-              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
             </button>

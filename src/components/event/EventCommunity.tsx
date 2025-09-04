@@ -89,11 +89,11 @@ export default function EventCommunity({
           onRefresh();
         }
       } else {
-        // showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
+        showToast(result.error || '게시글 삭제에 실패했습니다.', 'error');
       }
     } catch (error) {
       console.error('삭제 오류:', error);
-      // showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+      showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
     }
     setShowActionSheet(false);
   };
