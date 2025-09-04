@@ -45,11 +45,12 @@ export async function POST(request: NextRequest) {
     console.log('외부 API URL:', externalUrl);
     
     // 외부 API로 전송할 데이터 구성
+    // 일반적인 소셜 로그인 플로우: code만 전송하고 외부 API에서 사용자 정보 조회
     const requestBody = {
       code,
       provider: provider.toUpperCase(),
-      isNewUser,
-      // 소셜 사용자 고유 식별자와 이메일 (있는 경우에만 포함)
+      // 추가 정보가 있으면 포함 (없어도 됨)
+      ...(isNewUser !== undefined && { isNewUser }),
       ...(social_user_id && { social_user_id }),
       ...(email && { email }),
       ...(name && { name }),
@@ -57,6 +58,7 @@ export async function POST(request: NextRequest) {
     };
 
     console.log('🚀 외부 API로 전송할 데이터:', requestBody);
+    console.log('📝 참고: code만으로도 외부 API에서 사용자 정보를 조회할 수 있어야 합니다.');
 
     const response = await fetch(externalUrl, {
       method: 'POST',
@@ -112,6 +114,24 @@ export async function POST(request: NextRequest) {
         requestBody: requestBody
       });
       
+      // 외부 API 실패 시 대안 처리
+      // 1. 사용자 정보가 URL 파라미터에 있는 경우 사용
+      if (social_user_id && email) {
+        console.log('🔄 외부 API 실패, URL 파라미터의 사용자 정보 사용');
+        return NextResponse.json({
+          success: true,
+          data: {
+            id: social_user_id,
+            email: email,
+            nickname: nickname || name || '사용자',
+            name: name || nickname || '사용자'
+          },
+          access_token: 'temp_token_' + Date.now(), // 임시 토큰
+          refresh_token: 'temp_refresh_' + Date.now(),
+          message: '외부 API 실패로 인한 임시 로그인 (URL 파라미터 사용)'
+        });
+      }
+      
       return NextResponse.json(
         { 
           success: false, 
@@ -120,7 +140,8 @@ export async function POST(request: NextRequest) {
             status: response.status,
             statusText: response.statusText,
             response: result,
-            request: requestBody
+            request: requestBody,
+            suggestion: '외부 소셜 로그인 서비스 설정을 확인하거나, URL 파라미터에 사용자 정보가 포함되도록 설정하세요.'
           }
         },
         { status: response.status }

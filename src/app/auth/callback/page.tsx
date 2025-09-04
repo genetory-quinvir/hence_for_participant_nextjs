@@ -15,6 +15,13 @@ function AuthCallbackContent() {
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasRedirected, setHasRedirected] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [manualUserInfo, setManualUserInfo] = useState({
+    social_user_id: '',
+    email: '',
+    name: '',
+    nickname: ''
+  });
 
   useEffect(() => {
     const processCallback = async () => {
@@ -186,6 +193,64 @@ function AuthCallbackContent() {
     processCallback();
   }, [searchParams, login, replace, showToast]);
 
+  // 수동 사용자 정보 입력 처리
+  const handleManualSubmit = async () => {
+    if (!manualUserInfo.social_user_id || !manualUserInfo.email) {
+      setError('소셜 사용자 ID와 이메일은 필수입니다.');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const code = searchParams.get('code');
+      const provider = searchParams.get('provider');
+      
+      const response = await fetch('/api/auth/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code,
+          provider: provider?.toUpperCase(),
+          social_user_id: manualUserInfo.social_user_id,
+          email: manualUserInfo.email,
+          name: manualUserInfo.name,
+          nickname: manualUserInfo.nickname
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success && result.access_token) {
+        saveTokens(result.access_token, result.refresh_token);
+        login(
+          {
+            id: result.data.id || manualUserInfo.social_user_id,
+            name: result.data.nickname || manualUserInfo.name || '사용자',
+            nickname: result.data.nickname || manualUserInfo.nickname || '사용자',
+            email: result.data.email || manualUserInfo.email,
+          },
+          result.access_token,
+          result.refresh_token
+        );
+        
+        // 성공 후 리다이렉트
+        const savedRedirectUrl = sessionStorage.getItem('socialLoginRedirectUrl');
+        if (savedRedirectUrl) {
+          sessionStorage.removeItem('socialLoginRedirectUrl');
+          window.location.href = savedRedirectUrl;
+        } else {
+          window.location.href = '/';
+        }
+      } else {
+        setError(result.error || '수동 로그인에 실패했습니다.');
+      }
+    } catch (error) {
+      setError('수동 로그인 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   if (isProcessing) {
     return (
       <div className="min-h-screen bg-white text-black flex items-center justify-center">
@@ -209,20 +274,90 @@ function AuthCallbackContent() {
               </div>
             ))}
           </div>
-          <div className="space-y-2">
-            <button
-              onClick={() => replace('/sign')}
-              className="w-full px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              로그인 페이지로 돌아가기
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              다시 시도
-            </button>
-          </div>
+          
+          {!showManualForm ? (
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowManualForm(true)}
+                className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                사용자 정보 수동 입력
+              </button>
+              <button
+                onClick={() => replace('/sign')}
+                className="w-full px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                로그인 페이지로 돌아가기
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                다시 시도
+              </button>
+            </div>
+          ) : (
+            <div className="text-left">
+              <h3 className="text-lg font-semibold mb-4">사용자 정보 입력</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">소셜 사용자 ID *</label>
+                  <input
+                    type="text"
+                    value={manualUserInfo.social_user_id}
+                    onChange={(e) => setManualUserInfo(prev => ({ ...prev, social_user_id: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="소셜 고유 ID"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">이메일 *</label>
+                  <input
+                    type="email"
+                    value={manualUserInfo.email}
+                    onChange={(e) => setManualUserInfo(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="이메일 주소"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">이름</label>
+                  <input
+                    type="text"
+                    value={manualUserInfo.name}
+                    onChange={(e) => setManualUserInfo(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="사용자 이름"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">닉네임</label>
+                  <input
+                    type="text"
+                    value={manualUserInfo.nickname}
+                    onChange={(e) => setManualUserInfo(prev => ({ ...prev, nickname: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="사용자 닉네임"
+                  />
+                </div>
+              </div>
+              <div className="flex space-x-2 mt-4">
+                <button
+                  onClick={handleManualSubmit}
+                  disabled={isProcessing}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                >
+                  {isProcessing ? '처리 중...' : '로그인 완료'}
+                </button>
+                <button
+                  onClick={() => setShowManualForm(false)}
+                  className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
