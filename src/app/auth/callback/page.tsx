@@ -76,22 +76,27 @@ function AuthCallbackContent() {
         console.log('👤 사용자 정보로 로그인/회원가입 처리...');
         
         // verify 결과에서 사용자 정보 추출
-        const userData = verifyResult.data || verifyResult.user || verifyResult;
-        const userEmail = userData.email || email;
-        const userId = userData.id || socialUserId;
-        const userName = userData.name || userData.nickname || name;
-        const userNickname = userData.nickname || userData.name || nickname;
+        const userData = verifyResult.user || verifyResult.data || verifyResult;
+        const userEmail = userData.email;
+        const userId = userData.id;
+        const userProvider = userData.provider;
+        const userName = userData.name || userData.nickname;
+        const userNickname = userData.nickname || userData.name;
         
         console.log('📋 추출된 사용자 정보:', {
           email: userEmail,
           id: userId,
+          provider: userProvider,
           name: userName,
-          nickname: userNickname,
-          provider: provider.toUpperCase()
+          nickname: userNickname
         });
 
-        if (!userEmail || !userId) {
-          console.error('❌ 필수 사용자 정보 누락:', { email: !!userEmail, id: !!userId });
+        if (!userEmail || !userId || !userProvider) {
+          console.error('❌ 필수 사용자 정보 누락:', { 
+            email: !!userEmail, 
+            id: !!userId, 
+            provider: !!userProvider 
+          });
           setError('사용자 정보가 올바르지 않습니다.');
           return;
         }
@@ -100,7 +105,7 @@ function AuthCallbackContent() {
         console.log('📡 소셜 로그인/회원가입 API 호출...');
         const loginResult = await socialLoginOrRegister(
           userEmail,
-          provider.toUpperCase(),
+          userProvider,
           userId,
           userName,
           userNickname
@@ -126,7 +131,7 @@ function AuthCallbackContent() {
           nickname: loginResult.data?.nickname || loginResult.data?.name || userNickname || '사용자',
           email: loginResult.data?.email || userEmail,
           profileImage: loginResult.data?.profileImage || loginResult.data?.profileImageUrl || '',
-          provider: provider.toUpperCase(),
+          provider: userProvider,
           clientRedirectUrl: clientRedirectUrl
         };
 
