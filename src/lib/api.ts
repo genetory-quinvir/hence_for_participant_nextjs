@@ -1344,13 +1344,24 @@ export async function createPost(eventId: string, boardType: string, title: stri
       }
       
       console.log('🌐 API 요청 (이미지 포함):', `${API_BASE_URL}/board/${eventId}/${boardType}`);
+      console.log('🔑 인증 토큰 확인:', accessToken ? '토큰 있음' : '토큰 없음');
+      console.log('📋 요청 URL 상세:', {
+        baseUrl: API_BASE_URL,
+        eventId,
+        boardType,
+        fullUrl: `${API_BASE_URL}/board/${eventId}/${boardType}`
+      });
       
       const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
         method: 'POST',
         body: formData,
       });
       
-      console.log('📡 API 응답 (이미지 포함):', { success: result.success, error: result.error });
+      console.log('📡 API 응답 (이미지 포함):', { 
+        success: result.success, 
+        error: result.error,
+        status: result.status
+      });
       
       if (result.success && result.data) {
         console.log('✅ 게시글 작성 성공 (이미지 포함):', result.data);
@@ -1389,13 +1400,25 @@ export async function createPost(eventId: string, boardType: string, title: stri
       }
       
       console.log('🌐 API 요청 (이미지 없음):', `${API_BASE_URL}/board/${eventId}/${boardType}`);
+      const accessToken = getAccessToken();
+      console.log('🔑 인증 토큰 확인:', accessToken ? '토큰 있음' : '토큰 없음');
+      console.log('📋 요청 URL 상세:', {
+        baseUrl: API_BASE_URL,
+        eventId,
+        boardType,
+        fullUrl: `${API_BASE_URL}/board/${eventId}/${boardType}`
+      });
       
       const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
         method: 'POST',
         body: formData,
       });
       
-      console.log('📡 API 응답 (이미지 없음):', { success: result.success, error: result.error });
+      console.log('📡 API 응답 (이미지 없음):', { 
+        success: result.success, 
+        error: result.error,
+        status: result.status
+      });
       
       if (result.success && result.data) {
         console.log('✅ 게시글 작성 성공 (이미지 없음):', result.data);
