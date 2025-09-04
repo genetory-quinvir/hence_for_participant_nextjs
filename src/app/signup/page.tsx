@@ -9,6 +9,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSimpleNavigation } from "@/utils/navigation";
 import { useToast } from "@/components/common/Toast";
 
+// Google Analytics 타입 정의
+declare global {
+  interface Window {
+    dataLayer: any[];
+    __dlSignupFired?: boolean;
+  }
+}
+
 function SignupContent() {
   const { navigate, goBack, replace } = useSimpleNavigation();
   const searchParams = useSearchParams();
@@ -89,12 +97,51 @@ function SignupContent() {
 
         showToast("회원가입이 완료되었습니다!", "success");
 
-        // redirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
-        const redirectUrl = searchParams.get('redirect');
-        if (redirectUrl) {
-          replace(decodeURIComponent(redirectUrl));
-        } else {
-          replace("/");
+        // Google Analytics 이벤트 트리거
+        try {
+          // dataLayer가 없으면 초기화
+          if (!window.dataLayer) {
+            window.dataLayer = [];
+          }
+          
+          // 중복 실행 방지
+          if (!window.__dlSignupFired) {
+            window.__dlSignupFired = true;
+            
+            const userId = response.data?.id || '1';
+            
+            window.dataLayer.push({
+              event: 'signup_success',
+              method: 'email',
+              user_id: userId,
+              eventCallback: function () {
+                // redirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
+                const redirectUrl = searchParams.get('redirect');
+                const nextUrl = redirectUrl ? decodeURIComponent(redirectUrl) : '/';
+                console.log('📊 GA 회원가입 이벤트 완료, 리다이렉트:', nextUrl);
+                location.replace(nextUrl);
+              },
+              eventTimeout: 2000
+            });
+            
+            console.log('📊 Google Analytics 회원가입 이벤트 전송:', {
+              event: 'signup_success',
+              method: 'email',
+              user_id: userId
+            });
+          } else {
+            console.log('📊 GA 회원가입 이벤트 이미 실행됨, 바로 리다이렉트');
+            // 이미 실행된 경우 바로 리다이렉트
+            const redirectUrl = searchParams.get('redirect');
+            const nextUrl = redirectUrl ? decodeURIComponent(redirectUrl) : '/';
+            window.location.href = nextUrl;
+          }
+        } catch (gaError) {
+          console.error('❌ Google Analytics 회원가입 이벤트 전송 실패:', gaError);
+          // GA 실패해도 회원가입은 성공했으므로 리다이렉트
+          const redirectUrl = searchParams.get('redirect');
+          const nextUrl = redirectUrl ? decodeURIComponent(redirectUrl) : '/';
+          window.location.href = nextUrl;
         }
       } else {
         showToast(response.error || "회원가입에 실패했습니다.", "error");

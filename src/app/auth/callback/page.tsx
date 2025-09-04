@@ -5,6 +5,14 @@ import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { saveTokens, socialLoginOrRegister } from "@/lib/api";
 
+// Google Analytics 타입 정의
+declare global {
+  interface Window {
+    dataLayer: any[];
+    __dlAuthFired?: boolean;
+  }
+}
+
 function AuthCallbackContent() {
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -172,11 +180,54 @@ function AuthCallbackContent() {
 
         console.log('🎉 소셜 로그인 완료!');
         
-        // 로그인 완료 후 이전 화면으로 리다이렉트
-        if (clientRedirectUrl) {
-          window.location.href = clientRedirectUrl;
-        } else {
-          window.location.href = '/';
+        // Google Analytics 이벤트 트리거
+        try {
+          // dataLayer가 없으면 초기화
+          if (!window.dataLayer) {
+            window.dataLayer = [];
+          }
+          
+          // 중복 실행 방지
+          if (!window.__dlAuthFired) {
+            window.__dlAuthFired = true;
+            
+            // 신규 사용자 여부 확인 (회원가입인지 로그인인지)
+            const isNewUser = !loginResult.data?.createdAt || 
+              new Date(loginResult.data.createdAt).getTime() > Date.now() - 60000; // 1분 이내 생성된 경우 신규
+            
+            window.dataLayer.push({
+              event: 'auth_success',
+              method: 'social',
+              provider: userProvider,        // 'GOOGLE', 'KAKAO', 'NAVER'
+              is_new_user: isNewUser,        // true = 신규회원, false = 기존회원
+              user_id: userId,               // 사용자 ID
+              eventCallback: function () { 
+                // 리다이렉트 URL 설정
+                const nextUrl = clientRedirectUrl || '/';
+                console.log('📊 GA 이벤트 완료, 리다이렉트:', nextUrl);
+                location.replace(nextUrl); 
+              },
+              eventTimeout: 2000
+            });
+            
+            console.log('📊 Google Analytics 이벤트 전송:', {
+              event: 'auth_success',
+              method: 'social',
+              provider: userProvider,
+              is_new_user: isNewUser,
+              user_id: userId
+            });
+          } else {
+            console.log('📊 GA 이벤트 이미 실행됨, 바로 리다이렉트');
+            // 이미 실행된 경우 바로 리다이렉트
+            const nextUrl = clientRedirectUrl || '/';
+            window.location.href = nextUrl;
+          }
+        } catch (gaError) {
+          console.error('❌ Google Analytics 이벤트 전송 실패:', gaError);
+          // GA 실패해도 로그인은 성공했으므로 리다이렉트
+          const nextUrl = clientRedirectUrl || '/';
+          window.location.href = nextUrl;
         }
       } catch (error) {
         console.error('❌ 소셜 로그인 처리 오류:', error);

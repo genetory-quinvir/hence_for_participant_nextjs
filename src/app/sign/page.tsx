@@ -14,6 +14,14 @@ import {
   getCurrentRedirectContext 
 } from "@/utils/redirect";
 
+// Google Analytics 타입 정의
+declare global {
+  interface Window {
+    dataLayer: any[];
+    __dlLoginFired?: boolean;
+  }
+}
+
 function SignContent() {
   const { navigate, goBack, replace } = useSimpleNavigation();
   const searchParams = useSearchParams();
@@ -75,14 +83,51 @@ function SignContent() {
           );
         }
 
-        // redirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
-        const redirectUrl = searchParams.get('redirect');
-        if (redirectUrl) {
-          // router.replace를 사용하여 히스토리에서 로그인 페이지를 교체
-          replace(decodeURIComponent(redirectUrl));
-        } else {
-          // router.replace를 사용하여 히스토리에서 로그인 페이지를 교체
-          replace("/");
+        // Google Analytics 이벤트 트리거
+        try {
+          // dataLayer가 없으면 초기화
+          if (!window.dataLayer) {
+            window.dataLayer = [];
+          }
+          
+          // 중복 실행 방지
+          if (!window.__dlLoginFired) {
+            window.__dlLoginFired = true;
+            
+            const userId = response.data?.id || '1';
+            
+            window.dataLayer.push({
+              event: 'login_success',
+              method: 'email',
+              user_id: userId,
+              eventCallback: function () {
+                // redirect 파라미터가 있으면 해당 페이지로, 없으면 메인 페이지로 이동
+                const redirectUrl = searchParams.get('redirect');
+                const nextUrl = redirectUrl ? decodeURIComponent(redirectUrl) : '/';
+                console.log('📊 GA 로그인 이벤트 완료, 리다이렉트:', nextUrl);
+                location.replace(nextUrl);
+              },
+              eventTimeout: 2000
+            });
+            
+            console.log('📊 Google Analytics 로그인 이벤트 전송:', {
+              event: 'login_success',
+              method: 'email',
+              user_id: userId
+            });
+          } else {
+            console.log('📊 GA 로그인 이벤트 이미 실행됨, 바로 리다이렉트');
+            // 이미 실행된 경우 바로 리다이렉트
+            const redirectUrl = searchParams.get('redirect');
+            const nextUrl = redirectUrl ? decodeURIComponent(redirectUrl) : '/';
+            window.location.href = nextUrl;
+          }
+        } catch (gaError) {
+          console.error('❌ Google Analytics 로그인 이벤트 전송 실패:', gaError);
+          // GA 실패해도 로그인은 성공했으므로 리다이렉트
+          const redirectUrl = searchParams.get('redirect');
+          const nextUrl = redirectUrl ? decodeURIComponent(redirectUrl) : '/';
+          window.location.href = nextUrl;
         }
       } else {
         setError(response.error || "로그인에 실패했습니다.");
