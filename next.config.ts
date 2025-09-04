@@ -36,6 +36,15 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "connect-src 'self' https://api-participant.hence.events https://api.hence.events https://www.google-analytics.com",
+          },
+        ],
+      },
     ];
   },
 };
