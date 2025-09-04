@@ -808,7 +808,7 @@ export async function socialLoginOrRegister(
   nickname?: string,
   profileImageUrl?: string
 ): Promise<LoginResponse> {
-  const url = `${API_BASE_URL}/api/auth/social-login`;
+  const url = `${API_BASE_URL}/auth/social-login`;
   
   try {
     // 네트워크 상태 체크
