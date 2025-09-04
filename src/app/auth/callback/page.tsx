@@ -40,30 +40,8 @@ function AuthCallbackContent() {
           return;
         }
 
-        // 1단계: 외부 API로 사용자 데이터 조회
-        console.log('📡 외부 API 호출 시작...');
-        const verifyResponse = await fetch(`https://api.hence.events/api/v1/auth/social/verify/${code}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            provider: provider.toUpperCase(),
-            isNewUser
-          }),
-        });
-
-        if (!verifyResponse.ok) {
-          console.error('❌ 외부 API 호출 실패:', verifyResponse.status);
-          setError('사용자 정보 조회에 실패했습니다.');
-          return;
-        }
-
-        const userData = await verifyResponse.json();
-        console.log('✅ 사용자 데이터 조회 성공:', userData);
-
-        // 2단계: 사용자 데이터로 로그인/회원가입 처리
-        console.log('🔐 로그인/회원가입 처리 시작...');
+        // 백엔드로 최소한의 정보만 전달 (code, provider, isNewUser)
+        console.log('📡 백엔드로 소셜 로그인 정보 전달...');
         const loginResponse = await fetch('https://api-participant.hence.events/auth/callback', {
           method: 'POST',
           headers: {
@@ -72,22 +50,18 @@ function AuthCallbackContent() {
           body: JSON.stringify({
             code,
             provider: provider.toUpperCase(),
-            social_user_id: userData.id || userData.data?.id,
-            email: userData.email || userData.data?.email,
-            name: userData.name || userData.data?.name,
-            nickname: userData.nickname || userData.data?.nickname,
             isNewUser
           }),
         });
 
         if (!loginResponse.ok) {
-          console.error('❌ 로그인/회원가입 실패:', loginResponse.status);
-          setError('로그인/회원가입에 실패했습니다.');
+          console.error('❌ 소셜 로그인 실패:', loginResponse.status);
+          setError('소셜 로그인에 실패했습니다.');
           return;
         }
 
         const loginResult = await loginResponse.json();
-        console.log('✅ 로그인/회원가입 성공:', loginResult);
+        console.log('✅ 소셜 로그인 성공:', loginResult);
 
         // 3단계: 토큰 저장 및 사용자 정보 설정
         if (loginResult.access_token) {
@@ -145,11 +119,12 @@ function AuthCallbackContent() {
         body: JSON.stringify({
           code,
           provider: provider?.toUpperCase(),
+          isNewUser,
+          // 수동 입력된 사용자 정보 (필요한 경우에만)
           social_user_id: manualUserInfo.social_user_id,
           email: manualUserInfo.email,
           name: manualUserInfo.name,
-          nickname: manualUserInfo.nickname,
-          isNewUser
+          nickname: manualUserInfo.nickname
         }),
       });
 
