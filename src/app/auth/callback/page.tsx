@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { saveTokens } from "@/lib/api";
+import { saveTokens, socialLoginOrRegister } from "@/lib/api";
 
 function AuthCallbackContent() {
   const searchParams = useSearchParams();
@@ -72,32 +72,60 @@ function AuthCallbackContent() {
         const verifyResult = await verifyResponse.json();
         console.log('✅ 인증 검증 성공:', verifyResult);
 
-        // 2단계: verify 결과에서 사용자 정보 추출하여 직접 로그인 처리
-        console.log('👤 사용자 정보로 직접 로그인 처리...');
+        // 2단계: verify 결과에서 사용자 정보 추출하여 로그인/회원가입 처리
+        console.log('👤 사용자 정보로 로그인/회원가입 처리...');
         
         // verify 결과에서 사용자 정보 추출
         const userData = verifyResult.data || verifyResult.user || verifyResult;
-        const accessToken = verifyResult.access_token || verifyResult.token?.accessToken || verifyResult.accessToken;
-        const refreshToken = verifyResult.refresh_token || verifyResult.token?.refreshToken || verifyResult.refreshToken;
+        const userEmail = userData.email || email;
+        const userId = userData.id || socialUserId;
+        const userName = userData.name || userData.nickname || name;
+        const userNickname = userData.nickname || userData.name || nickname;
         
         console.log('📋 추출된 사용자 정보:', {
-          userData,
-          hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken
+          email: userEmail,
+          id: userId,
+          name: userName,
+          nickname: userNickname,
+          provider: provider.toUpperCase()
         });
 
-        // 토큰이 있으면 저장
-        if (accessToken) {
-          saveTokens(accessToken, refreshToken);
+        if (!userEmail || !userId) {
+          console.error('❌ 필수 사용자 정보 누락:', { email: !!userEmail, id: !!userId });
+          setError('사용자 정보가 올바르지 않습니다.');
+          return;
+        }
+
+        // 소셜 로그인/회원가입 API 호출
+        console.log('📡 소셜 로그인/회원가입 API 호출...');
+        const loginResult = await socialLoginOrRegister(
+          userEmail,
+          provider.toUpperCase(),
+          userId,
+          userName,
+          userNickname
+        );
+
+        if (!loginResult.success) {
+          console.error('❌ 소셜 로그인/회원가입 실패:', loginResult.error);
+          setError(loginResult.error || '소셜 로그인에 실패했습니다.');
+          return;
+        }
+
+        console.log('✅ 소셜 로그인/회원가입 성공:', loginResult);
+
+        // 토큰 저장
+        if (loginResult.access_token) {
+          saveTokens(loginResult.access_token, loginResult.refresh_token);
         }
 
         // AuthContext에 로그인 상태 업데이트
         const finalUserData = {
-          id: userData.id || socialUserId || '1',
-          name: userData.name || userData.nickname || name || '사용자',
-          nickname: userData.nickname || userData.name || nickname || '사용자',
-          email: userData.email || email || '',
-          profileImage: userData.profileImage || userData.profileImageUrl || '',
+          id: loginResult.data?.id || userId,
+          name: loginResult.data?.name || loginResult.data?.nickname || userName || '사용자',
+          nickname: loginResult.data?.nickname || loginResult.data?.name || userNickname || '사용자',
+          email: loginResult.data?.email || userEmail,
+          profileImage: loginResult.data?.profileImage || loginResult.data?.profileImageUrl || '',
           provider: provider.toUpperCase(),
           clientRedirectUrl: clientRedirectUrl
         };
@@ -106,8 +134,8 @@ function AuthCallbackContent() {
         
         login(
           finalUserData,
-          accessToken || '',
-          refreshToken || ''
+          loginResult.access_token || '',
+          loginResult.refresh_token || ''
         );
 
         setSuccessData({ userData: finalUserData, clientRedirectUrl });
