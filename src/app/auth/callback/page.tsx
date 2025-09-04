@@ -47,10 +47,34 @@ function AuthCallbackContent() {
           return;
         }
 
-        // 내부 API 라우트를 통해 소셜 로그인 처리 (verify + callback)
-        console.log('📡 내부 API를 통해 소셜 로그인 처리...');
-        console.log('🔍 처리 단계: 1) 외부 API 인증 검증 → 2) 백엔드 콜백 처리');
-        const loginResponse = await fetch('/api/auth/callback', {
+        // 1단계: 외부 API로 인증 검증
+        console.log('🔐 외부 API로 인증 검증...');
+        const verifyResponse = await fetch(`http://api.hence.events/api/v1/auth/social/verify/${code}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            provider: provider.toUpperCase(),
+            isNewUser
+          }),
+        });
+
+        console.log('📊 인증 검증 응답 상태:', verifyResponse.status);
+
+        if (!verifyResponse.ok) {
+          const verifyErrorText = await verifyResponse.text();
+          console.error('❌ 인증 검증 실패:', verifyResponse.status, verifyErrorText);
+          setError(`인증 검증에 실패했습니다. (${verifyResponse.status})`);
+          return;
+        }
+
+        const verifyResult = await verifyResponse.json();
+        console.log('✅ 인증 검증 성공:', verifyResult);
+
+        // 2단계: 백엔드로 소셜 로그인 정보 전달
+        console.log('📡 백엔드로 소셜 로그인 정보 전달...');
+        const loginResponse = await fetch('https://api-participant.hence.events/auth/callback', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -102,7 +126,16 @@ function AuthCallbackContent() {
         console.log('🎉 소셜 로그인 완료!');
       } catch (error) {
         console.error('❌ 소셜 로그인 처리 오류:', error);
-        setError('소셜 로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+        
+        // 에러 타입에 따른 구체적인 메시지 제공
+        let errorMessage = '소셜 로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.';
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          errorMessage = '네트워크 연결에 문제가 있습니다. 인터넷 연결을 확인해주세요.';
+        } else if (error instanceof Error) {
+          errorMessage = `처리 중 오류가 발생했습니다: ${error.message}`;
+        }
+        
+        setError(errorMessage);
         setIsProcessing(false);
       }
     };
