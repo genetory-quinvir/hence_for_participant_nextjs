@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(verifyRequestBody),
+      signal: AbortSignal.timeout(10000) // 10초 타임아웃
     });
 
     console.log('🔍 ===== VERIFY API 응답 수신 =====');
@@ -241,6 +242,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(10000) // 10초 타임아웃
     });
 
     console.log('🔍 ===== 외부 API 응답 수신 =====');
@@ -332,6 +334,25 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('소셜 로그인 콜백 처리 오류:', error);
+    
+    // 타임아웃 에러 처리
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      console.error('⏰ API 호출 타임아웃 발생');
+      return NextResponse.json(
+        { success: false, error: 'API 호출이 시간 초과되었습니다. 다시 시도해주세요.' },
+        { status: 408 }
+      );
+    }
+    
+    // AbortError 처리
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('⏰ API 호출이 중단됨');
+      return NextResponse.json(
+        { success: false, error: 'API 호출이 중단되었습니다. 다시 시도해주세요.' },
+        { status: 408 }
+      );
+    }
+    
     return NextResponse.json(
       { success: false, error: '서버 오류가 발생했습니다.' },
       { status: 500 }

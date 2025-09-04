@@ -43,6 +43,9 @@ function AuthCallbackContent() {
         }
 
         // 내부 API 라우트를 통해 처리 (CSP 문제 해결)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15초 타임아웃
+        
         const response = await fetch('/api/auth/callback', {
           method: 'POST',
           headers: {
@@ -53,7 +56,10 @@ function AuthCallbackContent() {
             provider,
             isNewUser
           }),
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
 
         const result = await response.json();
         
@@ -105,7 +111,14 @@ function AuthCallbackContent() {
         }
       } catch (error) {
         console.error('❌ 로그인 콜백 처리 오류:', error);
-        setError('로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+        
+        // 타임아웃 에러 처리
+        if (error instanceof Error && error.name === 'AbortError') {
+          setError('로그인 처리 시간이 초과되었습니다. 다시 시도해주세요.');
+        } else {
+          setError('로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+        }
+        
         setIsProcessing(false);
       }
     };
