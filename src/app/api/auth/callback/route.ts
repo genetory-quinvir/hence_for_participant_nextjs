@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 1단계: code로 사용자 정보 조회
-    const verifyUrl = `https://api-participant.hence.events/api/v1/auth/social/verify/${code}`;
+    const verifyUrl = `https://api.hence.events/api/v1/auth/social/verify/${code}`;
     const verifyRequestBody = {
       code,
       provider: provider.toUpperCase()

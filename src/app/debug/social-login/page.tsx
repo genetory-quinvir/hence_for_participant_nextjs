@@ -63,7 +63,7 @@ function SocialLoginDebugContent() {
 
     setIsLoading(true);
     try {
-      const verifyUrl = `https://api-participant.hence.events/api/v1/auth/social/verify/${code}`;
+      const verifyUrl = `https://api.hence.events/api/v1/auth/social/verify/${code}`;
       console.log('🔍 verify 엔드포인트 테스트:', verifyUrl);
       
       const response = await fetch(verifyUrl, {
