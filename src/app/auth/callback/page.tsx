@@ -128,14 +128,23 @@ function AuthCallbackContent() {
             console.log('저장된 소셜 로그인 리다이렉트 URL:', savedRedirectUrl);
             sessionStorage.removeItem('socialLoginRedirectUrl');
             setHasRedirected(true);
-            // window.location.href를 사용하여 완전한 페이지 전환
-            window.location.href = savedRedirectUrl;
+            
+            // 콘솔 로그를 보기 위해 3초 대기
+            console.log('🚀 3초 후 리다이렉트됩니다. 콘솔 로그를 확인하세요!');
+            setTimeout(() => {
+              window.location.href = savedRedirectUrl;
+            }, 3000);
           } else if (clientRedirectUrl) {
             console.log('클라이언트 리다이렉트 URL:', clientRedirectUrl);
             const decodedUrl = decodeURIComponent(clientRedirectUrl);
             console.log('디코딩된 URL:', decodedUrl);
             setHasRedirected(true);
-            window.location.href = decodedUrl;
+            
+            // 콘솔 로그를 보기 위해 3초 대기
+            console.log('🚀 3초 후 리다이렉트됩니다. 콘솔 로그를 확인하세요!');
+            setTimeout(() => {
+              window.location.href = decodedUrl;
+            }, 3000);
           } else {
             console.log('리다이렉트 파라미터가 없어서 메인 페이지로 리다이렉트');
             console.log('사용 가능한 파라미터들:', {
@@ -146,7 +155,12 @@ function AuthCallbackContent() {
               clientRedirectUrl: !!clientRedirectUrl
             });
             setHasRedirected(true);
-            window.location.href = '/';
+            
+            // 콘솔 로그를 보기 위해 3초 대기
+            console.log('🚀 3초 후 메인 페이지로 리다이렉트됩니다. 콘솔 로그를 확인하세요!');
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 3000);
           }
         } else {
           console.error('로그인 실패 상세:', result);
@@ -214,9 +228,15 @@ function AuthCallbackContent() {
         const savedRedirectUrl = sessionStorage.getItem('socialLoginRedirectUrl');
         if (savedRedirectUrl) {
           sessionStorage.removeItem('socialLoginRedirectUrl');
-          window.location.href = savedRedirectUrl;
+          console.log('🚀 3초 후 리다이렉트됩니다. 콘솔 로그를 확인하세요!');
+          setTimeout(() => {
+            window.location.href = savedRedirectUrl;
+          }, 3000);
         } else {
-          window.location.href = '/';
+          console.log('🚀 3초 후 메인 페이지로 리다이렉트됩니다. 콘솔 로그를 확인하세요!');
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 3000);
         }
       } else {
         setError(result.error || '수동 로그인에 실패했습니다.');
@@ -234,6 +254,13 @@ function AuthCallbackContent() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
           <p className="text-sm" style={{ opacity: 0.7 }}>로그인 처리 중...</p>
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg max-w-md">
+            <p className="text-xs text-blue-600 mb-2">🔍 디버깅 팁</p>
+            <p className="text-xs text-blue-500">
+              브라우저 개발자 도구(F12) → 콘솔 탭에서<br/>
+              상세한 verify 과정을 확인할 수 있습니다
+            </p>
+          </div>
         </div>
       </div>
     );

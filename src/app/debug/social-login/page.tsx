@@ -430,6 +430,20 @@ function SocialLoginDebugContent() {
               <li>필수 파라미터가 누락된 경우 빨간색으로 표시됩니다</li>
             </ul>
           </div>
+          
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+            <h3 className="font-semibold text-green-800 mb-2">🚀 콘솔 로그 확인 방법</h3>
+            <ol className="list-decimal list-inside space-y-1 text-sm text-green-700">
+              <li>브라우저에서 <strong>F12</strong> 키를 눌러 개발자 도구 열기</li>
+              <li><strong>Console</strong> 탭 클릭</li>
+              <li>소셜 로그인 테스트 진행</li>
+              <li>콘솔에서 <strong>🔍 ===== VERIFY API 호출 시작 =====</strong> 로그 확인</li>
+              <li>모든 verify 과정이 상세하게 로그로 출력됩니다</li>
+            </ol>
+            <div className="mt-2 p-2 bg-white rounded text-xs">
+              <strong>참고:</strong> 로그인 성공 시 3초 후 자동으로 리다이렉트되므로, 그 전에 콘솔 로그를 확인하세요!
+            </div>
+          </div>
         </div>
       </div>
     </div>
