@@ -72,51 +72,42 @@ function AuthCallbackContent() {
         const verifyResult = await verifyResponse.json();
         console.log('✅ 인증 검증 성공:', verifyResult);
 
-        // 2단계: 백엔드로 소셜 로그인 정보 전달
-        console.log('📡 백엔드로 소셜 로그인 정보 전달...');
-        const loginResponse = await fetch('https://api-participant.hence.events/auth/callback', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            code,
-            provider: provider.toUpperCase(),
-            isNewUser,
-            social_user_id: socialUserId,
-            email,
-            name,
-            nickname,
-            clientRedirect: clientRedirectUrl
-          }),
+        // 2단계: verify 결과에서 사용자 정보 추출하여 직접 로그인 처리
+        console.log('👤 사용자 정보로 직접 로그인 처리...');
+        
+        // verify 결과에서 사용자 정보 추출
+        const userData = verifyResult.data || verifyResult.user || verifyResult;
+        const accessToken = verifyResult.access_token || verifyResult.token?.accessToken || verifyResult.accessToken;
+        const refreshToken = verifyResult.refresh_token || verifyResult.token?.refreshToken || verifyResult.refreshToken;
+        
+        console.log('📋 추출된 사용자 정보:', {
+          userData,
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken
         });
 
-        if (!loginResponse.ok) {
-          const errorData = await loginResponse.json().catch(() => ({}));
-          console.error('❌ 소셜 로그인 실패:', loginResponse.status, errorData);
-          setError(errorData.error || '소셜 로그인에 실패했습니다.');
-          return;
+        // 토큰이 있으면 저장
+        if (accessToken) {
+          saveTokens(accessToken, refreshToken);
         }
 
-        const loginResult = await loginResponse.json();
-        console.log('✅ 소셜 로그인 성공:', loginResult);
+        // AuthContext에 로그인 상태 업데이트
+        const finalUserData = {
+          id: userData.id || socialUserId || '1',
+          name: userData.name || userData.nickname || name || '사용자',
+          nickname: userData.nickname || userData.name || nickname || '사용자',
+          email: userData.email || email || '',
+          profileImage: userData.profileImage || userData.profileImageUrl || '',
+          provider: provider.toUpperCase(),
+          clientRedirectUrl: clientRedirectUrl
+        };
 
-        // 3단계: 토큰 저장 및 사용자 정보 설정
-        if (loginResult.access_token) {
-          saveTokens(loginResult.access_token, loginResult.refresh_token);
-        }
-
-        const finalUserData = loginResult.data || loginResult;
+        console.log('🔐 AuthContext 로그인 상태 업데이트:', finalUserData);
+        
         login(
-          {
-            id: finalUserData.id || '1',
-            name: finalUserData.nickname || finalUserData.name || '사용자',
-            email: finalUserData.email || '',
-            profileImage: finalUserData.profileImage || '',
-            clientRedirectUrl: clientRedirectUrl
-          },
-          loginResult.access_token || '',
-          loginResult.refresh_token || ''
+          finalUserData,
+          accessToken || '',
+          refreshToken || ''
         );
 
         setSuccessData({ userData: finalUserData, clientRedirectUrl });
