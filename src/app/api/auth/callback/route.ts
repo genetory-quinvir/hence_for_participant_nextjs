@@ -5,9 +5,17 @@ export async function POST(request: NextRequest) {
     console.log('API 라우트 호출됨');
     
     const body = await request.json();
-    const { code, provider, isNewUser } = body;
+    const { code, provider, isNewUser, social_user_id, email, name, nickname } = body;
 
-    console.log('소셜 로그인 콜백 API 호출:', { code, provider, isNewUser });
+    console.log('소셜 로그인 콜백 API 호출:', { 
+      code, 
+      provider, 
+      isNewUser, 
+      social_user_id, 
+      email, 
+      name, 
+      nickname 
+    });
 
     if (!code || !provider) {
       return NextResponse.json(
@@ -28,7 +36,12 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         code,
         provider: provider.toUpperCase(),
-        isNewUser
+        isNewUser,
+        // 소셜 사용자 고유 식별자와 이메일 추가 (필수!)
+        social_user_id: social_user_id,
+        email: email,
+        name: name,
+        nickname: nickname
       }),
     });
 

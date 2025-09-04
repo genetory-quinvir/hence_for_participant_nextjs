@@ -24,8 +24,24 @@ function AuthCallbackContent() {
         const isNewUser = searchParams.get('isNewUser') === 'true';
         const redirectUrl = searchParams.get('redirect');
         const clientRedirectUrl = searchParams.get('clientRedirect');
+        
+        // 소셜 사용자 정보 파라미터 추가
+        const socialUserId = searchParams.get('social_user_id');
+        const email = searchParams.get('email');
+        const name = searchParams.get('name');
+        const nickname = searchParams.get('nickname');
 
-        console.log('로그인 콜백 처리:', { code, provider, isNewUser, redirectUrl, clientRedirectUrl });
+        console.log('로그인 콜백 처리:', { 
+          code, 
+          provider, 
+          isNewUser, 
+          redirectUrl, 
+          clientRedirectUrl,
+          socialUserId,
+          email,
+          name,
+          nickname
+        });
         console.log('전체 URL 파라미터:', window.location.search);
         console.log('clientRedirect 파라미터 존재 여부:', !!clientRedirectUrl);
 
@@ -46,7 +62,12 @@ function AuthCallbackContent() {
           body: JSON.stringify({
             code,
             provider: provider.toUpperCase(),
-            isNewUser
+            isNewUser,
+            // 소셜 사용자 고유 식별자와 이메일 추가 (필수!)
+            social_user_id: socialUserId,
+            email: email,
+            name: name,
+            nickname: nickname
           }),
         });
 
