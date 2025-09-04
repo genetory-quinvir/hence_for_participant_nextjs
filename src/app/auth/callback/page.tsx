@@ -49,7 +49,7 @@ function AuthCallbackContent() {
 
         // 내부 API 라우트를 통해 백엔드로 소셜 로그인 정보 전달
         console.log('📡 내부 API를 통해 소셜 로그인 처리...');
-        const loginResponse = await fetch('/api/auth/callback', {
+        const loginResponse = await fetch('/auth/callback', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
