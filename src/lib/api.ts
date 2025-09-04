@@ -1311,9 +1311,19 @@ export async function createPost(eventId: string, boardType: string, title: stri
         console.log('📝 제목 추가:', title);
       }
       
-      // 내용 추가
+      // 내용 추가 (여러 필드명 시도)
       formData.append('content', content);
-      console.log('📝 내용 추가:', content.substring(0, 50) + '...');
+      formData.append('body', content);  // body 필드명도 추가
+      formData.append('text', content);  // text 필드명도 추가
+      console.log('📝 내용 추가:', {
+        content: content,
+        contentLength: content.length,
+        contentTrimmed: content.trim(),
+        contentTrimmedLength: content.trim().length,
+        isEmpty: content.trim() === '',
+        isNull: content === null,
+        isUndefined: content === undefined
+      });
       
       // 압축된 이미지 파일들 추가
       compressedImages.forEach((image, index) => {
@@ -1389,9 +1399,19 @@ export async function createPost(eventId: string, boardType: string, title: stri
         console.log('📝 제목 추가:', title);
       }
       
-      // 내용 추가
+      // 내용 추가 (여러 필드명 시도)
       formData.append('content', content);
-      console.log('📝 내용 추가:', content.substring(0, 50) + '...');
+      formData.append('body', content);  // body 필드명도 추가
+      formData.append('text', content);  // text 필드명도 추가
+      console.log('📝 내용 추가:', {
+        content: content,
+        contentLength: content.length,
+        contentTrimmed: content.trim(),
+        contentTrimmedLength: content.trim().length,
+        isEmpty: content.trim() === '',
+        isNull: content === null,
+        isUndefined: content === undefined
+      });
       
       // FormData 내용 확인
       console.log('📋 FormData 내용 (이미지 없음):');
