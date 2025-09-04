@@ -75,21 +75,24 @@ function AuthCallbackContent() {
           hasUser: !!verifyResult.user,
           hasData: !!verifyResult.data,
           userKeys: verifyResult.user ? Object.keys(verifyResult.user) : [],
-          dataKeys: verifyResult.data ? Object.keys(verifyResult.data) : []
+          dataKeys: verifyResult.data ? Object.keys(verifyResult.data) : [],
+          allKeys: Object.keys(verifyResult)
         });
 
         // 2단계: verify 결과에서 사용자 정보 추출하여 로그인/회원가입 처리
         console.log('👤 사용자 정보로 로그인/회원가입 처리...');
         
         // verify 결과에서 사용자 정보 추출
-        const userData = verifyResult.user || verifyResult.data || verifyResult;
+        const userData = verifyResult.user;
+        
         console.log('📋 userData:', userData);
         
+        // user 객체에서 사용자 정보 추출
         const userEmail = userData.email;
         const userId = userData.id;
         const userProvider = userData.provider;
-        const userName = userData.name || userData.nickname;
-        const userNickname = userData.nickname || userData.name;
+        const userName = userData.name;
+        const userNickname = userData.nickname;
         
         console.log('📋 추출된 사용자 정보:', {
           email: userEmail,
@@ -99,11 +102,12 @@ function AuthCallbackContent() {
           nickname: userNickname
         });
 
+
         if (!userEmail || !userId || !userProvider) {
           console.error('❌ 필수 사용자 정보 누락:', { 
-            email: !!userEmail, 
-            id: !!userId, 
-            provider: !!userProvider 
+            email: userEmail, 
+            id: userId, 
+            provider: userProvider
           });
           setError('사용자 정보가 올바르지 않습니다.');
           return;
