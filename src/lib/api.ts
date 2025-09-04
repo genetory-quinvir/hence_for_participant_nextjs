@@ -630,11 +630,14 @@ export async function apiRequest<T>(
         'accept': 'application/json',
       };
 
-      // Content-Type이 설정되지 않은 경우에만 추가
+      // Content-Type이 설정되지 않은 경우에만 추가 (FormData가 아닌 경우에만)
       if (!options.headers || !Object.keys(options.headers).some(key => 
         key.toLowerCase() === 'content-type'
       )) {
-        headers['Content-Type'] = 'application/json';
+        // FormData인 경우 Content-Type을 설정하지 않음 (브라우저가 자동으로 multipart/form-data 설정)
+        if (!(options.body instanceof FormData)) {
+          headers['Content-Type'] = 'application/json';
+        }
       }
 
       // 기존 헤더와 병합
@@ -1388,8 +1391,8 @@ export async function createPost(eventId: string, boardType: string, title: stri
         };
       }
     } else {
-      // FormData 사용 (이미지 없음) - JSON 대신 FormData로 통일
-      console.log('🌐 API 요청 (이미지 없음):', `${API_BASE_URL}/board/${eventId}/${boardType}`);
+      // FormData 사용 (이미지 없음) - 서버가 FormData를 기대함
+      console.log('🌐 API 요청 (이미지 없음, FormData 방식):', `${API_BASE_URL}/board/${eventId}/${boardType}`);
       
       const formData = new FormData();
       
@@ -1399,11 +1402,14 @@ export async function createPost(eventId: string, boardType: string, title: stri
         console.log('📝 제목 추가:', title);
       }
       
-      // 내용 추가 (여러 필드명 시도)
+      // 내용 추가 - 여러 가능한 필드명 시도
       formData.append('content', content);
-      formData.append('body', content);  // body 필드명도 추가
-      formData.append('text', content);  // text 필드명도 추가
-      console.log('📝 내용 추가:', {
+      formData.append('body', content);
+      formData.append('text', content);
+      formData.append('message', content);
+      formData.append('description', content);
+      
+      console.log('📝 내용 추가 (FormData):', {
         content: content,
         contentLength: content.length,
         contentTrimmed: content.trim(),
@@ -1419,7 +1425,6 @@ export async function createPost(eventId: string, boardType: string, title: stri
         console.log(`  ${key}: ${value}`);
       }
       
-      console.log('🌐 API 요청 (이미지 없음):', `${API_BASE_URL}/board/${eventId}/${boardType}`);
       const accessToken = getAccessToken();
       console.log('🔑 인증 토큰 확인:', accessToken ? '토큰 있음' : '토큰 없음');
       console.log('📋 요청 URL 상세:', {
