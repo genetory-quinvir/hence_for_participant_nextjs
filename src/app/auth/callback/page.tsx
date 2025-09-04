@@ -46,6 +46,7 @@ function AuthCallbackContent() {
         console.log('clientRedirect 파라미터 존재 여부:', !!clientRedirectUrl);
         
         // URL 파라미터 디버깅을 위한 상세 로그
+        const allUrlParams = Object.fromEntries(new URLSearchParams(window.location.search));
         console.log('URL 파라미터 상세 분석:', {
           hasCode: !!code,
           hasProvider: !!provider,
@@ -53,7 +54,15 @@ function AuthCallbackContent() {
           hasEmail: !!email,
           hasName: !!name,
           hasNickname: !!nickname,
-          allParams: Object.fromEntries(new URLSearchParams(window.location.search))
+          allParams: allUrlParams,
+          fullUrl: window.location.href,
+          searchString: window.location.search
+        });
+
+        // 외부 소셜 로그인 서비스에서 제공하는 모든 파라미터 로깅
+        console.log('🔍 외부 소셜 로그인 서비스에서 제공된 모든 파라미터:');
+        Object.entries(allUrlParams).forEach(([key, value]) => {
+          console.log(`  ${key}: ${value}`);
         });
 
         if (!code || !provider) {

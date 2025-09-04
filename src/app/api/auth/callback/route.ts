@@ -63,6 +63,19 @@ export async function POST(request: NextRequest) {
 
     const result = await response.json();
     console.log('외부 API 응답:', result);
+    
+    // 외부 API 응답 상세 분석
+    console.log('🔍 외부 API 응답 분석:', {
+      status: response.status,
+      ok: response.ok,
+      headers: Object.fromEntries(response.headers.entries()),
+      responseData: result,
+      hasSuccess: 'success' in result,
+      hasData: 'data' in result,
+      hasAccessToken: 'access_token' in result || 'accessToken' in result,
+      hasRefreshToken: 'refresh_token' in result || 'refreshToken' in result,
+      hasError: 'error' in result || 'message' in result
+    });
 
     if (response.ok) {
       // 외부 API 응답 구조에 따라 처리
