@@ -40,9 +40,9 @@ function AuthCallbackContent() {
           return;
         }
 
-        // 백엔드로 최소한의 정보만 전달 (code, provider, isNewUser)
-        console.log('📡 백엔드로 소셜 로그인 정보 전달...');
-        const loginResponse = await fetch('https://api-participant.hence.events/auth/callback', {
+        // 내부 API 라우트를 통해 백엔드로 소셜 로그인 정보 전달
+        console.log('📡 내부 API를 통해 소셜 로그인 처리...');
+        const loginResponse = await fetch('/api/auth/callback', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -110,8 +110,8 @@ function AuthCallbackContent() {
       const isNewUser = searchParams.get('isNewUser') === 'true';
       const clientRedirectUrl = searchParams.get('clientRedirect');
 
-      // 수동 입력된 사용자 데이터로 로그인/회원가입 처리
-      const loginResponse = await fetch('https://api-participant.hence.events/auth/callback', {
+      // 내부 API를 통해 수동 입력된 사용자 데이터로 로그인/회원가입 처리
+      const loginResponse = await fetch('/api/auth/callback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
