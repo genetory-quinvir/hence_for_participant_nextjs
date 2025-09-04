@@ -217,6 +217,10 @@ function AuthCallbackContent() {
               is_new_user: isNewUser,
               user_id: userId
             });
+            
+            // 디버깅: dataLayer 상태 확인
+            console.log('🔍 dataLayer 현재 상태:', window.dataLayer);
+            console.log('🔍 dataLayer 길이:', window.dataLayer.length);
           } else {
             console.log('📊 GA 이벤트 이미 실행됨, 바로 리다이렉트');
             // 이미 실행된 경우 바로 리다이렉트
