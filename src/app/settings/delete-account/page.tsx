@@ -92,11 +92,11 @@ export default function DeleteAccountPage() {
     const redirectUrl = '/settings/delete-account?fromSocialLogin=true';
     
     if (provider === 'naver') {
-      window.location.href = `http://api.hence.events/api/v1/auth/naver?redirect=participant&joinPlatform=participant&redirect=${encodeURIComponent(redirectUrl)}`;
+      window.location.href = `https://api.hence.events/api/v1/auth/naver?redirect=participant&joinPlatform=participant&redirect=${encodeURIComponent(redirectUrl)}`;
     } else if (provider === 'google') {
-      window.location.href = `http://api.hence.events/api/v1/auth/google?redirect=participant&joinPlatform=participant&redirect=${encodeURIComponent(redirectUrl)}`;
+      window.location.href = `https://api.hence.events/api/v1/auth/google?redirect=participant&joinPlatform=participant&redirect=${encodeURIComponent(redirectUrl)}`;
     } else if (provider === 'kakao') {
-      window.location.href = `http://api.hence.events/api/v1/auth/kakao?redirect=participant&joinPlatform=participant&redirect=${encodeURIComponent(redirectUrl)}`;
+      window.location.href = `https://api.hence.events/api/v1/auth/kakao?redirect=participant&joinPlatform=participant&redirect=${encodeURIComponent(redirectUrl)}`;
     } else {
       showToast('지원하지 않는 소셜 로그인입니다.', 'error');
     }

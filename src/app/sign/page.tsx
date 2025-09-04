@@ -118,7 +118,7 @@ function SignContent() {
 
     // 소셜 로그인 URL 생성 - 콜백 URL을 명시적으로 지정
     const callbackUrl = `${window.location.origin}/auth/callback`;
-    const baseUrl = `http://api.hence.events/api/v1/auth/${provider}?redirect=participant&joinPlatform=participant&callbackUrl=${encodeURIComponent(callbackUrl)}`;
+    const baseUrl = `https://api.hence.events/api/v1/auth/${provider}?redirect=participant&joinPlatform=participant&callbackUrl=${encodeURIComponent(callbackUrl)}`;
     const socialLoginUrl = addRedirectToSocialLoginUrl(baseUrl, redirectUrl);
     
     console.log(`${provider} 로그인 URL:`, socialLoginUrl);

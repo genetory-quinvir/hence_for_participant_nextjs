@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // 1단계: 외부 API로 인증 검증
     console.log('🔐 외부 API로 인증 검증...');
-    const verifyResponse = await fetch(`http://api.hence.events/api/v1/auth/social/verify/${code}`, {
+    const verifyResponse = await fetch(`https://api.hence.events/api/v1/auth/social/verify/${code}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
