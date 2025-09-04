@@ -144,16 +144,17 @@ function SocialLoginDebugContent() {
 
         {/* 필수 파라미터 검증 */}
         <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h2 className="text-lg font-semibold mb-4">필수 파라미터 검증</h2>
+          <h2 className="text-lg font-semibold mb-4">필수 파라미터 검증 (Verify 중심)</h2>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { key: 'code', label: '인증 코드', required: true },
-              { key: 'provider', label: '소셜 제공자', required: true },
-              { key: 'social_user_id', label: '소셜 사용자 ID', required: true },
-              { key: 'email', label: '이메일', required: true },
-              { key: 'name', label: '이름', required: false },
-              { key: 'nickname', label: '닉네임', required: false }
-            ].map(({ key, label, required }) => {
+              { key: 'code', label: '인증 코드', required: true, description: 'verify API 호출에 필요' },
+              { key: 'provider', label: '소셜 제공자', required: true, description: 'verify API 호출에 필요' },
+              { key: 'isNewUser', label: '신규 사용자', required: false, description: 'verify API 호출에 필요' },
+              { key: 'social_user_id', label: '소셜 사용자 ID', required: false, description: 'verify에서 조회됨' },
+              { key: 'email', label: '이메일', required: false, description: 'verify에서 조회됨' },
+              { key: 'name', label: '이름', required: false, description: 'verify에서 조회됨' },
+              { key: 'nickname', label: '닉네임', required: false, description: 'verify에서 조회됨' }
+            ].map(({ key, label, required, description }) => {
               const value = allParams[key];
               const exists = !!value;
               return (
@@ -164,6 +165,9 @@ function SocialLoginDebugContent() {
                     {required && <span className="text-red-500 ml-1">*</span>}
                     <div className="text-sm text-gray-600">
                       {exists ? `✓ ${value}` : required ? '✗ 누락' : '선택사항'}
+                    </div>
+                    <div className="text-xs text-blue-600 mt-1">
+                      {description}
                     </div>
                   </div>
                 </div>
@@ -219,6 +223,48 @@ function SocialLoginDebugContent() {
             >
               {isLoading ? '테스트 중...' : 'Verify 엔드포인트 테스트'}
             </button>
+            
+            <button
+              onClick={async () => {
+                if (!allParams.code || !allParams.provider) {
+                  alert('code와 provider 파라미터가 필요합니다.');
+                  return;
+                }
+                
+                setIsLoading(true);
+                try {
+                  const response = await fetch('/api/auth/callback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      code: allParams.code,
+                      provider: allParams.provider.toUpperCase(),
+                      isNewUser: allParams.isNewUser === 'true'
+                    })
+                  });
+                  
+                  const result = await response.json();
+                  setDebugResult({
+                    success: true,
+                    endpoint: 'full-flow',
+                    status: response.status,
+                    data: result
+                  });
+                } catch (error) {
+                  setDebugResult({
+                    success: false,
+                    endpoint: 'full-flow',
+                    error: error instanceof Error ? error.message : '알 수 없는 오류'
+                  });
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              disabled={!allParams.code || !allParams.provider || isLoading}
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+            >
+              {isLoading ? '테스트 중...' : '전체 플로우 테스트'}
+            </button>
           </div>
         </div>
 
@@ -226,6 +272,139 @@ function SocialLoginDebugContent() {
         {debugResult && (
           <div className="p-4 bg-gray-100 rounded-lg">
             <h2 className="text-lg font-semibold mb-4">디버깅 결과</h2>
+            
+            {/* 전체 플로우 테스트 결과 특별 표시 */}
+            {debugResult.endpoint === 'full-flow' && (
+              <div className="mb-4 p-4 bg-white rounded border">
+                <h3 className="font-semibold mb-2">🚀 전체 소셜 로그인 플로우 테스트 결과</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">상태:</span>
+                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                      debugResult.status === 200 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {debugResult.status} {debugResult.status === 200 ? '성공' : '실패'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium">성공 여부:</span>
+                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                      debugResult.data?.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {debugResult.data?.success ? '로그인 성공' : '로그인 실패'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium">토큰 발급:</span>
+                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                      debugResult.data?.access_token ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {debugResult.data?.access_token ? '발급됨' : '발급 안됨'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium">사용자 데이터:</span>
+                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                      debugResult.data?.data ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {debugResult.data?.data ? '있음' : '없음'}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* 에러 메시지 표시 */}
+                {debugResult.data?.error && (
+                  <div className="mt-4 p-3 bg-red-50 rounded">
+                    <h4 className="font-medium text-red-800 mb-2">❌ 에러 메시지</h4>
+                    <p className="text-sm text-red-700">{debugResult.data.error}</p>
+                  </div>
+                )}
+                
+                {/* 성공 시 사용자 정보 표시 */}
+                {debugResult.data?.success && debugResult.data?.data && (
+                  <div className="mt-4 p-3 bg-green-50 rounded">
+                    <h4 className="font-medium text-green-800 mb-2">✅ 로그인된 사용자 정보</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="font-medium">ID:</span>
+                        <span className="ml-2">{debugResult.data.data.id || '없음'}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">이메일:</span>
+                        <span className="ml-2">{debugResult.data.data.email || '없음'}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">이름:</span>
+                        <span className="ml-2">{debugResult.data.data.name || '없음'}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">닉네임:</span>
+                        <span className="ml-2">{debugResult.data.data.nickname || '없음'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Verify 테스트 결과 특별 표시 */}
+            {debugResult.endpoint === 'verify' && (
+              <div className="mb-4 p-4 bg-white rounded border">
+                <h3 className="font-semibold mb-2">🔍 Verify API 테스트 결과</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">상태:</span>
+                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                      debugResult.status === 200 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {debugResult.status} {debugResult.status === 200 ? '성공' : '실패'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium">URL:</span>
+                    <span className="ml-2 text-xs break-all">{debugResult.url}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">요청 데이터:</span>
+                    <pre className="mt-1 text-xs bg-gray-50 p-2 rounded">
+                      {JSON.stringify(debugResult.requestBody, null, 2)}
+                    </pre>
+                  </div>
+                  <div>
+                    <span className="font-medium">응답 데이터:</span>
+                    <pre className="mt-1 text-xs bg-gray-50 p-2 rounded max-h-32 overflow-auto">
+                      {JSON.stringify(debugResult.data, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+                
+                {/* 사용자 정보 추출 결과 */}
+                {debugResult.data && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded">
+                    <h4 className="font-medium text-blue-800 mb-2">📋 추출된 사용자 정보</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="font-medium">ID:</span>
+                        <span className="ml-2">{debugResult.data.data?.id || debugResult.data.id || '없음'}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">이메일:</span>
+                        <span className="ml-2">{debugResult.data.data?.email || debugResult.data.email || '없음'}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">이름:</span>
+                        <span className="ml-2">{debugResult.data.data?.name || debugResult.data.name || '없음'}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">닉네임:</span>
+                        <span className="ml-2">{debugResult.data.data?.nickname || debugResult.data.nickname || '없음'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <pre className="bg-white p-4 rounded text-sm overflow-auto">
               {JSON.stringify(debugResult, null, 2)}
             </pre>
