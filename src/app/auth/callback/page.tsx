@@ -47,8 +47,9 @@ function AuthCallbackContent() {
           return;
         }
 
-        // 내부 API 라우트를 통해 백엔드로 소셜 로그인 정보 전달
+        // 내부 API 라우트를 통해 소셜 로그인 처리 (verify + callback)
         console.log('📡 내부 API를 통해 소셜 로그인 처리...');
+        console.log('🔍 처리 단계: 1) 외부 API 인증 검증 → 2) 백엔드 콜백 처리');
         const loginResponse = await fetch('/api/auth/callback', {
           method: 'POST',
           headers: {
