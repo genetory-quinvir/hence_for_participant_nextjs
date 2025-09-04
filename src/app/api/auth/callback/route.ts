@@ -5,16 +5,12 @@ export async function POST(request: NextRequest) {
     console.log('API 라우트 호출됨');
     
     const body = await request.json();
-    const { code, provider, isNewUser, social_user_id, email, name, nickname } = body;
+    const { code, provider, isNewUser } = body;
 
     console.log('소셜 로그인 콜백 API 호출:', { 
       code, 
       provider, 
-      isNewUser, 
-      social_user_id, 
-      email, 
-      name, 
-      nickname 
+      isNewUser
     });
 
     if (!code || !provider) {
@@ -25,20 +21,14 @@ export async function POST(request: NextRequest) {
     }
 
     // 필수 파라미터 검증 - code와 provider만 있으면 진행
-    // social_user_id와 email은 외부 API에서 code를 통해 조회할 예정
+    // 사용자 정보는 verify API에서 code를 통해 조회
     console.log('🔍 API 파라미터 검증 결과:', {
       hasCode: !!code,
       hasProvider: !!provider,
-      hasSocialUserId: !!social_user_id,
-      hasEmail: !!email,
-      hasName: !!name,
-      hasNickname: !!nickname
+      hasIsNewUser: isNewUser !== undefined
     });
 
-    // social_user_id와 email이 없어도 code와 provider가 있으면 외부 API에서 조회 시도
-    if (!social_user_id || !email) {
-      console.log('⚠️ social_user_id 또는 email이 요청에 없음. 외부 API에서 code를 통해 조회를 시도합니다.');
-    }
+    console.log('✅ verify API를 통해 사용자 정보를 조회합니다.');
 
     // 1단계: code로 사용자 정보 조회
     const verifyUrl = `https://api.hence.events/api/v1/auth/social/verify/${code}`;
@@ -208,22 +198,8 @@ export async function POST(request: NextRequest) {
         });
       }
       
-      // 2. URL 파라미터에 사용자 정보가 있는 경우 사용
-      if (social_user_id && email) {
-        console.log('🔄 외부 API 실패, URL 파라미터의 사용자 정보 사용');
-        return NextResponse.json({
-          success: true,
-          data: {
-            id: social_user_id,
-            email: email,
-            nickname: nickname || name || '사용자',
-            name: name || nickname || '사용자'
-          },
-          access_token: 'temp_token_' + Date.now(), // 임시 토큰
-          refresh_token: 'temp_refresh_' + Date.now(),
-          message: '외부 API 실패로 인한 임시 로그인 (URL 파라미터 사용)'
-        });
-      }
+      // 2. verify에서 가져온 사용자 정보가 있는 경우 사용 (이미 위에서 처리됨)
+      console.log('🔄 외부 API 실패, verify에서 가져온 사용자 정보로만 처리 가능');
       
       return NextResponse.json(
         { 
@@ -234,7 +210,7 @@ export async function POST(request: NextRequest) {
             statusText: response.statusText,
             response: result,
             request: requestBody,
-            suggestion: '외부 소셜 로그인 서비스 설정을 확인하거나, URL 파라미터에 사용자 정보가 포함되도록 설정하세요.'
+            suggestion: '외부 소셜 로그인 서비스 설정을 확인하거나, verify API가 올바른 사용자 정보를 반환하는지 확인하세요.'
           }
         },
         { status: response.status }

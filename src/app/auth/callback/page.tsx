@@ -32,22 +32,12 @@ function AuthCallbackContent() {
         const redirectUrl = searchParams.get('redirect');
         const clientRedirectUrl = searchParams.get('clientRedirect');
         
-        // 소셜 사용자 정보 파라미터 추가
-        const socialUserId = searchParams.get('social_user_id');
-        const email = searchParams.get('email');
-        const name = searchParams.get('name');
-        const nickname = searchParams.get('nickname');
-
         console.log('로그인 콜백 처리:', { 
           code, 
           provider, 
           isNewUser, 
           redirectUrl, 
-          clientRedirectUrl,
-          socialUserId,
-          email,
-          name,
-          nickname
+          clientRedirectUrl
         });
         console.log('전체 URL 파라미터:', window.location.search);
         console.log('clientRedirect 파라미터 존재 여부:', !!clientRedirectUrl);
@@ -57,10 +47,7 @@ function AuthCallbackContent() {
         console.log('URL 파라미터 상세 분석:', {
           hasCode: !!code,
           hasProvider: !!provider,
-          hasSocialUserId: !!socialUserId,
-          hasEmail: !!email,
-          hasName: !!name,
-          hasNickname: !!nickname,
+          hasIsNewUser: isNewUser !== undefined,
           allParams: allUrlParams,
           fullUrl: window.location.href,
           searchString: window.location.search
@@ -78,20 +65,14 @@ function AuthCallbackContent() {
         }
 
         // 필수 파라미터 검증 - code와 provider만 있으면 진행
-        // social_user_id와 email은 외부 API에서 code를 통해 조회할 예정
+        // 사용자 정보는 verify API에서 code를 통해 조회
         console.log('🔍 파라미터 검증 결과:', {
           hasCode: !!code,
           hasProvider: !!provider,
-          hasSocialUserId: !!socialUserId,
-          hasEmail: !!email,
-          hasName: !!name,
-          hasNickname: !!nickname
+          hasIsNewUser: isNewUser !== undefined
         });
 
-        // social_user_id와 email이 없어도 code와 provider가 있으면 외부 API에서 조회 시도
-        if (!socialUserId || !email) {
-          console.log('⚠️ social_user_id 또는 email이 URL 파라미터에 없음. 외부 API에서 code를 통해 조회를 시도합니다.');
-        }
+        console.log('✅ verify API를 통해 사용자 정보를 조회합니다.');
 
         // Next.js API 라우트를 통해 요청
         const apiUrl = `/api/auth/callback`;
@@ -105,12 +86,8 @@ function AuthCallbackContent() {
           body: JSON.stringify({
             code,
             provider: provider.toUpperCase(),
-            isNewUser,
-            // 소셜 사용자 고유 식별자와 이메일 추가 (필수!)
-            social_user_id: socialUserId,
-            email: email,
-            name: name,
-            nickname: nickname
+            isNewUser
+            // verify에서 사용자 정보를 조회하므로 URL 파라미터의 사용자 정보는 전달하지 않음
           }),
         });
 
