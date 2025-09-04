@@ -56,6 +56,7 @@ function SocialLoginDebugContent() {
   const testVerifyEndpoint = async () => {
     const code = allParams.code;
     const provider = allParams.provider;
+    const isNewUser = allParams.isNewUser === 'true';
     if (!code) {
       alert('URL에 code 파라미터가 없습니다.');
       return;
@@ -73,7 +74,8 @@ function SocialLoginDebugContent() {
         },
         body: JSON.stringify({
           code,
-          provider: provider?.toUpperCase() || 'GOOGLE'
+          provider: provider?.toUpperCase() || 'GOOGLE',
+          isNewUser
         }),
       });
       
@@ -85,7 +87,7 @@ function SocialLoginDebugContent() {
         endpoint: 'verify',
         url: verifyUrl,
         method: 'POST',
-        requestBody: { code, provider: provider?.toUpperCase() || 'GOOGLE' },
+        requestBody: { code, provider: provider?.toUpperCase() || 'GOOGLE', isNewUser },
         status: response.status,
         data: result
       });

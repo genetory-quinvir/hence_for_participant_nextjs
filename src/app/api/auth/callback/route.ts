@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
     const verifyUrl = `https://api.hence.events/api/v1/auth/social/verify/${code}`;
     const verifyRequestBody = {
       code,
-      provider: provider.toUpperCase()
+      provider: provider.toUpperCase(),
+      isNewUser
     };
     
     console.log('🔍 사용자 정보 조회 URL:', verifyUrl);
