@@ -805,7 +805,8 @@ export async function socialLoginOrRegister(
   provider: string, 
   socialUserId: string, 
   name?: string, 
-  nickname?: string
+  nickname?: string,
+  profileImageUrl?: string
 ): Promise<LoginResponse> {
   const url = `${API_BASE_URL}/auth/social-login`;
   
@@ -821,10 +822,10 @@ export async function socialLoginOrRegister(
     const requestBody = {
       email,
       provider: provider.toUpperCase(),
-      socialUserId,
-      name: name || nickname || '사용자',
-      nickname: nickname || name || '사용자',
-      joinPlatform: "participant"
+      id: socialUserId,
+      name: name || null,
+      nickname: nickname || name || null,
+      profile_image_url: profileImageUrl || null
     };
     const headers = { 'Content-Type': 'application/json' };
     const jsonBody = JSON.stringify(requestBody);
