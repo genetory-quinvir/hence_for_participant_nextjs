@@ -22,6 +22,8 @@ function AuthCallbackContent() {
     name: '',
     nickname: ''
   });
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successData, setSuccessData] = useState<any>(null);
 
   useEffect(() => {
     const processCallback = async () => {
@@ -114,54 +116,16 @@ function AuthCallbackContent() {
             );
           }
 
-          // 소셜 로그인에서는 토스트 메시지 제거
-
-          // 소셜 로그인 완료 후 리다이렉트 처리
-          if (hasRedirected) {
-            console.log('이미 리다이렉트됨 - 추가 처리 중단');
-            return;
-          }
+          // 성공 데이터 저장 및 성공 화면 표시
+          setSuccessData({
+            userData: result.data,
+            redirectUrl: sessionStorage.getItem('socialLoginRedirectUrl'),
+            clientRedirectUrl: clientRedirectUrl
+          });
+          setShowSuccessMessage(true);
+          setIsProcessing(false);
           
-          const savedRedirectUrl = sessionStorage.getItem('socialLoginRedirectUrl');
-          
-          if (savedRedirectUrl) {
-            console.log('저장된 소셜 로그인 리다이렉트 URL:', savedRedirectUrl);
-            sessionStorage.removeItem('socialLoginRedirectUrl');
-            setHasRedirected(true);
-            
-            // 콘솔 로그를 보기 위해 3초 대기
-            console.log('🚀 3초 후 리다이렉트됩니다. 콘솔 로그를 확인하세요!');
-            setTimeout(() => {
-              window.location.href = savedRedirectUrl;
-            }, 3000);
-          } else if (clientRedirectUrl) {
-            console.log('클라이언트 리다이렉트 URL:', clientRedirectUrl);
-            const decodedUrl = decodeURIComponent(clientRedirectUrl);
-            console.log('디코딩된 URL:', decodedUrl);
-            setHasRedirected(true);
-            
-            // 콘솔 로그를 보기 위해 3초 대기
-            console.log('🚀 3초 후 리다이렉트됩니다. 콘솔 로그를 확인하세요!');
-            setTimeout(() => {
-              window.location.href = decodedUrl;
-            }, 3000);
-          } else {
-            console.log('리다이렉트 파라미터가 없어서 메인 페이지로 리다이렉트');
-            console.log('사용 가능한 파라미터들:', {
-              code: !!code,
-              provider: !!provider,
-              isNewUser: !!isNewUser,
-              redirectUrl: !!redirectUrl,
-              clientRedirectUrl: !!clientRedirectUrl
-            });
-            setHasRedirected(true);
-            
-            // 콘솔 로그를 보기 위해 3초 대기
-            console.log('🚀 3초 후 메인 페이지로 리다이렉트됩니다. 콘솔 로그를 확인하세요!');
-            setTimeout(() => {
-              window.location.href = '/';
-            }, 3000);
-          }
+          console.log('✅ 로그인 성공! 콘솔 로그를 확인한 후 "계속하기" 버튼을 클릭하세요.');
         } else {
           console.error('로그인 실패 상세:', result);
           const errorMessage = result.error || result.message || '로그인에 실패했습니다.';
@@ -224,20 +188,16 @@ function AuthCallbackContent() {
           result.refresh_token
         );
         
-        // 성공 후 리다이렉트
-        const savedRedirectUrl = sessionStorage.getItem('socialLoginRedirectUrl');
-        if (savedRedirectUrl) {
-          sessionStorage.removeItem('socialLoginRedirectUrl');
-          console.log('🚀 3초 후 리다이렉트됩니다. 콘솔 로그를 확인하세요!');
-          setTimeout(() => {
-            window.location.href = savedRedirectUrl;
-          }, 3000);
-        } else {
-          console.log('🚀 3초 후 메인 페이지로 리다이렉트됩니다. 콘솔 로그를 확인하세요!');
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 3000);
-        }
+        // 성공 후 성공 화면 표시
+        setSuccessData({
+          userData: result.data,
+          redirectUrl: sessionStorage.getItem('socialLoginRedirectUrl'),
+          clientRedirectUrl: null
+        });
+        setShowSuccessMessage(true);
+        setIsProcessing(false);
+        
+        console.log('✅ 수동 로그인 성공! 콘솔 로그를 확인한 후 "계속하기" 버튼을 클릭하세요.');
       } else {
         setError(result.error || '수동 로그인에 실패했습니다.');
       }
@@ -261,6 +221,59 @@ function AuthCallbackContent() {
               상세한 verify 과정을 확인할 수 있습니다
             </p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showSuccessMessage) {
+    return (
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="text-green-500 text-lg mb-4">✅ 로그인 성공!</div>
+          <div className="text-sm mb-6" style={{ opacity: 0.7 }}>
+            소셜 로그인이 성공적으로 완료되었습니다.
+          </div>
+          
+          {successData?.userData && (
+            <div className="mb-6 p-4 bg-green-50 rounded-lg text-left">
+              <h3 className="font-semibold text-green-800 mb-2">로그인된 사용자 정보</h3>
+              <div className="text-sm space-y-1">
+                <div><span className="font-medium">ID:</span> {successData.userData.id || '없음'}</div>
+                <div><span className="font-medium">이메일:</span> {successData.userData.email || '없음'}</div>
+                <div><span className="font-medium">이름:</span> {successData.userData.name || '없음'}</div>
+                <div><span className="font-medium">닉네임:</span> {successData.userData.nickname || '없음'}</div>
+              </div>
+            </div>
+          )}
+          
+          <div className="mb-6 p-3 bg-blue-50 rounded-lg">
+            <p className="text-xs text-blue-600 mb-2">🔍 디버깅 완료</p>
+            <p className="text-xs text-blue-500">
+              브라우저 개발자 도구(F12) → 콘솔 탭에서<br/>
+              verify 과정의 상세한 로그를 확인할 수 있습니다
+            </p>
+          </div>
+          
+          <button
+            onClick={() => {
+              const savedRedirectUrl = successData?.redirectUrl;
+              const clientRedirectUrl = successData?.clientRedirectUrl;
+              
+              if (savedRedirectUrl) {
+                sessionStorage.removeItem('socialLoginRedirectUrl');
+                window.location.href = savedRedirectUrl;
+              } else if (clientRedirectUrl) {
+                const decodedUrl = decodeURIComponent(clientRedirectUrl);
+                window.location.href = decodedUrl;
+              } else {
+                window.location.href = '/';
+              }
+            }}
+            className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+          >
+            계속하기
+          </button>
         </div>
       </div>
     );
