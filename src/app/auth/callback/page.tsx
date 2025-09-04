@@ -21,6 +21,12 @@ function AuthCallbackContent() {
   const [successData, setSuccessData] = useState<any>(null);
 
   useEffect(() => {
+    // 중복 호출 방지: 이미 처리 중이거나 완료된 경우 스킵
+    if (isProcessing || showSuccessMessage || error) {
+      console.log('⏭️ 이미 처리 중이거나 완료됨. 스킵합니다.');
+      return;
+    }
+
     const processCallback = async () => {
       try {
         const code = searchParams.get('code');
@@ -105,7 +111,7 @@ function AuthCallbackContent() {
     };
 
     processCallback();
-  }, [searchParams, login]);
+  }, [searchParams, login, isProcessing, showSuccessMessage, error]);
 
   // 수동 사용자 정보 입력 처리
   const handleManualLogin = async () => {

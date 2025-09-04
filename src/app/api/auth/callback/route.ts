@@ -9,15 +9,40 @@ export async function POST(request: NextRequest) {
     console.log('🚀 호출 시간:', new Date().toISOString());
     
     const body = await request.json();
+    console.log('🔍 받은 요청 body:', body);
+    
     const { code, provider, isNewUser } = body;
+    
+    // code 값이 문자열인지 확인하고 안전하게 처리
+    const safeCode = String(code || '').trim();
+    const safeProvider = String(provider || '').trim();
 
     console.log('소셜 로그인 콜백 API 호출:', { 
       code, 
       provider, 
-      isNewUser
+      isNewUser,
+      safeCode,
+      safeProvider
     });
+    
+    console.log('🔍 ===== 파라미터 상세 분석 =====');
+    console.log('🔍 원본 code 타입:', typeof code);
+    console.log('🔍 원본 code 값:', code);
+    console.log('🔍 안전한 code 값:', safeCode);
+    console.log('🔍 안전한 code 길이:', safeCode.length);
+    console.log('🔍 원본 provider 타입:', typeof provider);
+    console.log('🔍 원본 provider 값:', provider);
+    console.log('🔍 안전한 provider 값:', safeProvider);
+    console.log('🔍 isNewUser 타입:', typeof isNewUser);
+    console.log('🔍 isNewUser 값:', isNewUser);
 
-    if (!code || !provider) {
+    if (!safeCode || !safeProvider) {
+      console.error('❌ 필수 파라미터 누락:', { 
+        hasCode: !!safeCode, 
+        hasProvider: !!safeProvider,
+        originalCode: code,
+        originalProvider: provider
+      });
       return NextResponse.json(
         { success: false, error: '인증 코드가 필요합니다.' },
         { status: 400 }
@@ -27,22 +52,29 @@ export async function POST(request: NextRequest) {
     // 필수 파라미터 검증 - code와 provider만 있으면 진행
     // 사용자 정보는 verify API에서 code를 통해 조회
     console.log('🔍 API 파라미터 검증 결과:', {
-      hasCode: !!code,
-      hasProvider: !!provider,
+      hasCode: !!safeCode,
+      hasProvider: !!safeProvider,
       hasIsNewUser: isNewUser !== undefined
     });
 
     console.log('✅ verify API를 통해 사용자 정보를 조회합니다.');
 
     // 1단계: code로 사용자 정보 조회
-    const verifyUrl = `https://api.hence.events/api/v1/auth/social/verify/${code}`;
+    console.log('🔍 ===== VERIFY URL 생성 =====');
+    console.log('🔍 원본 code 값:', code);
+    console.log('🔍 안전한 code 값:', safeCode);
+    console.log('🔍 code 타입:', typeof safeCode);
+    
+    const verifyUrl = `https://api.hence.events/api/v1/auth/social/verify/${safeCode}`;
     const verifyRequestBody = {
-      provider: provider.toUpperCase(),
+      provider: safeProvider.toUpperCase(),
       isNewUser
     };
     
     console.log('🔍 ===== VERIFY API 호출 시작 =====');
-    console.log('🔍 사용자 정보 조회 URL:', verifyUrl);
+    console.log('🔍 생성된 verify URL:', verifyUrl);
+    console.log('🔍 URL에 safeCode가 제대로 들어갔는지 확인:', verifyUrl.includes(safeCode));
+    console.log('🔍 URL에 원본 code가 들어갔는지 확인:', verifyUrl.includes(code));
     console.log('🔍 사용자 정보 조회 요청 데이터:', verifyRequestBody);
     console.log('🔍 요청 헤더:', {
       'Content-Type': 'application/json',
@@ -98,6 +130,28 @@ export async function POST(request: NextRequest) {
       console.log('📋 verifyResult.nickname:', verifyResult.nickname);
     }
 
+    // verify API 응답에 토큰이 포함되어 있는지 확인
+    console.log('🔍 ===== 토큰 확인 =====');
+    console.log('🔍 hasAccessToken:', !!(verifyResult.access_token || verifyResult.data?.access_token));
+    console.log('🔍 hasRefreshToken:', !!(verifyResult.refresh_token || verifyResult.data?.refresh_token));
+    
+    // verify API에서 토큰을 제공하는 경우 바로 반환
+    if (verifyResult.access_token || verifyResult.data?.access_token) {
+      console.log('✅ verify API에서 토큰을 제공함. 바로 반환합니다.');
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: verifyResult.data?.id || verifyResult.id,
+          email: verifyResult.data?.email || verifyResult.email,
+          name: verifyResult.data?.name || verifyResult.name,
+          nickname: verifyResult.data?.nickname || verifyResult.nickname
+        },
+        access_token: verifyResult.access_token || verifyResult.data?.access_token,
+        refresh_token: verifyResult.refresh_token || verifyResult.data?.refresh_token,
+        message: 'verify API에서 토큰을 받아 로그인 완료'
+      });
+    }
+
     if (!verifyResponse.ok) {
       console.error('❌ ===== VERIFY API 실패 =====');
       console.error('❌ 응답 상태:', verifyResponse.status, verifyResponse.statusText);
@@ -111,8 +165,10 @@ export async function POST(request: NextRequest) {
       if (verifyResponse.status === 401) {
         console.error('🔐 ===== 401 UNAUTHORIZED 에러 =====');
         console.error('🔐 code가 유효하지 않거나 만료되었을 수 있습니다.');
-        console.error('🔐 code 값:', code);
-        console.error('🔐 provider 값:', provider);
+        console.error('🔐 원본 code 값:', code);
+        console.error('🔐 안전한 code 값:', safeCode);
+        console.error('🔐 원본 provider 값:', provider);
+        console.error('🔐 안전한 provider 값:', safeProvider);
         console.error('🔐 isNewUser 값:', isNewUser);
         console.error('🔐 요청 URL:', verifyUrl);
         console.error('🔐 요청 body:', JSON.stringify(verifyRequestBody, null, 2));
@@ -150,15 +206,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2단계: verify된 사용자 정보로 회원가입/로그인 처리
+    // 2단계: verify된 사용자 정보로 회원가입/로그인 처리 (토큰이 없는 경우에만)
     console.log('🚀 ===== 회원가입/로그인 처리 시작 =====');
+    console.log('🚀 verify API에서 토큰을 제공하지 않음. 외부 API 호출 필요.');
     const externalUrl = `https://api-participant.hence.events/auth/callback`;
     console.log('🚀 회원가입/로그인 처리 URL:', externalUrl);
     
     // verify에서 가져온 사용자 정보로 회원가입/로그인 요청
     const requestBody = {
-      code,
-      provider: provider.toUpperCase(),
+      code: safeCode,
+      provider: safeProvider.toUpperCase(),
       // verify에서 가져온 사용자 정보 (필수!)
       social_user_id: verifyResult.data?.id || verifyResult.id,
       email: verifyResult.data?.email || verifyResult.email,
@@ -255,26 +312,8 @@ export async function POST(request: NextRequest) {
       console.error('❌ 요청 데이터:', JSON.stringify(requestBody, null, 2));
       console.error('❌ 실패 시간:', new Date().toISOString());
       
-      // 외부 API 실패 시 대안 처리
-      // 1. verify에서 가져온 사용자 정보가 있는 경우 사용 (우선순위)
-      if (verifyResult.data || verifyResult.id) {
-        console.log('🔄 회원가입/로그인 API 실패, verify에서 가져온 사용자 정보로 임시 로그인 처리');
-        return NextResponse.json({
-          success: true,
-          data: {
-            id: verifyResult.data?.id || verifyResult.id,
-            email: verifyResult.data?.email || verifyResult.email,
-            nickname: verifyResult.data?.nickname || verifyResult.nickname || '사용자',
-            name: verifyResult.data?.name || verifyResult.name || '사용자'
-          },
-          access_token: 'temp_token_' + Date.now(), // 임시 토큰
-          refresh_token: 'temp_refresh_' + Date.now(),
-          message: '회원가입/로그인 API 실패로 인한 임시 로그인 (verify 정보 사용)'
-        });
-      }
-      
-      // 2. verify에서 가져온 사용자 정보가 있는 경우 사용 (이미 위에서 처리됨)
-      console.log('🔄 외부 API 실패, verify에서 가져온 사용자 정보로만 처리 가능');
+      // 외부 API 실패 시 에러 반환
+      console.log('🔄 회원가입/로그인 API 실패, 에러 반환');
       
       return NextResponse.json(
         { 
