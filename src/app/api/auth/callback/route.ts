@@ -40,25 +40,59 @@ export async function POST(request: NextRequest) {
       console.log('⚠️ social_user_id 또는 email이 요청에 없음. 외부 API에서 code를 통해 조회를 시도합니다.');
     }
 
-    // 외부 API 호출
+    // 1단계: code로 사용자 정보 조회
+    const verifyUrl = `https://api-participant.hence.events/api/v1/auth/social/verify/${code}`;
+    console.log('🔍 사용자 정보 조회 URL:', verifyUrl);
+
+    const verifyResponse = await fetch(verifyUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const verifyResult = await verifyResponse.json();
+    console.log('👤 사용자 정보 조회 결과:', verifyResult);
+
+    if (!verifyResponse.ok) {
+      console.error('❌ 사용자 정보 조회 실패:', {
+        status: verifyResponse.status,
+        statusText: verifyResponse.statusText,
+        responseData: verifyResult
+      });
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `사용자 정보 조회 실패 (${verifyResponse.status}: ${verifyResponse.statusText})`,
+          details: {
+            status: verifyResponse.status,
+            statusText: verifyResponse.statusText,
+            response: verifyResult
+          }
+        },
+        { status: verifyResponse.status }
+      );
+    }
+
+    // 2단계: 사용자 정보가 확인되면 로그인 처리
     const externalUrl = `https://api-participant.hence.events/auth/callback`;
-    console.log('외부 API URL:', externalUrl);
+    console.log('🚀 로그인 처리 URL:', externalUrl);
     
-    // 외부 API로 전송할 데이터 구성
-    // 일반적인 소셜 로그인 플로우: code만 전송하고 외부 API에서 사용자 정보 조회
+    // 사용자 정보와 함께 로그인 요청
     const requestBody = {
       code,
       provider: provider.toUpperCase(),
-      // 추가 정보가 있으면 포함 (없어도 됨)
-      ...(isNewUser !== undefined && { isNewUser }),
-      ...(social_user_id && { social_user_id }),
-      ...(email && { email }),
-      ...(name && { name }),
-      ...(nickname && { nickname })
+      // verify에서 가져온 사용자 정보 포함
+      social_user_id: verifyResult.data?.id || verifyResult.id || social_user_id,
+      email: verifyResult.data?.email || verifyResult.email || email,
+      name: verifyResult.data?.name || verifyResult.name || name,
+      nickname: verifyResult.data?.nickname || verifyResult.nickname || nickname,
+      // 추가 정보
+      ...(isNewUser !== undefined && { isNewUser })
     };
 
-    console.log('🚀 외부 API로 전송할 데이터:', requestBody);
-    console.log('📝 참고: code만으로도 외부 API에서 사용자 정보를 조회할 수 있어야 합니다.');
+    console.log('🚀 로그인 처리 요청 데이터:', requestBody);
 
     const response = await fetch(externalUrl, {
       method: 'POST',
@@ -115,7 +149,24 @@ export async function POST(request: NextRequest) {
       });
       
       // 외부 API 실패 시 대안 처리
-      // 1. 사용자 정보가 URL 파라미터에 있는 경우 사용
+      // 1. verify에서 가져온 사용자 정보가 있는 경우 사용
+      if (verifyResult.data || verifyResult.id) {
+        console.log('🔄 외부 API 실패, verify에서 가져온 사용자 정보 사용');
+        return NextResponse.json({
+          success: true,
+          data: {
+            id: verifyResult.data?.id || verifyResult.id,
+            email: verifyResult.data?.email || verifyResult.email,
+            nickname: verifyResult.data?.nickname || verifyResult.nickname || '사용자',
+            name: verifyResult.data?.name || verifyResult.name || '사용자'
+          },
+          access_token: 'temp_token_' + Date.now(), // 임시 토큰
+          refresh_token: 'temp_refresh_' + Date.now(),
+          message: '외부 API 실패로 인한 임시 로그인 (verify 정보 사용)'
+        });
+      }
+      
+      // 2. URL 파라미터에 사용자 정보가 있는 경우 사용
       if (social_user_id && email) {
         console.log('🔄 외부 API 실패, URL 파라미터의 사용자 정보 사용');
         return NextResponse.json({

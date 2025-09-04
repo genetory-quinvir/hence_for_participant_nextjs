@@ -53,6 +53,41 @@ function SocialLoginDebugContent() {
     }
   };
 
+  const testVerifyEndpoint = async () => {
+    const code = allParams.code;
+    if (!code) {
+      alert('URL에 code 파라미터가 없습니다.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const verifyUrl = `https://api-participant.hence.events/api/v1/auth/social/verify/${code}`;
+      console.log('🔍 verify 엔드포인트 테스트:', verifyUrl);
+      
+      const response = await fetch(verifyUrl);
+      const result = await response.json();
+      
+      console.log('👤 verify 응답:', result);
+      setDebugResult({
+        success: true,
+        endpoint: 'verify',
+        url: verifyUrl,
+        status: response.status,
+        data: result
+      });
+    } catch (error) {
+      console.error('❌ verify 테스트 실패:', error);
+      setDebugResult({
+        success: false,
+        endpoint: 'verify',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white text-black p-8">
       <div className="max-w-4xl mx-auto">
@@ -161,6 +196,14 @@ function SocialLoginDebugContent() {
               className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
             >
               현재 파라미터로 콜백 테스트
+            </button>
+            
+            <button
+              onClick={testVerifyEndpoint}
+              disabled={!allParams.code || isLoading}
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50"
+            >
+              {isLoading ? '테스트 중...' : 'Verify 엔드포인트 테스트'}
             </button>
           </div>
         </div>
