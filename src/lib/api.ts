@@ -830,6 +830,7 @@ export async function socialLoginOrRegister(
     const jsonBody = JSON.stringify(requestBody);
     
     // 요청 로깅
+    console.log('🔍 socialLoginOrRegister 요청 데이터:', requestBody);
     apiDebugger.logRequest('POST', url, headers, requestBody);
 
     const response = await fetchWithRetry(url, {

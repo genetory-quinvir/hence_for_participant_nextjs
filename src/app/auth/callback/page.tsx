@@ -71,12 +71,20 @@ function AuthCallbackContent() {
 
         const verifyResult = await verifyResponse.json();
         console.log('✅ 인증 검증 성공:', verifyResult);
+        console.log('🔍 verifyResult 구조 분석:', {
+          hasUser: !!verifyResult.user,
+          hasData: !!verifyResult.data,
+          userKeys: verifyResult.user ? Object.keys(verifyResult.user) : [],
+          dataKeys: verifyResult.data ? Object.keys(verifyResult.data) : []
+        });
 
         // 2단계: verify 결과에서 사용자 정보 추출하여 로그인/회원가입 처리
         console.log('👤 사용자 정보로 로그인/회원가입 처리...');
         
         // verify 결과에서 사용자 정보 추출
         const userData = verifyResult.user || verifyResult.data || verifyResult;
+        console.log('📋 userData:', userData);
+        
         const userEmail = userData.email;
         const userId = userData.id;
         const userProvider = userData.provider;
@@ -103,6 +111,14 @@ function AuthCallbackContent() {
 
         // 소셜 로그인/회원가입 API 호출
         console.log('📡 소셜 로그인/회원가입 API 호출...');
+        console.log('📤 전달할 데이터:', {
+          email: userEmail,
+          provider: userProvider,
+          socialUserId: userId,
+          name: userName,
+          nickname: userNickname
+        });
+        
         const loginResult = await socialLoginOrRegister(
           userEmail,
           userProvider,
