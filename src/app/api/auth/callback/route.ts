@@ -42,13 +42,20 @@ export async function POST(request: NextRequest) {
 
     // 1단계: code로 사용자 정보 조회
     const verifyUrl = `https://api-participant.hence.events/api/v1/auth/social/verify/${code}`;
+    const verifyRequestBody = {
+      code,
+      provider: provider.toUpperCase()
+    };
+    
     console.log('🔍 사용자 정보 조회 URL:', verifyUrl);
+    console.log('🔍 사용자 정보 조회 요청 데이터:', verifyRequestBody);
 
     const verifyResponse = await fetch(verifyUrl, {
-      method: 'GET',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify(verifyRequestBody),
     });
 
     const verifyResult = await verifyResponse.json();

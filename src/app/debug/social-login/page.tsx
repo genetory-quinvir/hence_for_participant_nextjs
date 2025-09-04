@@ -55,6 +55,7 @@ function SocialLoginDebugContent() {
 
   const testVerifyEndpoint = async () => {
     const code = allParams.code;
+    const provider = allParams.provider;
     if (!code) {
       alert('URL에 code 파라미터가 없습니다.');
       return;
@@ -65,7 +66,17 @@ function SocialLoginDebugContent() {
       const verifyUrl = `https://api-participant.hence.events/api/v1/auth/social/verify/${code}`;
       console.log('🔍 verify 엔드포인트 테스트:', verifyUrl);
       
-      const response = await fetch(verifyUrl);
+      const response = await fetch(verifyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          provider: provider?.toUpperCase() || 'GOOGLE'
+        }),
+      });
+      
       const result = await response.json();
       
       console.log('👤 verify 응답:', result);
@@ -73,6 +84,8 @@ function SocialLoginDebugContent() {
         success: true,
         endpoint: 'verify',
         url: verifyUrl,
+        method: 'POST',
+        requestBody: { code, provider: provider?.toUpperCase() || 'GOOGLE' },
         status: response.status,
         data: result
       });
