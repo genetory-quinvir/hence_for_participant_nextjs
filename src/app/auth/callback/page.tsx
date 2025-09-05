@@ -20,8 +20,8 @@ function AuthCallbackContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // 중복 호출 방지 - error가 있는 경우에만 실행 중단
-    if (error) {
+    // 중복 실행 방지
+    if (!isProcessing) {
       return;
     }
 
@@ -219,6 +219,7 @@ function AuthCallbackContent() {
             // 즉시 리다이렉트 (GA 이벤트와 분리)
             setTimeout(() => {
               console.log('📊 리다이렉트 실행:', nextUrl);
+              setIsProcessing(false); // 처리 완료 표시
               window.location.replace(nextUrl);
             }, 100);
             
@@ -226,12 +227,14 @@ function AuthCallbackContent() {
             console.log('📊 GA 이벤트 이미 실행됨, 바로 리다이렉트');
             // 이미 실행된 경우 바로 리다이렉트
             const nextUrl = clientRedirectUrl || '/';
+            setIsProcessing(false); // 처리 완료 표시
             window.location.replace(nextUrl);
           }
         } catch (gaError) {
           console.error('❌ Google Analytics 이벤트 전송 실패:', gaError);
           // GA 실패해도 로그인은 성공했으므로 리다이렉트
           const nextUrl = clientRedirectUrl || '/';
+          setIsProcessing(false); // 처리 완료 표시
           window.location.replace(nextUrl);
         }
       } catch (error) {
@@ -251,7 +254,7 @@ function AuthCallbackContent() {
     };
 
     processCallback();
-  }, [searchParams, login, error]);
+  }, [searchParams, login, isProcessing]);
 
 
   // 에러 화면
@@ -276,12 +279,26 @@ function AuthCallbackContent() {
   }
 
   // 로딩 화면
+  if (isProcessing) {
+    return (
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg mb-4">로그인 처리 중...</div>
+          <div className="text-sm text-gray-600">
+            소셜 로그인을 처리하고 있습니다. 잠시만 기다려주세요.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 처리 완료 후 빈 화면 (리다이렉트 대기)
   return (
     <div className="min-h-screen bg-white text-black flex items-center justify-center">
       <div className="text-center">
-        <div className="text-lg mb-4">로그인 처리 중...</div>
+        <div className="text-lg mb-4">리다이렉트 중...</div>
         <div className="text-sm text-gray-600">
-          소셜 로그인을 처리하고 있습니다. 잠시만 기다려주세요.
+          잠시만 기다려주세요.
         </div>
       </div>
     </div>
