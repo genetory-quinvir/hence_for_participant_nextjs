@@ -54,16 +54,28 @@ function AuthCallbackContent() {
         }
 
         const verifyResult = await verifyResponse.json();
+        console.log('verifyResult:', verifyResult);
 
         // 2단계: verify 결과에서 사용자 정보 추출하여 로그인/회원가입 처리
-        const userData = verifyResult.data.user;
+        const userData = verifyResult.data?.user || verifyResult.user;
+        console.log('userData:', userData);
+        
+        if (!userData) {
+          console.log('userData가 없습니다');
+          window.location.replace('/sign');
+          return;
+        }
+        
         const userEmail = userData.email;
         const userId = userData.id;
         const userProvider = userData.provider;
         const userName = userData.name;
         const userNickname = userData.nickname;
 
+        console.log('추출된 사용자 정보:', { userEmail, userId, userProvider, userName, userNickname });
+
         if (!userEmail || !userId || !userProvider) {
+          console.log('필수 사용자 정보가 누락되었습니다:', { userEmail: !!userEmail, userId: !!userId, userProvider: !!userProvider });
           window.location.replace('/sign');
           return;
         }
