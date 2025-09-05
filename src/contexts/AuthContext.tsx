@@ -209,7 +209,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logger.info('📥 users/me API 응답:', {
         success: result.success,
         hasData: !!result.data,
-        error: result.error
+        error: result.error,
+        fullResult: result
       });
 
       if (result.success && result.data) {
@@ -235,7 +236,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logger.info('✅ 토큰 검증 성공 및 사용자 정보 저장됨');
         return true;
       } else {
-        logger.warn('❌ 토큰 검증 실패', result.error);
+        logger.warn('❌ 토큰 검증 실패', {
+          success: result.success,
+          hasData: !!result.data,
+          error: result.error,
+          fullResult: result
+        });
         return false;
       }
     } catch (error) {
