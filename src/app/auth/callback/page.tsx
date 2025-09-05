@@ -180,7 +180,7 @@ function AuthCallbackContent() {
 
         console.log('🎉 소셜 로그인 완료!');
         
-        // Google Analytics 이벤트 트리거
+        // Google Analytics 이벤트 트리거 및 리다이렉트
         try {
           // dataLayer가 없으면 초기화
           if (!window.dataLayer) {
@@ -195,19 +195,17 @@ function AuthCallbackContent() {
             const isNewUser = !loginResult.data?.createdAt || 
               new Date(loginResult.data.createdAt).getTime() > Date.now() - 60000; // 1분 이내 생성된 경우 신규
             
+            // 리다이렉트 URL 설정
+            const nextUrl = clientRedirectUrl || '/';
+            console.log('📊 리다이렉트 URL:', nextUrl);
+            
+            // GA 이벤트 전송 (콜백 없이)
             window.dataLayer.push({
               event: 'auth_success',
               method: 'social',
-              provider: userProvider,        // 'GOOGLE', 'KAKAO', 'NAVER'
-              is_new_user: isNewUser,        // true = 신규회원, false = 기존회원
-              user_id: userId,               // 사용자 ID
-              eventCallback: function () { 
-                // 리다이렉트 URL 설정
-                const nextUrl = clientRedirectUrl || '/';
-                console.log('📊 GA 이벤트 완료, 리다이렉트:', nextUrl);
-                location.replace(nextUrl); 
-              },
-              eventTimeout: 2000
+              provider: userProvider,
+              is_new_user: isNewUser,
+              user_id: userId
             });
             
             console.log('📊 Google Analytics 이벤트 전송:', {
@@ -218,20 +216,23 @@ function AuthCallbackContent() {
               user_id: userId
             });
             
-            // 디버깅: dataLayer 상태 확인
-            console.log('🔍 dataLayer 현재 상태:', window.dataLayer);
-            console.log('🔍 dataLayer 길이:', window.dataLayer.length);
+            // 즉시 리다이렉트 (GA 이벤트와 분리)
+            setTimeout(() => {
+              console.log('📊 리다이렉트 실행:', nextUrl);
+              window.location.replace(nextUrl);
+            }, 100);
+            
           } else {
             console.log('📊 GA 이벤트 이미 실행됨, 바로 리다이렉트');
             // 이미 실행된 경우 바로 리다이렉트
             const nextUrl = clientRedirectUrl || '/';
-            window.location.href = nextUrl;
+            window.location.replace(nextUrl);
           }
         } catch (gaError) {
           console.error('❌ Google Analytics 이벤트 전송 실패:', gaError);
           // GA 실패해도 로그인은 성공했으므로 리다이렉트
           const nextUrl = clientRedirectUrl || '/';
-          window.location.href = nextUrl;
+          window.location.replace(nextUrl);
         }
       } catch (error) {
         console.error('❌ 소셜 로그인 처리 오류:', error);

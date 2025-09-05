@@ -269,7 +269,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
   useEffect(() => {
     console.log('인증 상태 확인:', { authLoading, isAuthenticated, eventId, user });
     
-    // 소셜 로그인 후 리다이렉트된 경우 처리
+    // 소셜 로그인 후 리다이렉트된 경우 처리 (중복 리다이렉트 방지)
     const savedRedirectUrl = sessionStorage.getItem('socialLoginRedirectUrl');
     if (savedRedirectUrl && isAuthenticated && user) {
       console.log('소셜 로그인 후 리다이렉트 처리 완료 - sessionStorage 정리');
@@ -284,23 +284,9 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
       console.log('로그인되지 않은 사용자 - 이벤트 정보 저장:', eventId);
     }
     
-    // 로그인 완료 후 이벤트 페이지로 자동 리다이렉트
-    if (!authLoading && isAuthenticated && user && eventId) {
-      const pendingEventId = sessionStorage.getItem('pendingEventId');
-      const pendingEventUrl = sessionStorage.getItem('pendingEventUrl');
-      
-      if (pendingEventId === eventId && pendingEventUrl) {
-        console.log('로그인 완료 - 이벤트 페이지로 자동 리다이렉트:', pendingEventUrl);
-        // sessionStorage 정리
-        sessionStorage.removeItem('pendingEventId');
-        sessionStorage.removeItem('pendingEventUrl');
-        // 현재 URL이 다르면 리다이렉트
-        if (window.location.pathname + window.location.search !== pendingEventUrl) {
-          navigate(pendingEventUrl);
-        }
-      }
-    }
-  }, [isAuthenticated, authLoading, eventId, user, navigate]);
+    // 로그인 완료 후 이벤트 페이지로 자동 리다이렉트 (콜백 페이지에서 이미 처리되므로 제거)
+    // 소셜 로그인 콜백에서 직접 리다이렉트하므로 여기서는 처리하지 않음
+  }, [isAuthenticated, authLoading, eventId, user]);
 
   // 로그인되지 않은 사용자의 경우 body 스크롤 막기
   useEffect(() => {
