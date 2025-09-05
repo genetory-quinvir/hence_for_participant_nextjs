@@ -125,6 +125,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       logger.info('🔍 인증 상태 확인 시작');
       
+      // 이미 인증된 상태라면 검증을 건너뜀
+      if (authState.isAuthenticated && authState.user && authState.accessToken) {
+        logger.info('✅ 이미 인증된 상태 - 검증 건너뜀');
+        return true;
+      }
+      
       const accessToken = getAccessToken();
       const refreshToken = getRefreshToken();
 
@@ -178,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout();
       return false;
     }
-  }, [logout]);
+  }, [logout, authState.isAuthenticated, authState.user, authState.accessToken]);
 
   // 토큰 유효성 검증 (apiRequest 래퍼 사용)
   const validateToken = async (token: string): Promise<boolean> => {

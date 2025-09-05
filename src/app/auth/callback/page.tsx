@@ -111,14 +111,16 @@ function AuthCallbackContent() {
           clientRedirectUrl: clientRedirectUrl
         };
         
+        // 로그인 상태 업데이트 (validateToken을 거치지 않음)
         login(
           finalUserData,
           loginResult.access_token || '',
           loginResult.refresh_token || ''
         );
 
-        // 로그인 성공 - 자동으로 리다이렉트
+        // 로그인 성공 - 즉시 리다이렉트 (validateToken 검증 없이)
         const nextUrl = clientRedirectUrl || '/';
+        console.log('✅ 소셜 로그인 성공, 리다이렉트:', nextUrl);
         window.location.replace(nextUrl);
         
       } catch (error) {
