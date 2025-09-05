@@ -40,7 +40,14 @@ export default function AdminRafflePage() {
   const [isSlotMachine, setIsSlotMachine] = useState(false);
   const [slotName, setSlotName] = useState('');
   const [slotPhone, setSlotPhone] = useState('');
-  const [prizes, setPrizes] = useState([
+  const [prizes, setPrizes] = useState<{
+    id: number;
+    name: string;
+    description: string;
+    icon: string;
+    isDrawn: boolean;
+    winner: RaffleParticipant | null;
+  }[]>([
     { id: 1, name: '1등 상품', description: '특별 기념품', icon: '🏆', isDrawn: false, winner: null },
     { id: 2, name: '2등 상품', description: '기념품', icon: '🥈', isDrawn: false, winner: null },
     { id: 3, name: '3등 상품', description: '소정의 기념품', icon: '🥉', isDrawn: false, winner: null }
