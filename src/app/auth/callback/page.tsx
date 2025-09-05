@@ -34,7 +34,7 @@ function AuthCallbackContent() {
         if (!code || !provider) {
           console.error('❌ 필수 파라미터 누락:', { code: !!code, provider: !!provider });
           const nextUrl = searchParams.get('clientRedirect') || '/';
-          window.location.href = nextUrl;
+          window.location.replace(nextUrl);
           return;
         }
 
@@ -54,7 +54,7 @@ function AuthCallbackContent() {
           const errorText = await verifyResponse.text();
           console.error('❌ 인증 검증 실패:', { status: verifyResponse.status, error: errorText });
           const nextUrl = searchParams.get('clientRedirect') || '/';
-          window.location.href = nextUrl;
+          window.location.replace(nextUrl);
           return;
         }
 
@@ -68,7 +68,7 @@ function AuthCallbackContent() {
         if (!userData) {
           console.error('❌ userData가 없습니다');
           const nextUrl = searchParams.get('clientRedirect') || '/';
-          window.location.href = nextUrl;
+          window.location.replace(nextUrl);
           return;
         }
         
@@ -83,7 +83,7 @@ function AuthCallbackContent() {
         if (!userEmail || !userId || !userProvider) {
           console.error('❌ 필수 사용자 정보가 누락되었습니다:', { userEmail: !!userEmail, userId: !!userId, userProvider: !!userProvider });
           const nextUrl = searchParams.get('clientRedirect') || '/';
-          window.location.href = nextUrl;
+          window.location.replace(nextUrl);
           return;
         }
 
@@ -100,7 +100,7 @@ function AuthCallbackContent() {
         if (!loginResult.success) {
           console.error('❌ 소셜 로그인/회원가입 실패:', loginResult.error);
           const nextUrl = searchParams.get('clientRedirect') || '/';
-          window.location.href = nextUrl;
+          window.location.replace(nextUrl);
           return;
         }
 
@@ -173,7 +173,7 @@ function AuthCallbackContent() {
           setTimeout(() => {
             console.log('사파리/모바일 즉시 리다이렉트:', nextUrl);
             try {
-              window.location.href = nextUrl;
+              window.location.replace(nextUrl);
             } catch (error) {
               console.error('즉시 리다이렉트 실패:', error);
             }
@@ -184,7 +184,7 @@ function AuthCallbackContent() {
             if (window.location.pathname === '/auth/callback') {
               console.log('사파리/모바일 백업 리다이렉트:', nextUrl);
               try {
-                window.location.href = nextUrl;
+                window.location.replace(nextUrl);
               } catch (error) {
                 console.error('백업 리다이렉트 실패:', error);
               }
@@ -196,11 +196,11 @@ function AuthCallbackContent() {
             if (window.location.pathname === '/auth/callback') {
               console.log('사파리/모바일 최종 백업 리다이렉트:', nextUrl);
               try {
-                window.location.href = nextUrl;
+                window.location.replace(nextUrl);
               } catch (error) {
                 console.error('최종 백업 리다이렉트 실패:', error);
                 // 마지막 수단: 메인 페이지로 강제 이동
-                window.location.href = '/';
+                window.location.replace('/');
               }
             }
           }, 5000);
@@ -211,7 +211,7 @@ function AuthCallbackContent() {
             window.location.replace(nextUrl);
           } catch (error) {
             console.error('웹브라우저 리다이렉트 실패:', error);
-            window.location.href = nextUrl;
+            window.location.replace(nextUrl);
           }
         }
         
@@ -231,14 +231,14 @@ function AuthCallbackContent() {
           console.log('ℹ️ registerParticipant 관련 에러 무시, 로그인 성공으로 처리');
           // 로그인 성공으로 처리하고 리다이렉트
           const nextUrl = searchParams.get('clientRedirect') || '/';
-          window.location.href = nextUrl;
+          window.location.replace(nextUrl);
           return;
         }
         
         // 에러 발생 시에도 메인 페이지로 리다이렉트
         console.log('⚠️ 소셜 로그인 에러 발생, 메인 페이지로 리다이렉트:', error);
         const nextUrl = searchParams.get('clientRedirect') || '/';
-        window.location.href = nextUrl;
+        window.location.replace(nextUrl);
       }
     };
 
@@ -251,20 +251,25 @@ function AuthCallbackContent() {
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
   return (
-    <div className="min-h-screen bg-white text-black flex items-center justify-center px-4">
+    <div 
+      className="min-h-screen text-black flex items-center justify-center px-4"
+      style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      }}
+    >
       <div className="text-center max-w-sm mx-auto">
         <div className="mb-6">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
         </div>
-        <div className={`${isMobile ? 'text-xl' : 'text-lg'} mb-4 font-medium`}>
+        <div className={`${isMobile ? 'text-xl' : 'text-lg'} mb-4 font-medium text-white`}>
           로그인 처리 중...
         </div>
-        <div className={`${isMobile ? 'text-base' : 'text-sm'} text-gray-600 leading-relaxed`}>
+        <div className={`${isMobile ? 'text-base' : 'text-sm'} text-white leading-relaxed`} style={{ opacity: 0.8 }}>
           소셜 로그인을 처리하고 있습니다.<br />
           잠시만 기다려주세요.
         </div>
         {isMobile && (
-          <div className="mt-6 text-xs text-gray-500">
+          <div className="mt-6 text-xs text-white" style={{ opacity: 0.6 }}>
             자동으로 페이지가 이동됩니다
           </div>
         )}
@@ -278,16 +283,21 @@ function AuthCallbackLoading() {
   const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
   return (
-    <div className="min-h-screen bg-white text-black flex items-center justify-center px-4">
+    <div 
+      className="min-h-screen text-black flex items-center justify-center px-4"
+      style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      }}
+    >
       <div className="text-center max-w-sm mx-auto">
         <div className="mb-6">
-          <div className={`animate-spin rounded-full border-b-2 border-purple-600 mx-auto mb-4 ${isMobile ? 'h-12 w-12' : 'h-8 w-8'}`}></div>
+          <div className={`animate-spin rounded-full border-b-2 border-white mx-auto mb-4 ${isMobile ? 'h-12 w-12' : 'h-8 w-8'}`}></div>
         </div>
-        <p className={`${isMobile ? 'text-lg' : 'text-sm'} font-medium`} style={{ opacity: 0.8 }}>
+        <p className={`${isMobile ? 'text-lg' : 'text-sm'} font-medium text-white`} style={{ opacity: 0.8 }}>
           인증 처리 중...
         </p>
         {isMobile && (
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-white mt-2" style={{ opacity: 0.6 }}>
             잠시만 기다려주세요
           </p>
         )}
