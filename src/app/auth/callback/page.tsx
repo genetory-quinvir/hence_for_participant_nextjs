@@ -15,6 +15,7 @@ declare global {
 function AuthCallbackContent() {
   const searchParams = useSearchParams();
   const [isProcessing, setIsProcessing] = useState(true);
+  const [userProvider, setUserProvider] = useState<string | null>(null);
 
   useEffect(() => {
     // 중복 실행 방지
@@ -75,14 +76,17 @@ function AuthCallbackContent() {
         
         const userEmail = userData.email;
         const userId = userData.id;
-        const userProvider = userData.provider;
+        const extractedUserProvider = userData.provider;
         const userName = userData.name;
         const userNickname = userData.nickname;
 
-        console.log('추출된 사용자 정보:', { userEmail, userId, userProvider, userName, userNickname });
+        // userProvider를 state에 저장 (GA 이벤트에서 사용)
+        setUserProvider(extractedUserProvider);
 
-        if (!userEmail || !userId || !userProvider) {
-          console.error('❌ 필수 사용자 정보가 누락되었습니다:', { userEmail: !!userEmail, userId: !!userId, userProvider: !!userProvider });
+        console.log('추출된 사용자 정보:', { userEmail, userId, userProvider: extractedUserProvider, userName, userNickname });
+
+        if (!userEmail || !userId || !extractedUserProvider) {
+          console.error('❌ 필수 사용자 정보가 누락되었습니다:', { userEmail: !!userEmail, userId: !!userId, userProvider: !!extractedUserProvider });
           const nextUrl = searchParams.get('clientRedirect') || '/';
           document.body.style.display = 'none';
           window.location.replace(nextUrl);
@@ -92,7 +96,7 @@ function AuthCallbackContent() {
         // 소셜 로그인/회원가입 API 호출
         const loginResult = await socialLoginOrRegister(
           userEmail,
-          userProvider,
+          extractedUserProvider,
           userId,
           userName,
           userNickname,
