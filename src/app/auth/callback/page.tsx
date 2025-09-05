@@ -32,7 +32,12 @@ function AuthCallbackContent() {
         const clientRedirectUrl = searchParams.get('clientRedirect');
 
         if (!code || !provider) {
-          window.location.replace('/sign');
+          // 모바일/사파리 호환성을 위한 리다이렉트
+          try {
+            window.location.replace('/sign');
+          } catch {
+            window.location.href = '/sign';
+          }
           return;
         }
 
@@ -49,7 +54,12 @@ function AuthCallbackContent() {
         });
 
         if (!verifyResponse.ok) {
-          window.location.replace('/sign');
+          // 모바일/사파리 호환성을 위한 리다이렉트
+          try {
+            window.location.replace('/sign');
+          } catch {
+            window.location.href = '/sign';
+          }
           return;
         }
 
@@ -62,7 +72,12 @@ function AuthCallbackContent() {
         
         if (!userData) {
           console.log('userData가 없습니다');
-          window.location.replace('/sign');
+          // 모바일/사파리 호환성을 위한 리다이렉트
+          try {
+            window.location.replace('/sign');
+          } catch {
+            window.location.href = '/sign';
+          }
           return;
         }
         
@@ -76,7 +91,12 @@ function AuthCallbackContent() {
 
         if (!userEmail || !userId || !userProvider) {
           console.log('필수 사용자 정보가 누락되었습니다:', { userEmail: !!userEmail, userId: !!userId, userProvider: !!userProvider });
-          window.location.replace('/sign');
+          // 모바일/사파리 호환성을 위한 리다이렉트
+          try {
+            window.location.replace('/sign');
+          } catch {
+            window.location.href = '/sign';
+          }
           return;
         }
 
@@ -91,7 +111,12 @@ function AuthCallbackContent() {
         );
 
         if (!loginResult.success) {
-          window.location.replace('/sign');
+          // 모바일/사파리 호환성을 위한 리다이렉트
+          try {
+            window.location.replace('/sign');
+          } catch {
+            window.location.href = '/sign';
+          }
           return;
         }
 
@@ -121,11 +146,52 @@ function AuthCallbackContent() {
         // 로그인 성공 - 즉시 리다이렉트 (validateToken 검증 없이)
         const nextUrl = clientRedirectUrl || '/';
         console.log('✅ 소셜 로그인 성공, 리다이렉트:', nextUrl);
-        window.location.replace(nextUrl);
+        
+        // 모바일/사파리 호환성을 위한 다중 리다이렉트 시도
+        const redirectToUrl = (url: string) => {
+          try {
+            // 1. window.location.replace 시도
+            window.location.replace(url);
+          } catch (error) {
+            console.warn('window.location.replace 실패, window.location.href 시도:', error);
+            try {
+              // 2. window.location.href 시도
+              window.location.href = url;
+            } catch (error2) {
+              console.warn('window.location.href 실패, location.assign 시도:', error2);
+              try {
+                // 3. location.assign 시도
+                location.assign(url);
+              } catch (error3) {
+                console.error('모든 리다이렉트 방법 실패:', error3);
+                // 4. 마지막 수단: setTimeout으로 지연 후 시도
+                setTimeout(() => {
+                  window.location.href = url;
+                }, 100);
+              }
+            }
+          }
+        };
+        
+        // 즉시 리다이렉트 시도
+        redirectToUrl(nextUrl);
+        
+        // 모바일에서 안전을 위해 백업 리다이렉트도 설정
+        setTimeout(() => {
+          if (window.location.pathname === '/auth/callback') {
+            console.log('백업 리다이렉트 실행:', nextUrl);
+            redirectToUrl(nextUrl);
+          }
+        }, 1000);
         
       } catch (error) {
         // 로그인 실패 - 자동으로 로그인 페이지로 리다이렉트
-        window.location.replace('/sign');
+        // 모바일/사파리 호환성을 위한 리다이렉트
+        try {
+          window.location.replace('/sign');
+        } catch {
+          window.location.href = '/sign';
+        }
       }
     };
 
