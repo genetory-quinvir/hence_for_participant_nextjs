@@ -160,6 +160,9 @@ function SignContent() {
       sessionStorage.setItem('socialLoginRedirectUrl', redirectUrl);
       console.log('소셜 로그인 리다이렉트 URL 저장:', redirectUrl);
     }
+    
+    // provider 정보도 sessionStorage에 저장
+    sessionStorage.setItem('socialLoginProvider', provider);
 
     // 소셜 로그인 URL 생성 - 콜백 URL을 명시적으로 지정
     const callbackUrl = `${window.location.origin}/auth/callback`;

@@ -159,11 +159,14 @@ function AuthCallbackContent() {
         
         // GA 이벤트 발송 후 리다이렉트
         const sendGAEventAndRedirect = (redirectUrl: string) => {
+          // sessionStorage에서 provider 정보 가져오기
+          const provider = sessionStorage.getItem('socialLoginProvider') || 'unknown';
+          
           // GA 이벤트 발송
           if (window.dataLayer) {
             window.dataLayer.push({
               event: 'auth_success',
-              provider: 'social',
+              provider: provider,
               redirect_url: redirectUrl,
               event_id: new URLSearchParams(window.location.search).get('id') || '',
               qr_entry: new URLSearchParams(window.location.search).get('qr_entry') === 'true'
@@ -191,6 +194,7 @@ function AuthCallbackContent() {
           if (savedRedirectUrl) {
             console.log('sessionStorage에서 리다이렉트 URL 발견:', savedRedirectUrl);
             sessionStorage.removeItem('socialLoginRedirectUrl'); // 사용 후 제거
+            sessionStorage.removeItem('socialLoginProvider'); // 사용 후 제거
             sendGAEventAndRedirect(savedRedirectUrl);
             return;
           }
@@ -222,11 +226,14 @@ function AuthCallbackContent() {
         
         // GA 이벤트 발송 후 리다이렉트 (에러 처리용)
         const sendGAErrorEventAndRedirect = (redirectUrl: string, isSuccess: boolean = false) => {
+          // sessionStorage에서 provider 정보 가져오기
+          const provider = sessionStorage.getItem('socialLoginProvider') || 'unknown';
+          
           // GA 이벤트 발송
           if (window.dataLayer) {
             window.dataLayer.push({
               event: isSuccess ? 'auth_success' : 'auth_error',
-              provider: 'social',
+              provider: provider,
               redirect_url: redirectUrl,
               event_id: new URLSearchParams(window.location.search).get('id') || '',
               qr_entry: new URLSearchParams(window.location.search).get('qr_entry') === 'true',
@@ -260,6 +267,7 @@ function AuthCallbackContent() {
           if (savedRedirectUrl) {
             console.log('에러 처리 - sessionStorage에서 리다이렉트 URL 발견:', savedRedirectUrl);
             sessionStorage.removeItem('socialLoginRedirectUrl');
+            sessionStorage.removeItem('socialLoginProvider');
             sendGAErrorEventAndRedirect(savedRedirectUrl, true); // 성공으로 처리
             return;
           }
@@ -277,6 +285,7 @@ function AuthCallbackContent() {
         if (savedRedirectUrl) {
           console.log('에러 처리 - sessionStorage에서 리다이렉트 URL 발견:', savedRedirectUrl);
           sessionStorage.removeItem('socialLoginRedirectUrl');
+          sessionStorage.removeItem('socialLoginProvider');
           sendGAErrorEventAndRedirect(savedRedirectUrl, false); // 에러로 처리
           return;
         }
