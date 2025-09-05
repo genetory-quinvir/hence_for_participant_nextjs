@@ -22,11 +22,14 @@ function AuthCallbackContent() {
   useEffect(() => {
     // 중복 실행 방지
     if (!isProcessing) {
+      console.log('🚫 processCallback 중복 실행 방지 - isProcessing:', isProcessing);
       return;
     }
 
     const processCallback = async () => {
+      console.log('🚀 [STEP 1] processCallback 시작');
       try {
+        console.log('🔍 [STEP 2] URL 파라미터 파싱 시작');
         const code = searchParams.get('code');
         const provider = searchParams.get('provider');
         const isNewUser = searchParams.get('isNewUser') === 'true';
@@ -36,8 +39,8 @@ function AuthCallbackContent() {
         const name = searchParams.get('name');
         const nickname = searchParams.get('nickname');
         
-        console.log('🔍 소셜 로그인 파라미터:', { 
-          code, 
+        console.log('📋 [STEP 2-1] 파싱된 파라미터:', { 
+          code: code ? `${code.substring(0, 10)}...` : null, 
           provider, 
           isNewUser, 
           socialUserId, 
@@ -47,37 +50,50 @@ function AuthCallbackContent() {
           clientRedirectUrl 
         });
 
+        console.log('🔍 [STEP 3] 필수 파라미터 검증');
         if (!code || !provider) {
-          console.error('❌ 필수 파라미터 누락:', { code: !!code, provider: !!provider });
+          console.error('❌ [STEP 3-1] 필수 파라미터 누락:', { code: !!code, provider: !!provider });
           setError('인증 정보가 올바르지 않습니다.');
+          setIsProcessing(false);
           return;
         }
+        console.log('✅ [STEP 3-2] 필수 파라미터 검증 통과');
 
         // 1단계: 외부 API로 인증 검증
-        console.log('🔐 외부 API로 인증 검증...');
-        const verifyResponse = await fetch(`https://api.hence.events/api/v1/auth/social/verify/${code}`, {
+        console.log('🔐 [STEP 4] 외부 API 인증 검증 시작');
+        const verifyUrl = `https://api.hence.events/api/v1/auth/social/verify/${code}`;
+        const verifyPayload = {
+          provider: provider.toUpperCase(),
+          isNewUser
+        };
+        
+        console.log('📤 [STEP 4-1] 인증 검증 요청:', {
+          url: verifyUrl,
+          payload: verifyPayload
+        });
+        
+        const verifyResponse = await fetch(verifyUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            provider: provider.toUpperCase(),
-            isNewUser
-          }),
+          body: JSON.stringify(verifyPayload),
         });
 
-        console.log('📊 인증 검증 응답 상태:', verifyResponse.status);
+        console.log('📥 [STEP 4-2] 인증 검증 응답 상태:', verifyResponse.status, verifyResponse.statusText);
 
+        console.log('🔍 [STEP 4-3] 인증 검증 응답 처리');
         if (!verifyResponse.ok) {
           const verifyErrorText = await verifyResponse.text();
-          console.error('❌ 인증 검증 실패:', verifyResponse.status, verifyErrorText);
+          console.error('❌ [STEP 4-4] 인증 검증 실패:', verifyResponse.status, verifyErrorText);
           setError(`인증 검증에 실패했습니다. (${verifyResponse.status})`);
+          setIsProcessing(false);
           return;
         }
 
         const verifyResult = await verifyResponse.json();
-        console.log('✅ 인증 검증 성공:', verifyResult);
-        console.log('🔍 verifyResult 구조 분석:', {
+        console.log('✅ [STEP 4-5] 인증 검증 성공');
+        console.log('🔍 [STEP 4-6] verifyResult 구조 분석:', {
           hasUser: !!verifyResult.user,
           hasData: !!verifyResult.data,
           userKeys: verifyResult.user ? Object.keys(verifyResult.user) : [],
@@ -86,14 +102,16 @@ function AuthCallbackContent() {
         });
 
         // 2단계: verify 결과에서 사용자 정보 추출하여 로그인/회원가입 처리
-        console.log('👤 사용자 정보로 로그인/회원가입 처리...');
+        console.log('👤 [STEP 5] 사용자 정보 추출 및 로그인/회원가입 처리 시작');
         
         // verify 결과에서 사용자 정보 추출
+        console.log('🔍 [STEP 5-1] verifyResult에서 userData 추출');
         const userData = verifyResult.data.user;
         
-        console.log('📋 userData:', userData);
+        console.log('📋 [STEP 5-2] userData:', userData);
         
         // user 객체에서 사용자 정보 추출
+        console.log('🔍 [STEP 5-3] userData에서 개별 필드 추출');
         const userEmail = userData.email;
         const userId = userData.id;
         const userProvider = userData.provider;
@@ -101,13 +119,13 @@ function AuthCallbackContent() {
         const userNickname = userData.nickname;
         
         // 콘솔에 추출된 데이터 찍기
-        console.log('🎯 추출된 핵심 데이터:', {
+        console.log('🎯 [STEP 5-4] 추출된 핵심 데이터:', {
           email: userEmail,
           id: userId,
           provider: userProvider
         });
         
-        console.log('📋 추출된 사용자 정보:', {
+        console.log('📋 [STEP 5-5] 추출된 전체 사용자 정보:', {
           email: userEmail,
           id: userId,
           provider: userProvider,
@@ -116,27 +134,32 @@ function AuthCallbackContent() {
         });
 
 
+        console.log('🔍 [STEP 5-6] 필수 사용자 정보 검증');
         if (!userEmail || !userId || !userProvider) {
-          console.error('❌ 필수 사용자 정보 누락:', { 
+          console.error('❌ [STEP 5-7] 필수 사용자 정보 누락:', { 
             email: userEmail, 
             id: userId, 
             provider: userProvider
           });
           setError('사용자 정보가 올바르지 않습니다.');
+          setIsProcessing(false);
           return;
         }
+        console.log('✅ [STEP 5-8] 필수 사용자 정보 검증 통과');
 
         // 소셜 로그인/회원가입 API 호출
-        console.log('📡 소셜 로그인/회원가입 API 호출...');
-        console.log('📤 전달할 데이터:', {
+        console.log('📡 [STEP 6] 소셜 로그인/회원가입 API 호출 시작');
+        const socialLoginPayload = {
           email: userEmail,
           provider: userProvider,
           id: userId,
           name: userName,
           nickname: userNickname,
           profile_image_url: userData.profileImage || userData.profileImageUrl || null
-        });
+        };
+        console.log('📤 [STEP 6-1] 전달할 데이터:', socialLoginPayload);
         
+        console.log('📡 [STEP 6-2] socialLoginOrRegister API 호출');
         const loginResult = await socialLoginOrRegister(
           userEmail,
           userProvider,
@@ -146,20 +169,29 @@ function AuthCallbackContent() {
           userData.profileImage || userData.profileImageUrl || null
         );
 
+        console.log('📥 [STEP 6-3] socialLoginOrRegister 응답:', loginResult);
+
         if (!loginResult.success) {
-          console.error('❌ 소셜 로그인/회원가입 실패:', loginResult.error);
+          console.error('❌ [STEP 6-4] 소셜 로그인/회원가입 실패:', loginResult.error);
           setError(loginResult.error || '소셜 로그인에 실패했습니다.');
+          setIsProcessing(false);
           return;
         }
 
-        console.log('✅ 소셜 로그인/회원가입 성공:', loginResult);
+        console.log('✅ [STEP 6-5] 소셜 로그인/회원가입 성공');
 
         // 토큰 저장
+        console.log('🔑 [STEP 7] 토큰 저장 시작');
         if (loginResult.access_token) {
+          console.log('🔑 [STEP 7-1] 토큰 저장 실행');
           saveTokens(loginResult.access_token, loginResult.refresh_token);
+          console.log('✅ [STEP 7-2] 토큰 저장 완료');
+        } else {
+          console.log('⚠️ [STEP 7-3] access_token이 없음');
         }
 
         // AuthContext에 로그인 상태 업데이트
+        console.log('🔐 [STEP 8] AuthContext 로그인 상태 업데이트 시작');
         const finalUserData = {
           id: loginResult.data?.id || userId,
           name: loginResult.data?.name || loginResult.data?.nickname || userName || '사용자',
@@ -170,25 +202,32 @@ function AuthCallbackContent() {
           clientRedirectUrl: clientRedirectUrl
         };
 
-        console.log('🔐 AuthContext 로그인 상태 업데이트:', finalUserData);
+        console.log('🔐 [STEP 8-1] finalUserData:', finalUserData);
         
+        console.log('🔐 [STEP 8-2] login 함수 호출');
         login(
           finalUserData,
           loginResult.access_token || '',
           loginResult.refresh_token || ''
         );
 
-        console.log('🎉 소셜 로그인 완료!');
+        console.log('✅ [STEP 8-3] AuthContext 로그인 상태 업데이트 완료');
+        console.log('🎉 [STEP 9] 소셜 로그인 완료!');
         
         // Google Analytics 이벤트 트리거 및 리다이렉트
+        console.log('📊 [STEP 10] Google Analytics 이벤트 및 리다이렉트 시작');
         try {
           // dataLayer가 없으면 초기화
+          console.log('📊 [STEP 10-1] dataLayer 초기화 확인');
           if (!window.dataLayer) {
+            console.log('📊 [STEP 10-2] dataLayer 초기화');
             window.dataLayer = [];
           }
           
           // 중복 실행 방지
+          console.log('📊 [STEP 10-3] 중복 실행 방지 확인');
           if (!window.__dlAuthFired) {
+            console.log('📊 [STEP 10-4] GA 이벤트 실행');
             window.__dlAuthFired = true;
             
             // 신규 사용자 여부 확인 (회원가입인지 로그인인지)
@@ -197,48 +236,44 @@ function AuthCallbackContent() {
             
             // 리다이렉트 URL 설정
             const nextUrl = clientRedirectUrl || '/';
-            console.log('📊 리다이렉트 URL:', nextUrl);
+            console.log('📊 [STEP 10-5] 리다이렉트 URL:', nextUrl);
             
             // GA 이벤트 전송 (콜백 없이)
-            window.dataLayer.push({
+            const gaEvent = {
               event: 'auth_success',
               method: 'social',
               provider: userProvider,
               is_new_user: isNewUser,
               user_id: userId
-            });
+            };
             
-            console.log('📊 Google Analytics 이벤트 전송:', {
-              event: 'auth_success',
-              method: 'social',
-              provider: userProvider,
-              is_new_user: isNewUser,
-              user_id: userId
-            });
+            console.log('📊 [STEP 10-6] GA 이벤트 전송:', gaEvent);
+            window.dataLayer.push(gaEvent);
             
             // 즉시 리다이렉트 (GA 이벤트와 분리)
+            console.log('📊 [STEP 10-7] 리다이렉트 타이머 설정 (100ms)');
             setTimeout(() => {
-              console.log('📊 리다이렉트 실행:', nextUrl);
+              console.log('📊 [STEP 10-8] 리다이렉트 실행:', nextUrl);
               setIsProcessing(false); // 처리 완료 표시
               window.location.replace(nextUrl);
             }, 100);
             
           } else {
-            console.log('📊 GA 이벤트 이미 실행됨, 바로 리다이렉트');
+            console.log('📊 [STEP 10-9] GA 이벤트 이미 실행됨, 바로 리다이렉트');
             // 이미 실행된 경우 바로 리다이렉트
             const nextUrl = clientRedirectUrl || '/';
             setIsProcessing(false); // 처리 완료 표시
             window.location.replace(nextUrl);
           }
         } catch (gaError) {
-          console.error('❌ Google Analytics 이벤트 전송 실패:', gaError);
+          console.error('❌ [STEP 10-10] Google Analytics 이벤트 전송 실패:', gaError);
           // GA 실패해도 로그인은 성공했으므로 리다이렉트
           const nextUrl = clientRedirectUrl || '/';
           setIsProcessing(false); // 처리 완료 표시
           window.location.replace(nextUrl);
         }
       } catch (error) {
-        console.error('❌ 소셜 로그인 처리 오류:', error);
+        console.error('💥 [ERROR] 소셜 로그인 처리 중 예외 발생:', error);
         
         // 에러 타입에 따른 구체적인 메시지 제공
         let errorMessage = '소셜 로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.';
@@ -248,6 +283,7 @@ function AuthCallbackContent() {
           errorMessage = `처리 중 오류가 발생했습니다: ${error.message}`;
         }
         
+        console.error('💥 [ERROR] 최종 에러 메시지:', errorMessage);
         setError(errorMessage);
         setIsProcessing(false);
       }
