@@ -33,15 +33,9 @@ function AuthCallbackContent() {
         const clientRedirectUrl = searchParams.get('clientRedirect');
 
         if (!code || !provider) {
-          // 사파리/모바일 전용 리다이렉트
-          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-          
-          if (isSafari || isMobile) {
-            setTimeout(() => window.location.href = '/sign', 100);
-          } else {
-            window.location.replace('/sign');
-          }
+          console.error('❌ 필수 파라미터 누락:', { code: !!code, provider: !!provider });
+          setError('인증 정보가 올바르지 않습니다.');
+          setIsProcessing(false);
           return;
         }
 
@@ -58,15 +52,10 @@ function AuthCallbackContent() {
         });
 
         if (!verifyResponse.ok) {
-          // 사파리/모바일 전용 리다이렉트
-          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-          
-          if (isSafari || isMobile) {
-            setTimeout(() => window.location.href = '/sign', 100);
-          } else {
-            window.location.replace('/sign');
-          }
+          const errorText = await verifyResponse.text();
+          console.error('❌ 인증 검증 실패:', { status: verifyResponse.status, error: errorText });
+          setError(`인증 검증에 실패했습니다. (${verifyResponse.status})`);
+          setIsProcessing(false);
           return;
         }
 
@@ -78,16 +67,9 @@ function AuthCallbackContent() {
         console.log('userData:', userData);
         
         if (!userData) {
-          console.log('userData가 없습니다');
-          // 사파리/모바일 전용 리다이렉트
-          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-          
-          if (isSafari || isMobile) {
-            setTimeout(() => window.location.href = '/sign', 100);
-          } else {
-            window.location.replace('/sign');
-          }
+          console.error('❌ userData가 없습니다');
+          setError('사용자 정보를 가져올 수 없습니다.');
+          setIsProcessing(false);
           return;
         }
         
@@ -100,16 +82,9 @@ function AuthCallbackContent() {
         console.log('추출된 사용자 정보:', { userEmail, userId, userProvider, userName, userNickname });
 
         if (!userEmail || !userId || !userProvider) {
-          console.log('필수 사용자 정보가 누락되었습니다:', { userEmail: !!userEmail, userId: !!userId, userProvider: !!userProvider });
-          // 사파리/모바일 전용 리다이렉트
-          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-          
-          if (isSafari || isMobile) {
-            setTimeout(() => window.location.href = '/sign', 100);
-          } else {
-            window.location.replace('/sign');
-          }
+          console.error('❌ 필수 사용자 정보가 누락되었습니다:', { userEmail: !!userEmail, userId: !!userId, userProvider: !!userProvider });
+          setError('사용자 정보가 올바르지 않습니다.');
+          setIsProcessing(false);
           return;
         }
 
@@ -124,15 +99,9 @@ function AuthCallbackContent() {
         );
 
         if (!loginResult.success) {
-          // 사파리/모바일 전용 리다이렉트
-          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-          
-          if (isSafari || isMobile) {
-            setTimeout(() => window.location.href = '/sign', 100);
-          } else {
-            window.location.replace('/sign');
-          }
+          console.error('❌ 소셜 로그인/회원가입 실패:', loginResult.error);
+          setError(loginResult.error || '소셜 로그인에 실패했습니다.');
+          setIsProcessing(false);
           return;
         }
 
