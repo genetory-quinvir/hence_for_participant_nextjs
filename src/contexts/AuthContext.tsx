@@ -210,16 +210,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return true;
       }
       
-      // 소셜 로그인 사용자이고 최근에 로그인한 경우 검증 건너뜀
-      const existingUser = getStoredUser();
-      if (existingUser?.provider && existingUser.provider !== 'EMAIL') {
-        const lastLoginTime = localStorage.getItem('lastSocialLoginTime');
-        if (lastLoginTime && Date.now() - parseInt(lastLoginTime) < 10000) { // 10초 이내
-          logger.info('✅ 소셜 로그인 직후 - validateToken 건너뜀');
-          return true;
-        }
-      }
-      
       // 리프레시 토큰 확인
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
@@ -230,6 +220,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 기존 저장된 사용자 정보에서 provider 확인
       const existingUser = getStoredUser();
       const isSocialUser = existingUser?.provider && existingUser.provider !== 'EMAIL';
+      
+      // 소셜 로그인 사용자이고 최근에 로그인한 경우 검증 건너뜀
+      if (isSocialUser) {
+        const lastLoginTime = localStorage.getItem('lastSocialLoginTime');
+        if (lastLoginTime && Date.now() - parseInt(lastLoginTime) < 10000) { // 10초 이내
+          logger.info('✅ 소셜 로그인 직후 - validateToken 건너뜀');
+          return true;
+        }
+      }
       
       logger.info('🔑 토큰 검증 시작', {
         hasAccessToken: !!token,
