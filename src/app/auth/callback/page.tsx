@@ -157,21 +157,30 @@ function AuthCallbackContent() {
           currentPath: window.location.pathname
         });
         
-        // 강제 리다이렉트 - 깜빡임 방지를 위해 즉시 실행
+        // 강제 리다이렉트 - 서버 리다이렉트 무시하고 클라이언트에서 처리
         try {
           // 1. 먼저 페이지를 숨김
           document.body.style.display = 'none';
           
-          // 2. 즉시 리다이렉트
-          window.location.replace(nextUrl);
+          // 2. sessionStorage에서 저장된 리다이렉트 URL 확인
+          const savedRedirectUrl = sessionStorage.getItem('socialLoginRedirectUrl');
+          if (savedRedirectUrl) {
+            console.log('sessionStorage에서 리다이렉트 URL 발견:', savedRedirectUrl);
+            sessionStorage.removeItem('socialLoginRedirectUrl'); // 사용 후 제거
+            window.location.replace(savedRedirectUrl);
+            return;
+          }
           
-          // 3. 백업 리다이렉트 (혹시 모를 경우를 대비)
-          setTimeout(() => {
-            if (window.location.pathname === '/auth/callback') {
-              console.log('백업 리다이렉트 실행:', nextUrl);
-              window.location.replace(nextUrl);
-            }
-          }, 100);
+          // 3. clientRedirect 파라미터 사용
+          if (clientRedirectUrl) {
+            console.log('clientRedirect 파라미터 사용:', clientRedirectUrl);
+            window.location.replace(clientRedirectUrl);
+            return;
+          }
+          
+          // 4. 기본 리다이렉트
+          console.log('기본 리다이렉트:', nextUrl);
+          window.location.replace(nextUrl);
           
         } catch (error) {
           console.error('리다이렉트 실패:', error);
@@ -194,16 +203,36 @@ function AuthCallbackContent() {
              error.message.includes('Bad Request'))) {
           console.log('ℹ️ registerParticipant 관련 에러 무시, 로그인 성공으로 처리');
           // 로그인 성공으로 처리하고 리다이렉트
-          const nextUrl = searchParams.get('clientRedirect') || '/';
           document.body.style.display = 'none';
+          
+          // sessionStorage에서 저장된 리다이렉트 URL 확인
+          const savedRedirectUrl = sessionStorage.getItem('socialLoginRedirectUrl');
+          if (savedRedirectUrl) {
+            console.log('에러 처리 - sessionStorage에서 리다이렉트 URL 발견:', savedRedirectUrl);
+            sessionStorage.removeItem('socialLoginRedirectUrl');
+            window.location.replace(savedRedirectUrl);
+            return;
+          }
+          
+          const nextUrl = searchParams.get('clientRedirect') || '/';
           window.location.replace(nextUrl);
           return;
         }
         
-        // 에러 발생 시에도 메인 페이지로 리다이렉트
-        console.log('⚠️ 소셜 로그인 에러 발생, 메인 페이지로 리다이렉트:', error);
-        const nextUrl = searchParams.get('clientRedirect') || '/';
+        // 에러 발생 시에도 우선순위에 따라 리다이렉트
+        console.log('⚠️ 소셜 로그인 에러 발생, 리다이렉트:', error);
         document.body.style.display = 'none';
+        
+        // sessionStorage에서 저장된 리다이렉트 URL 확인
+        const savedRedirectUrl = sessionStorage.getItem('socialLoginRedirectUrl');
+        if (savedRedirectUrl) {
+          console.log('에러 처리 - sessionStorage에서 리다이렉트 URL 발견:', savedRedirectUrl);
+          sessionStorage.removeItem('socialLoginRedirectUrl');
+          window.location.replace(savedRedirectUrl);
+          return;
+        }
+        
+        const nextUrl = searchParams.get('clientRedirect') || '/';
         window.location.replace(nextUrl);
       }
     };
