@@ -32,6 +32,7 @@ function AuthCallbackContent() {
         if (!code || !provider) {
           console.error('❌ 필수 파라미터 누락:', { code: !!code, provider: !!provider });
           const nextUrl = searchParams.get('clientRedirect') || '/';
+          document.body.style.display = 'none';
           window.location.replace(nextUrl);
           return;
         }
@@ -52,6 +53,7 @@ function AuthCallbackContent() {
           const errorText = await verifyResponse.text();
           console.error('❌ 인증 검증 실패:', { status: verifyResponse.status, error: errorText });
           const nextUrl = searchParams.get('clientRedirect') || '/';
+          document.body.style.display = 'none';
           window.location.replace(nextUrl);
           return;
         }
@@ -66,6 +68,7 @@ function AuthCallbackContent() {
         if (!userData) {
           console.error('❌ userData가 없습니다');
           const nextUrl = searchParams.get('clientRedirect') || '/';
+          document.body.style.display = 'none';
           window.location.replace(nextUrl);
           return;
         }
@@ -81,6 +84,7 @@ function AuthCallbackContent() {
         if (!userEmail || !userId || !userProvider) {
           console.error('❌ 필수 사용자 정보가 누락되었습니다:', { userEmail: !!userEmail, userId: !!userId, userProvider: !!userProvider });
           const nextUrl = searchParams.get('clientRedirect') || '/';
+          document.body.style.display = 'none';
           window.location.replace(nextUrl);
           return;
         }
@@ -98,6 +102,7 @@ function AuthCallbackContent() {
         if (!loginResult.success) {
           console.error('❌ 소셜 로그인/회원가입 실패:', loginResult.error);
           const nextUrl = searchParams.get('clientRedirect') || '/';
+          document.body.style.display = 'none';
           window.location.replace(nextUrl);
           return;
         }
@@ -152,60 +157,26 @@ function AuthCallbackContent() {
           currentPath: window.location.pathname
         });
         
-        // 사파리/모바일 전용 리다이렉트 로직
-        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        console.log('브라우저 감지:', { isSafari, isMobile, userAgent: navigator.userAgent });
-        
-        if (isSafari || isMobile) {
-          // 사파리/모바일: 강제 페이지 이동
-          console.log('사파리/모바일 리다이렉트 시작');
+        // 강제 리다이렉트 - 깜빡임 방지를 위해 즉시 실행
+        try {
+          // 1. 먼저 페이지를 숨김
+          document.body.style.display = 'none';
           
-          // 1. 즉시 시도
+          // 2. 즉시 리다이렉트
+          window.location.replace(nextUrl);
+          
+          // 3. 백업 리다이렉트 (혹시 모를 경우를 대비)
           setTimeout(() => {
-            console.log('사파리/모바일 즉시 리다이렉트:', nextUrl);
-            try {
+            if (window.location.pathname === '/auth/callback') {
+              console.log('백업 리다이렉트 실행:', nextUrl);
               window.location.replace(nextUrl);
-            } catch (error) {
-              console.error('즉시 리다이렉트 실패:', error);
             }
           }, 100);
           
-          // 2. 백업 리다이렉트 (더 긴 지연)
-          setTimeout(() => {
-            if (window.location.pathname === '/auth/callback') {
-              console.log('사파리/모바일 백업 리다이렉트:', nextUrl);
-              try {
-                window.location.replace(nextUrl);
-              } catch (error) {
-                console.error('백업 리다이렉트 실패:', error);
-              }
-            }
-          }, 2000);
-          
-          // 3. 최종 백업 (매우 긴 지연)
-          setTimeout(() => {
-            if (window.location.pathname === '/auth/callback') {
-              console.log('사파리/모바일 최종 백업 리다이렉트:', nextUrl);
-              try {
-                window.location.replace(nextUrl);
-              } catch (error) {
-                console.error('최종 백업 리다이렉트 실패:', error);
-                // 마지막 수단: 메인 페이지로 강제 이동
-                window.location.replace('/');
-              }
-            }
-          }, 5000);
-        } else {
-          // 기존 웹브라우저: 기존 로직 유지
-          console.log('웹브라우저 리다이렉트:', nextUrl);
-          try {
-            window.location.replace(nextUrl);
-          } catch (error) {
-            console.error('웹브라우저 리다이렉트 실패:', error);
-            window.location.replace(nextUrl);
-          }
+        } catch (error) {
+          console.error('리다이렉트 실패:', error);
+          // 마지막 수단
+          window.location.href = nextUrl;
         }
         
       } catch (error) {
@@ -224,6 +195,7 @@ function AuthCallbackContent() {
           console.log('ℹ️ registerParticipant 관련 에러 무시, 로그인 성공으로 처리');
           // 로그인 성공으로 처리하고 리다이렉트
           const nextUrl = searchParams.get('clientRedirect') || '/';
+          document.body.style.display = 'none';
           window.location.replace(nextUrl);
           return;
         }
@@ -231,6 +203,7 @@ function AuthCallbackContent() {
         // 에러 발생 시에도 메인 페이지로 리다이렉트
         console.log('⚠️ 소셜 로그인 에러 발생, 메인 페이지로 리다이렉트:', error);
         const nextUrl = searchParams.get('clientRedirect') || '/';
+        document.body.style.display = 'none';
         window.location.replace(nextUrl);
       }
     };
