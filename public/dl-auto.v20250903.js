@@ -7,23 +7,26 @@
   const eventId = urlParams.get('id') || '';
   const qrEntry = urlParams.get('qr_entry') === 'true';
   
-  // 페이지 로드 시 자동 이벤트
+  // 페이지 로드 시 자동 이벤트 (중복 방지)
+  let lastTrackedPage = '';
   function autoTrackPageView() {
     const page = document.body.getAttribute('data-dl-page');
-    if (page) {
+    if (page && page !== lastTrackedPage) {
       window.dataLayer.push({
         event: 'page_view',
         page: page,
         event_id: eventId,
         qr_entry: qrEntry
       });
+      lastTrackedPage = page;
     }
   }
 
-  // 로그인 모달 노출 추적
+  // 로그인 모달 노출 추적 (중복 방지)
+  let loginModalTracked = false;
   function trackLoginModalView() {
     const loginModal = document.querySelector('[data-dl-expose="login_modal_view"]');
-    if (loginModal) {
+    if (loginModal && !loginModalTracked) {
       const fromStep = loginModal.getAttribute('data-from-step');
       window.dataLayer.push({
         event: 'login_modal_view',
@@ -31,6 +34,7 @@
         event_id: eventId,
         qr_entry: qrEntry
       });
+      loginModalTracked = true;
     }
   }
 
@@ -53,14 +57,21 @@
     }
   }
 
-  // 소셜 로그인 시작 추적
+  // 소셜 로그인 시작 추적 (중복 방지)
+  let authStartTracked = new Set();
   function trackAuthStart(provider) {
-    window.dataLayer.push({
-      event: 'auth_start',
-      provider: provider,
-      event_id: eventId,
-      qr_entry: qrEntry
-    });
+    const key = `${provider}_${Date.now()}`;
+    if (!authStartTracked.has(provider)) {
+      window.dataLayer.push({
+        event: 'auth_start',
+        provider: provider,
+        event_id: eventId,
+        qr_entry: qrEntry
+      });
+      authStartTracked.add(provider);
+      // 5초 후 제거 (같은 세션에서 재시도 허용)
+      setTimeout(() => authStartTracked.delete(provider), 5000);
+    }
   }
 
   // 소셜 로그인 CTA 클릭 추적
@@ -151,16 +162,21 @@
     setupEventListeners();
   }
 
-  // SPA 라우팅 대응
+  // SPA 라우팅 대응 (중복 방지)
   if (window.history && window.history.pushState) {
     const originalPushState = window.history.pushState;
     const originalReplaceState = window.history.replaceState;
+    let isListenerSetup = false;
     
     window.history.pushState = function() {
       originalPushState.apply(this, arguments);
       setTimeout(function() {
         autoTrackPageView();
-        setupEventListeners();
+        // 이벤트 리스너는 한 번만 설정
+        if (!isListenerSetup) {
+          setupEventListeners();
+          isListenerSetup = true;
+        }
       }, 100);
     };
     
@@ -168,7 +184,11 @@
       originalReplaceState.apply(this, arguments);
       setTimeout(function() {
         autoTrackPageView();
-        setupEventListeners();
+        // 이벤트 리스너는 한 번만 설정
+        if (!isListenerSetup) {
+          setupEventListeners();
+          isListenerSetup = true;
+        }
       }, 100);
     };
   }
