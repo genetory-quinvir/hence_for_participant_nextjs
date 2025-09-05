@@ -159,8 +159,40 @@ function AuthCallbackContent() {
         
         // GA 이벤트 발송 후 리다이렉트
         const sendGAEventAndRedirect = (redirectUrl: string) => {
-          // sessionStorage에서 provider 정보 가져오기
-          const provider = sessionStorage.getItem('socialLoginProvider') || 'unknown';
+          // provider 정보 가져오기 (여러 방법 시도)
+          let provider = 'unknown';
+          
+          // 1. sessionStorage에서 가져오기
+          const storedProvider = sessionStorage.getItem('socialLoginProvider');
+          if (storedProvider) {
+            provider = storedProvider;
+          } else {
+            // 2. URL 파라미터에서 추출 시도 (referrer 기반)
+            const referrer = document.referrer;
+            if (referrer.includes('kakao')) {
+              provider = 'kakao';
+            } else if (referrer.includes('naver')) {
+              provider = 'naver';
+            } else if (referrer.includes('google')) {
+              provider = 'google';
+            } else {
+              // 3. URL 파라미터에서 추출 시도
+              const urlParams = new URLSearchParams(window.location.search);
+              const state = urlParams.get('state');
+              if (state) {
+                try {
+                  const stateData = JSON.parse(decodeURIComponent(state));
+                  if (stateData.provider) {
+                    provider = stateData.provider;
+                  }
+                } catch (e) {
+                  // state 파싱 실패 시 무시
+                }
+              }
+            }
+          }
+          
+          console.log('GA 이벤트용 provider 정보:', provider);
           
           // GA 이벤트 발송
           if (window.dataLayer) {
@@ -226,8 +258,40 @@ function AuthCallbackContent() {
         
         // GA 이벤트 발송 후 리다이렉트 (에러 처리용)
         const sendGAErrorEventAndRedirect = (redirectUrl: string, isSuccess: boolean = false) => {
-          // sessionStorage에서 provider 정보 가져오기
-          const provider = sessionStorage.getItem('socialLoginProvider') || 'unknown';
+          // provider 정보 가져오기 (여러 방법 시도)
+          let provider = 'unknown';
+          
+          // 1. sessionStorage에서 가져오기
+          const storedProvider = sessionStorage.getItem('socialLoginProvider');
+          if (storedProvider) {
+            provider = storedProvider;
+          } else {
+            // 2. URL 파라미터에서 추출 시도 (referrer 기반)
+            const referrer = document.referrer;
+            if (referrer.includes('kakao')) {
+              provider = 'kakao';
+            } else if (referrer.includes('naver')) {
+              provider = 'naver';
+            } else if (referrer.includes('google')) {
+              provider = 'google';
+            } else {
+              // 3. URL 파라미터에서 추출 시도
+              const urlParams = new URLSearchParams(window.location.search);
+              const state = urlParams.get('state');
+              if (state) {
+                try {
+                  const stateData = JSON.parse(decodeURIComponent(state));
+                  if (stateData.provider) {
+                    provider = stateData.provider;
+                  }
+                } catch (e) {
+                  // state 파싱 실패 시 무시
+                }
+              }
+            }
+          }
+          
+          console.log('GA 에러 이벤트용 provider 정보:', provider);
           
           // GA 이벤트 발송
           if (window.dataLayer) {
