@@ -231,7 +231,7 @@ function AuthCallbackContent() {
              error.message.includes('Bad Request'))) {
           console.log('ℹ️ registerParticipant 관련 에러 무시, 로그인 성공으로 처리');
           // 로그인 성공으로 처리하고 리다이렉트
-          const nextUrl = clientRedirectUrl || '/';
+          const nextUrl = searchParams.get('clientRedirect') || '/';
           window.location.href = nextUrl;
           return;
         }

@@ -459,18 +459,18 @@ export function saveTokens(accessToken: string, refreshToken?: string) {
       const accessExpiry = Date.now() + (60 * 60 * 1000); // 1시간
       const refreshExpiry = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7일
       
-      localStorage.setItem('access_token', accessToken);
+    localStorage.setItem('access_token', accessToken);
       localStorage.setItem('access_token_expiry', accessExpiry.toString());
       
-      if (refreshToken) {
-        localStorage.setItem('refresh_token', refreshToken);
+    if (refreshToken) {
+      localStorage.setItem('refresh_token', refreshToken);
         localStorage.setItem('refresh_token_expiry', refreshExpiry.toString());
-      }
+    }
       
-      logger.debug('🔑 토큰 저장 완료', { 
-        hasAccessToken: !!accessToken, 
-        hasRefreshToken: !!refreshToken 
-      });
+    logger.debug('🔑 토큰 저장 완료', { 
+      hasAccessToken: !!accessToken, 
+      hasRefreshToken: !!refreshToken 
+    });
     } catch (error) {
       logger.error('🔑 토큰 저장 실패:', error);
     }
@@ -480,7 +480,7 @@ export function saveTokens(accessToken: string, refreshToken?: string) {
 export function getAccessToken(): string | null {
   if (typeof window !== 'undefined') {
     try {
-      const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('access_token');
       const expiry = localStorage.getItem('access_token_expiry');
       
       // 토큰 만료 확인
@@ -491,11 +491,11 @@ export function getAccessToken(): string | null {
         return null;
       }
       
-      // 로그 레벨을 INFO로 변경하여 DEBUG 로그 줄임
-      if (process.env.NODE_ENV === 'development') {
-        logger.debug('🔑 Access Token 조회', { hasToken: !!token, length: token?.length || 0 });
-      }
-      return token;
+    // 로그 레벨을 INFO로 변경하여 DEBUG 로그 줄임
+    if (process.env.NODE_ENV === 'development') {
+      logger.debug('🔑 Access Token 조회', { hasToken: !!token, length: token?.length || 0 });
+    }
+    return token;
     } catch (error) {
       logger.error('🔑 Access Token 조회 실패:', error);
       return null;
@@ -624,28 +624,28 @@ export async function apiRequest<T>(
     return { success: false, error: 'AUTH_REQUIRED' };
   }
 
-      const makeRequest = async (token: string) => {
-      const headers: Record<string, string> = {
-        'Authorization': `Bearer ${token}`,
-        'accept': 'application/json',
-      };
+  const makeRequest = async (token: string) => {
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${token}`,
+      'accept': 'application/json',
+    };
 
       // Content-Type이 설정되지 않은 경우에만 추가 (FormData가 아닌 경우에만)
-      if (!options.headers || !Object.keys(options.headers).some(key => 
-        key.toLowerCase() === 'content-type'
-      )) {
+    if (!options.headers || !Object.keys(options.headers).some(key => 
+      key.toLowerCase() === 'content-type'
+    )) {
         // FormData인 경우 Content-Type을 설정하지 않음 (브라우저가 자동으로 multipart/form-data 설정)
         if (!(options.body instanceof FormData)) {
-          headers['Content-Type'] = 'application/json';
+      headers['Content-Type'] = 'application/json';
         }
-      }
+    }
 
-      // 기존 헤더와 병합
-      if (options.headers) {
-        Object.entries(options.headers).forEach(([key, value]) => {
-          headers[key.toLowerCase()] = String(value);
-        });
-      }
+    // 기존 헤더와 병합
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        headers[key.toLowerCase()] = String(value);
+      });
+    }
 
 
 
@@ -694,7 +694,7 @@ export async function apiRequest<T>(
           }
           
           const originalMessage = errorData.message || errorData.error || errorMessage;
-
+          
           // coroutine 관련 오류인 경우 사용자 친화적인 메시지로 변경
           if (originalMessage.includes('coroutine') || originalMessage.includes('not iterable')) {
             errorMessage = '서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
@@ -774,13 +774,13 @@ export async function apiRequest<T>(
     
     try {
       // 토큰 갱신 시도
-      const refreshResult = await refreshAccessToken();
-      
-      if (refreshResult.success && refreshResult.accessToken) {
+    const refreshResult = await refreshAccessToken();
+    
+    if (refreshResult.success && refreshResult.accessToken) {
         logger.info('✅ 토큰 갱신 성공, 재시도');
-        accessToken = refreshResult.accessToken;
-        response = await makeRequest(accessToken);
-      } else {
+      accessToken = refreshResult.accessToken;
+      response = await makeRequest(accessToken);
+    } else {
         logger.warn('❌ 토큰 갱신 실패, AUTH_REQUIRED 반환');
         return { success: false, error: 'AUTH_REQUIRED' };
       }
@@ -832,7 +832,7 @@ export async function socialLoginOrRegister(
     };
     const headers = { 'Content-Type': 'application/json' };
     const jsonBody = JSON.stringify(requestBody);
-    
+
     // 요청 로깅
     console.log('🔍 socialLoginOrRegister 요청 데이터:', requestBody);
     apiDebugger.logRequest('POST', url, headers, requestBody);
@@ -859,8 +859,8 @@ export async function socialLoginOrRegister(
       // Swagger 응답 형식에 맞게 수정
       if (responseData.data && responseData.data.user) {
         logger.info('✅ 소셜 로그인/회원가입 성공 (data.user 형식)', responseData.data.user);
-        return {
-          success: true,
+      return {
+        success: true,
           data: responseData.data.user,
           access_token: responseData.data.token?.accessToken || '',
           refresh_token: responseData.data.token?.refreshToken || '',
@@ -872,8 +872,8 @@ export async function socialLoginOrRegister(
           data: responseData.user,
           access_token: responseData.access_token || responseData.accessToken || '',
           refresh_token: responseData.refresh_token || responseData.refreshToken || '',
-        };
-      } else {
+      };
+    } else {
         logger.error('❌ 응답에서 사용자 데이터를 찾을 수 없음', responseData);
         return {
           success: false,
@@ -883,11 +883,11 @@ export async function socialLoginOrRegister(
     } else {
       // 에러 응답 처리
       try {
-        const errorData = JSON.parse(responseText);
+      const errorData = JSON.parse(responseText);
         const errorMessage = errorData.message || '소셜 로그인에 실패했습니다.';
         logger.error('❌ 소셜 로그인 실패', { status: response.status, error: errorMessage });
-        return {
-          success: false,
+      return {
+        success: false,
           error: errorMessage,
         };
       } catch (e) {
@@ -1150,7 +1150,7 @@ export async function getBoardList(eventId: string, boardType: string, cursor?: 
     if (!accessToken) {
       return { success: false, error: 'AUTH_REQUIRED' };
     }
-  
+      
     const result = await apiRequest<any>(url, {
       method: 'GET',
     });
@@ -1306,16 +1306,16 @@ export async function createPost(eventId: string, boardType: string, title: stri
       console.log('✅ 이미지 압축 완료');
       
       // FormData 사용 (이미지 포함)
-      const formData = new FormData();
-      
-      // 제목 추가 (null이 아닌 경우에만)
-      if (title) {
-        formData.append('title', title);
+    const formData = new FormData();
+    
+    // 제목 추가 (null이 아닌 경우에만)
+    if (title) {
+      formData.append('title', title);
         console.log('📝 제목 추가:', title);
-      }
-      
+    }
+    
       // 내용 추가 (여러 필드명 시도)
-      formData.append('content', content);
+    formData.append('content', content);
       formData.append('body', content);  // body 필드명도 추가
       formData.append('text', content);  // text 필드명도 추가
       console.log('📝 내용 추가:', {
@@ -1341,10 +1341,10 @@ export async function createPost(eventId: string, boardType: string, title: stri
       });
       
       // FormData를 사용하는 경우 직접 fetch 호출
-      const accessToken = getAccessToken();
-      if (!accessToken) {
-        return { success: false, error: 'AUTH_REQUIRED' };
-      }
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      return { success: false, error: 'AUTH_REQUIRED' };
+    }
 
       // FormData 내용 확인
       console.log('📋 FormData 내용:');
@@ -1366,10 +1366,10 @@ export async function createPost(eventId: string, boardType: string, title: stri
       });
       
       const result = await apiRequest<any>(`${API_BASE_URL}/board/${eventId}/${boardType}`, {
-        method: 'POST',
-        body: formData,
-      });
-      
+          method: 'POST',
+          body: formData,
+        });
+
       console.log('📡 API 응답 (이미지 포함):', { 
         success: result.success, 
         error: result.error,
@@ -1379,18 +1379,18 @@ export async function createPost(eventId: string, boardType: string, title: stri
       if (result.success && result.data) {
         console.log('✅ 게시글 작성 성공 (이미지 포함):', result.data);
         logger.info('✅ 게시글 작성 성공 (이미지 포함)', result.data);
-        return {
-          success: true,
+          return {
+            success: true,
           data: result.data.data || result.data,
-        };
-      } else {
+          };
+        } else {
         console.log('❌ 게시글 작성 실패 (이미지 포함):', result.error);
-        return {
-          success: false,
+          return {
+            success: false,
           error: result.error || '게시글 작성에 실패했습니다.',
-        };
-      }
-    } else {
+          };
+        }
+      } else {
       // FormData 사용 (이미지 없음) - 서버가 FormData를 기대함
       console.log('🌐 API 요청 (이미지 없음, FormData 방식):', `${API_BASE_URL}/board/${eventId}/${boardType}`);
       
@@ -1448,16 +1448,16 @@ export async function createPost(eventId: string, boardType: string, title: stri
       if (result.success && result.data) {
         console.log('✅ 게시글 작성 성공 (이미지 없음):', result.data);
         logger.info('✅ 게시글 작성 성공 (이미지 없음)', result.data);
-        return {
-          success: true,
+      return {
+        success: true,
           data: result.data.data || result.data,
-        };
-      } else {
+      };
+    } else {
         console.log('❌ 게시글 작성 실패 (이미지 없음):', result.error);
-        return {
-          success: false,
+      return {
+        success: false,
           error: result.error || '게시글 작성에 실패했습니다.',
-        };
+      };
       }
     }
   } catch (error) {
@@ -1969,8 +1969,8 @@ export async function getFeaturedEvent(eventId: string, day: number = 1, accessT
         console.log('getFeaturedEvent 파싱된 응답:', responseData);
         
         logger.info('✅ 이벤트 상세 정보 로드 성공', responseData);
-        return {
-          success: true,
+      return {
+        success: true,
           featured: responseData.data || responseData,
         };
       } catch (parseError) {
@@ -2291,10 +2291,10 @@ export async function updateProfile(userId: string, data: {
 
     const makeRequest = async (token: string) => {
       const response = await fetch(`${API_BASE_URL}/users/${userId}/profile`, {
-        method: 'PATCH',
-        headers: {
+      method: 'PATCH',
+      headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/x-www-form-urlencoded',
           'accept': 'application/json',
         },
         body: formData.toString(),
@@ -2785,9 +2785,9 @@ export const sendFCMToken = async (token: string): Promise<{ success: boolean; e
     if (!result.success && result.error?.includes('405')) {
       console.log('🔄 PUT 실패, POST로 재시도');
       result = await apiRequest<any>(url, {
-        method: 'POST',
-        body: JSON.stringify({ token }),
-      });
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
     }
 
     // POST도 실패하면 PATCH로 시도
