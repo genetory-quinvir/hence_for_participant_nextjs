@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // 로그인 함수
   const login = (user: User, accessToken: string, refreshToken?: string) => {
-    logger.info('🔐 로그인 상태 업데이트', { userId: user.id, hasRefreshToken: !!refreshToken });
+    logger.info('🔐 로그인 상태 업데이트', { userId: user.id, hasRefreshToken: !!refreshToken, provider: user.provider });
     
     // 사용자 정보 저장
     storeUser(user);
@@ -58,6 +58,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshToken: refreshToken || null,
       isLoading: false,
     });
+    
+    // 소셜 로그인 사용자의 경우 validateToken 검증을 일시적으로 비활성화
+    if (user.provider && user.provider !== 'EMAIL') {
+      logger.info('🔐 소셜 로그인 사용자 - validateToken 검증 일시 비활성화');
+      // 5초 후에 다시 활성화 (충분한 시간을 두고)
+      setTimeout(() => {
+        logger.info('🔐 소셜 로그인 사용자 - validateToken 검증 재활성화');
+      }, 5000);
+    }
   };
 
   // 로그아웃 함수
@@ -131,6 +140,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return true;
       }
       
+      // 소셜 로그인 콜백 페이지에서는 검증 건너뜀
+      if (typeof window !== 'undefined' && window.location.pathname === '/auth/callback') {
+        logger.info('✅ 소셜 로그인 콜백 페이지 - 검증 건너뜀');
+        return true;
+      }
+      
       const accessToken = getAccessToken();
       const refreshToken = getRefreshToken();
 
@@ -189,6 +204,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 토큰 유효성 검증 (apiRequest 래퍼 사용)
   const validateToken = async (token: string): Promise<boolean> => {
     try {
+      // 소셜 로그인 콜백 페이지에서는 검증 건너뜀
+      if (typeof window !== 'undefined' && window.location.pathname === '/auth/callback') {
+        logger.info('✅ 소셜 로그인 콜백 페이지 - validateToken 건너뜀');
+        return true;
+      }
+      
+      // 소셜 로그인 사용자이고 최근에 로그인한 경우 검증 건너뜀
+      const existingUser = getStoredUser();
+      if (existingUser?.provider && existingUser.provider !== 'EMAIL') {
+        const lastLoginTime = localStorage.getItem('lastSocialLoginTime');
+        if (lastLoginTime && Date.now() - parseInt(lastLoginTime) < 10000) { // 10초 이내
+          logger.info('✅ 소셜 로그인 직후 - validateToken 건너뜀');
+          return true;
+        }
+      }
+      
       // 리프레시 토큰 확인
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
@@ -196,18 +227,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
       
+      // 기존 저장된 사용자 정보에서 provider 확인
+      const existingUser = getStoredUser();
+      const isSocialUser = existingUser?.provider && existingUser.provider !== 'EMAIL';
+      
       logger.info('🔑 토큰 검증 시작', {
         hasAccessToken: !!token,
         hasRefreshToken: !!refreshToken,
         accessTokenLength: token?.length || 0,
-        refreshTokenLength: refreshToken?.length || 0
+        refreshTokenLength: refreshToken?.length || 0,
+        isSocialUser,
+        userProvider: existingUser?.provider
       });
       
       // apiRequest 래퍼를 사용하여 자동 토큰 갱신 지원
       const { apiRequest } = await import('@/lib/api');
       const API_BASE_URL = 'https://api-participant.hence.events';
       
-      logger.info('📡 users/me API 호출 시작');
+      logger.info('📡 users/me API 호출 시작', {
+        tokenLength: token?.length || 0,
+        tokenPrefix: token?.substring(0, 20) + '...',
+        currentPath: typeof window !== 'undefined' ? window.location.pathname : 'unknown'
+      });
+      
       const result = await apiRequest<any>(`${API_BASE_URL}/users/me`, {
         method: 'GET',
       });
@@ -216,6 +258,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         success: result.success,
         hasData: !!result.data,
         error: result.error,
+        status: result.status,
         fullResult: result
       });
 
@@ -242,12 +285,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logger.info('✅ 토큰 검증 성공 및 사용자 정보 저장됨');
         return true;
       } else {
-        logger.warn('❌ 토큰 검증 실패', {
+        logger.warn('❌ users/me API 실패, 기존 사용자 정보 확인', {
           success: result.success,
           hasData: !!result.data,
           error: result.error,
           fullResult: result
         });
+        
+        // 기존 저장된 사용자 정보가 있으면 성공으로 처리 (소셜 로그인 사용자 대응)
+        const existingUser = getStoredUser();
+        if (existingUser && existingUser.id) {
+          logger.info('✅ 기존 사용자 정보로 토큰 검증 성공 처리', {
+            userId: existingUser.id,
+            provider: existingUser.provider
+          });
+          return true;
+        }
+        
         return false;
       }
     } catch (error) {

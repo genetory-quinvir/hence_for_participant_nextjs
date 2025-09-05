@@ -138,6 +138,8 @@ function AuthCallbackContent() {
         // 토큰 저장
         if (loginResult.access_token) {
           saveTokens(loginResult.access_token, loginResult.refresh_token);
+          // 소셜 로그인 시간 기록 (validateToken 검증 건너뛰기용)
+          localStorage.setItem('lastSocialLoginTime', Date.now().toString());
         }
 
         // AuthContext에 로그인 상태 업데이트
@@ -158,9 +160,35 @@ function AuthCallbackContent() {
           loginResult.refresh_token || ''
         );
 
+        // 토큰 저장과 AuthContext 업데이트가 완료될 때까지 잠시 대기
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // 로그인 성공 - 즉시 리다이렉트 (validateToken 검증 없이)
-        const nextUrl = clientRedirectUrl || '/';
-        console.log('✅ 소셜 로그인 성공, 리다이렉트:', nextUrl);
+        let nextUrl = clientRedirectUrl || '/';
+        
+        // URL 검증 및 정규화
+        if (nextUrl.startsWith('http')) {
+          // 절대 URL인 경우 도메인 부분 제거하고 상대 경로로 변환
+          try {
+            const url = new URL(nextUrl);
+            nextUrl = url.pathname + url.search;
+            console.log('절대 URL을 상대 경로로 변환:', { original: clientRedirectUrl, converted: nextUrl });
+          } catch (error) {
+            console.warn('URL 파싱 실패, 기본 경로 사용:', error);
+            nextUrl = '/';
+          }
+        }
+        
+        // 상대 경로가 아닌 경우 기본 경로로 설정
+        if (!nextUrl.startsWith('/')) {
+          nextUrl = '/' + nextUrl;
+        }
+        
+        console.log('✅ 소셜 로그인 성공, 리다이렉트:', {
+          clientRedirectUrl,
+          finalNextUrl: nextUrl,
+          currentPath: window.location.pathname
+        });
         
         // 사파리/모바일 전용 리다이렉트 로직
         const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -175,14 +203,22 @@ function AuthCallbackContent() {
           // 1. 즉시 시도
           setTimeout(() => {
             console.log('사파리/모바일 즉시 리다이렉트:', nextUrl);
-            window.location.href = nextUrl;
+            try {
+              window.location.href = nextUrl;
+            } catch (error) {
+              console.error('즉시 리다이렉트 실패:', error);
+            }
           }, 100);
           
           // 2. 백업 리다이렉트 (더 긴 지연)
           setTimeout(() => {
             if (window.location.pathname === '/auth/callback') {
               console.log('사파리/모바일 백업 리다이렉트:', nextUrl);
-              window.location.href = nextUrl;
+              try {
+                window.location.href = nextUrl;
+              } catch (error) {
+                console.error('백업 리다이렉트 실패:', error);
+              }
             }
           }, 2000);
           
@@ -190,13 +226,24 @@ function AuthCallbackContent() {
           setTimeout(() => {
             if (window.location.pathname === '/auth/callback') {
               console.log('사파리/모바일 최종 백업 리다이렉트:', nextUrl);
-              window.location.href = nextUrl;
+              try {
+                window.location.href = nextUrl;
+              } catch (error) {
+                console.error('최종 백업 리다이렉트 실패:', error);
+                // 마지막 수단: 메인 페이지로 강제 이동
+                window.location.href = '/';
+              }
             }
           }, 5000);
         } else {
           // 기존 웹브라우저: 기존 로직 유지
           console.log('웹브라우저 리다이렉트:', nextUrl);
-          window.location.replace(nextUrl);
+          try {
+            window.location.replace(nextUrl);
+          } catch (error) {
+            console.error('웹브라우저 리다이렉트 실패:', error);
+            window.location.href = nextUrl;
+          }
         }
         
       } catch (error) {
