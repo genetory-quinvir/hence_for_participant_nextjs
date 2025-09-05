@@ -224,6 +224,18 @@ function AuthCallbackContent() {
         console.error('💥 현재 경로:', window.location.pathname);
         console.error('💥 URL 파라미터:', Object.fromEntries(new URLSearchParams(window.location.search)));
         
+        // registerParticipant 관련 에러는 무시 (이미 참여 중인 경우)
+        if (error instanceof Error && 
+            (error.message.includes('participants') || 
+             error.message.includes('400') || 
+             error.message.includes('Bad Request'))) {
+          console.log('ℹ️ registerParticipant 관련 에러 무시, 로그인 성공으로 처리');
+          // 로그인 성공으로 처리하고 리다이렉트
+          const nextUrl = clientRedirectUrl || '/';
+          window.location.href = nextUrl;
+          return;
+        }
+        
         // 에러 화면 표시 (자동 리다이렉트 하지 않음)
         setIsProcessing(false);
         setError(`소셜 로그인 처리 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`);
