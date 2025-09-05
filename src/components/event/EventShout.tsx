@@ -91,6 +91,18 @@ export default function EventShout({ eventId }: EventShoutProps) {
 
     const timer = setTimeout(async () => {
       console.log('🔄 마지막 메시지 시작, 새로운 데이터 로드 시작...');
+      
+      // API 호출 제한 검사
+      const { checkApiLimits, recordApiCall } = await import('../../utils/apiProtection');
+      const limitCheck = checkApiLimits(`getShouts_${eventId}`);
+      
+      if (!limitCheck.allowed) {
+        console.warn('🚫 getShouts API 호출 제한:', limitCheck.reason);
+        return;
+      }
+      
+      recordApiCall(`getShouts_${eventId}`);
+      
       const result = await getShouts(eventId);
       console.log('📡 getShouts 결과:', result);
       

@@ -161,8 +161,15 @@ function SignContent() {
       console.log('소셜 로그인 리다이렉트 URL 저장:', redirectUrl);
     }
     
-    // provider 정보도 sessionStorage에 저장
+    // provider 정보도 sessionStorage에 저장 (카카오 특별 처리)
     sessionStorage.setItem('socialLoginProvider', provider);
+    console.log('✅ sessionStorage에 provider 저장:', provider);
+    
+    // 카카오의 경우 추가 보안을 위해 localStorage에도 백업 저장
+    if (provider === 'kakao') {
+      localStorage.setItem('kakaoLoginProvider', provider);
+      console.log('✅ localStorage에 카카오 provider 백업 저장');
+    }
 
     // 소셜 로그인 URL 생성 - 콜백 URL을 명시적으로 지정
     const callbackUrl = `${window.location.origin}/auth/callback`;

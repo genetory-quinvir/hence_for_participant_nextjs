@@ -611,6 +611,25 @@ export async function apiRequest<T>(
   url: string, 
   options: RequestInit = {}
 ): Promise<{ success: boolean; data?: T; error?: string; status?: number }> {
+  
+  // API 호출 제한 검사
+  const { checkApiLimits, recordApiCall, generateRequestId, startRequestTracking, endRequestTracking } = await import('../utils/apiProtection');
+  
+  const limitCheck = checkApiLimits(url);
+  if (!limitCheck.allowed) {
+    logger.warn(`🚫 API 호출 제한: ${limitCheck.reason}`);
+    return {
+      success: false,
+      error: limitCheck.reason,
+      status: 429 // Too Many Requests
+    };
+  }
+  
+  const requestId = generateRequestId(url);
+  startRequestTracking(requestId);
+  recordApiCall(url);
+  
+  try {
   let accessToken = getAccessToken();
   
   // 안드로이드 크롬을 위한 타임아웃 설정
@@ -799,6 +818,10 @@ export async function apiRequest<T>(
       console.error('❌ users/me - 최종 응답 실패:', response.error);
     }
     return { success: false, error: response.error || 'API 요청에 실패했습니다.' };
+  }
+  
+  } finally {
+    endRequestTracking(requestId);
   }
 }
 

@@ -159,34 +159,41 @@ function AuthCallbackContent() {
         
         // GA 이벤트 발송 후 리다이렉트
         const sendGAEventAndRedirect = (redirectUrl: string) => {
-          // provider 정보 가져오기 (여러 방법 시도)
+          // provider 정보 가져오기 (API 응답 우선, fallback 로직)
           let provider = 'unknown';
           
-          // 1. sessionStorage에서 가져오기
-          const storedProvider = sessionStorage.getItem('socialLoginProvider');
-          if (storedProvider) {
-            provider = storedProvider;
+          // 1. API 응답에서 가져온 userProvider 사용 (가장 정확함)
+          if (userProvider) {
+            provider = userProvider.toLowerCase();
+            console.log('✅ API 응답에서 provider 발견:', provider);
           } else {
-            // 2. URL 파라미터에서 추출 시도 (referrer 기반)
-            const referrer = document.referrer;
-            if (referrer.includes('kakao')) {
-              provider = 'kakao';
-            } else if (referrer.includes('naver')) {
-              provider = 'naver';
-            } else if (referrer.includes('google')) {
-              provider = 'google';
+            // 2. sessionStorage에서 가져오기
+            const storedProvider = sessionStorage.getItem('socialLoginProvider');
+            if (storedProvider) {
+              provider = storedProvider;
+              console.log('✅ sessionStorage에서 provider 발견:', provider);
             } else {
-              // 3. URL 파라미터에서 추출 시도
-              const urlParams = new URLSearchParams(window.location.search);
-              const state = urlParams.get('state');
-              if (state) {
-                try {
-                  const stateData = JSON.parse(decodeURIComponent(state));
-                  if (stateData.provider) {
-                    provider = stateData.provider;
-                  }
-                } catch (e) {
-                  // state 파싱 실패 시 무시
+              // 3. 카카오의 경우 localStorage 백업 확인
+              const kakaoBackup = localStorage.getItem('kakaoLoginProvider');
+              if (kakaoBackup) {
+                provider = kakaoBackup;
+                console.log('✅ localStorage에서 카카오 provider 백업 발견:', provider);
+                localStorage.removeItem('kakaoLoginProvider');
+              } else {
+                // 4. 구글, 네이버가 아니면 카카오로 처리 (fallback)
+                const referrer = document.referrer;
+                console.log('🔍 document.referrer:', referrer);
+                
+                if (referrer.includes('google') || referrer.includes('accounts.google.com')) {
+                  provider = 'google';
+                  console.log('✅ referrer에서 구글 감지');
+                } else if (referrer.includes('naver') || referrer.includes('nid.naver.com')) {
+                  provider = 'naver';
+                  console.log('✅ referrer에서 네이버 감지');
+                } else {
+                  // 구글, 네이버가 아니면 카카오로 처리
+                  provider = 'kakao';
+                  console.log('✅ 구글/네이버가 아니므로 카카오로 처리');
                 }
               }
             }
@@ -258,34 +265,41 @@ function AuthCallbackContent() {
         
         // GA 이벤트 발송 후 리다이렉트 (에러 처리용)
         const sendGAErrorEventAndRedirect = (redirectUrl: string, isSuccess: boolean = false) => {
-          // provider 정보 가져오기 (여러 방법 시도)
+          // provider 정보 가져오기 (API 응답 우선, fallback 로직)
           let provider = 'unknown';
           
-          // 1. sessionStorage에서 가져오기
-          const storedProvider = sessionStorage.getItem('socialLoginProvider');
-          if (storedProvider) {
-            provider = storedProvider;
+          // 1. API 응답에서 가져온 userProvider 사용 (가장 정확함)
+          if (userProvider) {
+            provider = userProvider.toLowerCase();
+            console.log('✅ 에러 처리 - API 응답에서 provider 발견:', provider);
           } else {
-            // 2. URL 파라미터에서 추출 시도 (referrer 기반)
-            const referrer = document.referrer;
-            if (referrer.includes('kakao')) {
-              provider = 'kakao';
-            } else if (referrer.includes('naver')) {
-              provider = 'naver';
-            } else if (referrer.includes('google')) {
-              provider = 'google';
+            // 2. sessionStorage에서 가져오기
+            const storedProvider = sessionStorage.getItem('socialLoginProvider');
+            if (storedProvider) {
+              provider = storedProvider;
+              console.log('✅ 에러 처리 - sessionStorage에서 provider 발견:', provider);
             } else {
-              // 3. URL 파라미터에서 추출 시도
-              const urlParams = new URLSearchParams(window.location.search);
-              const state = urlParams.get('state');
-              if (state) {
-                try {
-                  const stateData = JSON.parse(decodeURIComponent(state));
-                  if (stateData.provider) {
-                    provider = stateData.provider;
-                  }
-                } catch (e) {
-                  // state 파싱 실패 시 무시
+              // 3. 카카오의 경우 localStorage 백업 확인
+              const kakaoBackup = localStorage.getItem('kakaoLoginProvider');
+              if (kakaoBackup) {
+                provider = kakaoBackup;
+                console.log('✅ 에러 처리 - localStorage에서 카카오 provider 백업 발견:', provider);
+                localStorage.removeItem('kakaoLoginProvider');
+              } else {
+                // 4. 구글, 네이버가 아니면 카카오로 처리 (fallback)
+                const referrer = document.referrer;
+                console.log('🔍 에러 처리 - document.referrer:', referrer);
+                
+                if (referrer.includes('google') || referrer.includes('accounts.google.com')) {
+                  provider = 'google';
+                  console.log('✅ 에러 처리 - referrer에서 구글 감지');
+                } else if (referrer.includes('naver') || referrer.includes('nid.naver.com')) {
+                  provider = 'naver';
+                  console.log('✅ 에러 처리 - referrer에서 네이버 감지');
+                } else {
+                  // 구글, 네이버가 아니면 카카오로 처리
+                  provider = 'kakao';
+                  console.log('✅ 에러 처리 - 구글/네이버가 아니므로 카카오로 처리');
                 }
               }
             }
