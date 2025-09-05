@@ -17,7 +17,6 @@ function AuthCallbackContent() {
   const searchParams = useSearchParams();
   const { login } = useAuth();
   const [isProcessing, setIsProcessing] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // 중복 실행 방지
@@ -34,8 +33,8 @@ function AuthCallbackContent() {
 
         if (!code || !provider) {
           console.error('❌ 필수 파라미터 누락:', { code: !!code, provider: !!provider });
-          setError('인증 정보가 올바르지 않습니다.');
-          setIsProcessing(false);
+          const nextUrl = searchParams.get('clientRedirect') || '/';
+          window.location.href = nextUrl;
           return;
         }
 
@@ -54,8 +53,8 @@ function AuthCallbackContent() {
         if (!verifyResponse.ok) {
           const errorText = await verifyResponse.text();
           console.error('❌ 인증 검증 실패:', { status: verifyResponse.status, error: errorText });
-          setError(`인증 검증에 실패했습니다. (${verifyResponse.status})`);
-          setIsProcessing(false);
+          const nextUrl = searchParams.get('clientRedirect') || '/';
+          window.location.href = nextUrl;
           return;
         }
 
@@ -68,8 +67,8 @@ function AuthCallbackContent() {
         
         if (!userData) {
           console.error('❌ userData가 없습니다');
-          setError('사용자 정보를 가져올 수 없습니다.');
-          setIsProcessing(false);
+          const nextUrl = searchParams.get('clientRedirect') || '/';
+          window.location.href = nextUrl;
           return;
         }
         
@@ -83,8 +82,8 @@ function AuthCallbackContent() {
 
         if (!userEmail || !userId || !userProvider) {
           console.error('❌ 필수 사용자 정보가 누락되었습니다:', { userEmail: !!userEmail, userId: !!userId, userProvider: !!userProvider });
-          setError('사용자 정보가 올바르지 않습니다.');
-          setIsProcessing(false);
+          const nextUrl = searchParams.get('clientRedirect') || '/';
+          window.location.href = nextUrl;
           return;
         }
 
@@ -100,8 +99,8 @@ function AuthCallbackContent() {
 
         if (!loginResult.success) {
           console.error('❌ 소셜 로그인/회원가입 실패:', loginResult.error);
-          setError(loginResult.error || '소셜 로그인에 실패했습니다.');
-          setIsProcessing(false);
+          const nextUrl = searchParams.get('clientRedirect') || '/';
+          window.location.href = nextUrl;
           return;
         }
 
@@ -236,9 +235,10 @@ function AuthCallbackContent() {
           return;
         }
         
-        // 에러 화면 표시 (자동 리다이렉트 하지 않음)
-        setIsProcessing(false);
-        setError(`소셜 로그인 처리 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`);
+        // 에러 발생 시에도 메인 페이지로 리다이렉트
+        console.log('⚠️ 소셜 로그인 에러 발생, 메인 페이지로 리다이렉트:', error);
+        const nextUrl = searchParams.get('clientRedirect') || '/';
+        window.location.href = nextUrl;
       }
     };
 
@@ -246,33 +246,6 @@ function AuthCallbackContent() {
   }, [searchParams, login, isProcessing]);
 
 
-  // 에러 화면
-  if (error) {
-    return (
-      <div className="min-h-screen bg-white text-black flex items-center justify-center px-4">
-        <div className="text-center max-w-md mx-auto">
-          <div className="text-red-500 text-lg mb-4">❌ 소셜 로그인 오류</div>
-          <div className="text-sm mb-6 text-gray-600 break-words">
-            {error}
-          </div>
-          <div className="space-y-3">
-            <button
-              onClick={() => window.location.href = '/sign'}
-              className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              로그인 페이지로 이동
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              다시 시도
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // 로딩 화면만 표시 (성공/실패 시 자동 리다이렉트)
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
