@@ -245,7 +245,7 @@ function ParticipantsListContent() {
               onClick={() => navigate("/")}
               className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
-              메인으로 돌아가기
+              메인으로
             </button>
           </div>
         </div>

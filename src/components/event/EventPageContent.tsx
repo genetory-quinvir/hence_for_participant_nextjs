@@ -238,7 +238,7 @@ const ErrorDisplay = ({ error, onRetry }: { error: string; onRetry: () => void }
         onClick={onRetry}
         className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
       >
-        메인으로 돌아가기
+        메인으로
       </button>
     </div>
   </div>
@@ -664,7 +664,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
                   data-dest="/"
                   data-from-step="login_modal"
                 >
-                  메인으로 돌아가기
+                  메인으로
                 </button>
                 <button
                   onClick={() => navigate(`/sign?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)}
@@ -674,7 +674,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
                   data-dest="/sign"
                   data-from-step="login_modal"
                 >
-                  로그인하기
+                  로그인
                 </button>
               </div>
             </div>

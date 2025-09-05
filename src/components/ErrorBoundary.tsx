@@ -88,13 +88,13 @@ class ErrorBoundary extends Component<Props, State> {
                     onClick={this.handleGoLogin}
                     className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                   >
-                    로그인하기
+                    로그인
                   </button>
                   <button
                     onClick={this.handleGoHome}
                     className="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                   >
-                    메인으로 가기
+                    메인으로
                   </button>
                 </>
               ) : (

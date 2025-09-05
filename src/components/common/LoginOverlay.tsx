@@ -36,7 +36,7 @@ export default function LoginOverlay({ onLoginClick, onClose }: LoginOverlayProp
               onClick={handleLoginClick}
               className="flex-1 py-3 px-4 rounded-lg font-bold transition-colors bg-purple-600 hover:bg-purple-700 text-white"
             >
-              로그인하기
+              로그인
             </button>
           </div>
         </div>
