@@ -32,11 +32,14 @@ function AuthCallbackContent() {
         const clientRedirectUrl = searchParams.get('clientRedirect');
 
         if (!code || !provider) {
-          // 모바일/사파리 호환성을 위한 리다이렉트
-          try {
+          // 사파리/모바일 전용 리다이렉트
+          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          
+          if (isSafari || isMobile) {
+            setTimeout(() => window.location.href = '/sign', 100);
+          } else {
             window.location.replace('/sign');
-          } catch {
-            window.location.href = '/sign';
           }
           return;
         }
@@ -54,11 +57,14 @@ function AuthCallbackContent() {
         });
 
         if (!verifyResponse.ok) {
-          // 모바일/사파리 호환성을 위한 리다이렉트
-          try {
+          // 사파리/모바일 전용 리다이렉트
+          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          
+          if (isSafari || isMobile) {
+            setTimeout(() => window.location.href = '/sign', 100);
+          } else {
             window.location.replace('/sign');
-          } catch {
-            window.location.href = '/sign';
           }
           return;
         }
@@ -72,11 +78,14 @@ function AuthCallbackContent() {
         
         if (!userData) {
           console.log('userData가 없습니다');
-          // 모바일/사파리 호환성을 위한 리다이렉트
-          try {
+          // 사파리/모바일 전용 리다이렉트
+          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          
+          if (isSafari || isMobile) {
+            setTimeout(() => window.location.href = '/sign', 100);
+          } else {
             window.location.replace('/sign');
-          } catch {
-            window.location.href = '/sign';
           }
           return;
         }
@@ -91,11 +100,14 @@ function AuthCallbackContent() {
 
         if (!userEmail || !userId || !userProvider) {
           console.log('필수 사용자 정보가 누락되었습니다:', { userEmail: !!userEmail, userId: !!userId, userProvider: !!userProvider });
-          // 모바일/사파리 호환성을 위한 리다이렉트
-          try {
+          // 사파리/모바일 전용 리다이렉트
+          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          
+          if (isSafari || isMobile) {
+            setTimeout(() => window.location.href = '/sign', 100);
+          } else {
             window.location.replace('/sign');
-          } catch {
-            window.location.href = '/sign';
           }
           return;
         }
@@ -111,11 +123,14 @@ function AuthCallbackContent() {
         );
 
         if (!loginResult.success) {
-          // 모바일/사파리 호환성을 위한 리다이렉트
-          try {
+          // 사파리/모바일 전용 리다이렉트
+          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          
+          if (isSafari || isMobile) {
+            setTimeout(() => window.location.href = '/sign', 100);
+          } else {
             window.location.replace('/sign');
-          } catch {
-            window.location.href = '/sign';
           }
           return;
         }
@@ -147,50 +162,53 @@ function AuthCallbackContent() {
         const nextUrl = clientRedirectUrl || '/';
         console.log('✅ 소셜 로그인 성공, 리다이렉트:', nextUrl);
         
-        // 모바일/사파리 호환성을 위한 다중 리다이렉트 시도
-        const redirectToUrl = (url: string) => {
-          try {
-            // 1. window.location.replace 시도
-            window.location.replace(url);
-          } catch (error) {
-            console.warn('window.location.replace 실패, window.location.href 시도:', error);
-            try {
-              // 2. window.location.href 시도
-              window.location.href = url;
-            } catch (error2) {
-              console.warn('window.location.href 실패, location.assign 시도:', error2);
-              try {
-                // 3. location.assign 시도
-                location.assign(url);
-              } catch (error3) {
-                console.error('모든 리다이렉트 방법 실패:', error3);
-                // 4. 마지막 수단: setTimeout으로 지연 후 시도
-                setTimeout(() => {
-                  window.location.href = url;
-                }, 100);
-              }
+        // 사파리/모바일 전용 리다이렉트 로직
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        console.log('브라우저 감지:', { isSafari, isMobile, userAgent: navigator.userAgent });
+        
+        if (isSafari || isMobile) {
+          // 사파리/모바일: 강제 페이지 이동
+          console.log('사파리/모바일 리다이렉트 시작');
+          
+          // 1. 즉시 시도
+          setTimeout(() => {
+            console.log('사파리/모바일 즉시 리다이렉트:', nextUrl);
+            window.location.href = nextUrl;
+          }, 100);
+          
+          // 2. 백업 리다이렉트 (더 긴 지연)
+          setTimeout(() => {
+            if (window.location.pathname === '/auth/callback') {
+              console.log('사파리/모바일 백업 리다이렉트:', nextUrl);
+              window.location.href = nextUrl;
             }
-          }
-        };
-        
-        // 즉시 리다이렉트 시도
-        redirectToUrl(nextUrl);
-        
-        // 모바일에서 안전을 위해 백업 리다이렉트도 설정
-        setTimeout(() => {
-          if (window.location.pathname === '/auth/callback') {
-            console.log('백업 리다이렉트 실행:', nextUrl);
-            redirectToUrl(nextUrl);
-          }
-        }, 1000);
+          }, 2000);
+          
+          // 3. 최종 백업 (매우 긴 지연)
+          setTimeout(() => {
+            if (window.location.pathname === '/auth/callback') {
+              console.log('사파리/모바일 최종 백업 리다이렉트:', nextUrl);
+              window.location.href = nextUrl;
+            }
+          }, 5000);
+        } else {
+          // 기존 웹브라우저: 기존 로직 유지
+          console.log('웹브라우저 리다이렉트:', nextUrl);
+          window.location.replace(nextUrl);
+        }
         
       } catch (error) {
         // 로그인 실패 - 자동으로 로그인 페이지로 리다이렉트
-        // 모바일/사파리 호환성을 위한 리다이렉트
-        try {
+        // 사파리/모바일 전용 리다이렉트
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isSafari || isMobile) {
+          setTimeout(() => window.location.href = '/sign', 100);
+        } else {
           window.location.replace('/sign');
-        } catch {
-          window.location.href = '/sign';
         }
       }
     };
@@ -200,13 +218,26 @@ function AuthCallbackContent() {
 
 
   // 로딩 화면만 표시 (성공/실패 시 자동 리다이렉트)
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
   return (
-    <div className="min-h-screen bg-white text-black flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-lg mb-4">로그인 처리 중...</div>
-        <div className="text-sm text-gray-600">
-          소셜 로그인을 처리하고 있습니다. 잠시만 기다려주세요.
+    <div className="min-h-screen bg-white text-black flex items-center justify-center px-4">
+      <div className="text-center max-w-sm mx-auto">
+        <div className="mb-6">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
         </div>
+        <div className={`${isMobile ? 'text-xl' : 'text-lg'} mb-4 font-medium`}>
+          로그인 처리 중...
+        </div>
+        <div className={`${isMobile ? 'text-base' : 'text-sm'} text-gray-600 leading-relaxed`}>
+          소셜 로그인을 처리하고 있습니다.<br />
+          잠시만 기다려주세요.
+        </div>
+        {isMobile && (
+          <div className="mt-6 text-xs text-gray-500">
+            자동으로 페이지가 이동됩니다
+          </div>
+        )}
       </div>
     </div>
   );
@@ -214,11 +245,22 @@ function AuthCallbackContent() {
 
 // 로딩 컴포넌트
 function AuthCallbackLoading() {
+  const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
   return (
-    <div className="min-h-screen bg-white text-black flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-        <p className="text-sm" style={{ opacity: 0.7 }}>인증 처리 중...</p>
+    <div className="min-h-screen bg-white text-black flex items-center justify-center px-4">
+      <div className="text-center max-w-sm mx-auto">
+        <div className="mb-6">
+          <div className={`animate-spin rounded-full border-b-2 border-purple-600 mx-auto mb-4 ${isMobile ? 'h-12 w-12' : 'h-8 w-8'}`}></div>
+        </div>
+        <p className={`${isMobile ? 'text-lg' : 'text-sm'} font-medium`} style={{ opacity: 0.8 }}>
+          인증 처리 중...
+        </p>
+        {isMobile && (
+          <p className="text-xs text-gray-500 mt-2">
+            잠시만 기다려주세요
+          </p>
+        )}
       </div>
     </div>
   );
