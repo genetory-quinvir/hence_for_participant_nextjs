@@ -174,6 +174,9 @@ export default function AdminRafflePage() {
     setWinnerQueue([]);
     setCurrentWinner(null);
     setIsPopupRaffling(false);
+    setIsSlotMachine(false);
+    setSlotName('');
+    setSlotPhone('');
   };
 
   // 팝업 내에서 실제 추첨 실행
@@ -185,7 +188,11 @@ export default function AdminRafflePage() {
       return;
     }
     
+    console.log('🎲 추첨 상태 설정 중...');
     setIsPopupRaffling(true);
+    setSlotName('');
+    setSlotPhone('');
+    console.log('🎲 추첨 상태 설정 완료');
     
     try {
       // 목업 참여자 데이터 (더 많은 참여자 추가)
@@ -207,28 +214,37 @@ export default function AdminRafflePage() {
         { id: '15', name: '남궁민', email: 'nam@example.com', phone: '010-9999-0000', eventId: 'event1', registeredAt: '2024-01-01' }
       ];
       
+      console.log('🎲 3초 대기 시작...');
+      // 3초 대기 (추첨 중 애니메이션)
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.log('🎲 3초 대기 완료');
+      
       // 현재 상품의 winnerCount 가져오기
       const currentPrize = prizes.find(prize => prize.id === currentPrizeId);
       const winnerCount = currentPrize?.winnerCount || 1;
       console.log('🎯 상품 정보:', { currentPrize, winnerCount });
       
+      console.log('🎲 Fisher-Yates 셔플 시작...');
       // Fisher-Yates 셔플 알고리즘으로 공정한 추첨
       const shuffled = [...mockParticipants];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
+      console.log('🎲 Fisher-Yates 셔플 완료');
       
       // winnerCount만큼 당첨자 선정
       const winners = shuffled.slice(0, winnerCount);
       console.log('🏆 당첨자 선정:', winners);
       
+      console.log('🎲 상품에 당첨자 설정 중...');
       // 상품에 당첨자들 설정
       setPrizes(prev => prev.map(prize => 
         prize.id === currentPrizeId 
           ? { ...prize, isDrawn: true, winners: winners }
           : prize
       ));
+      console.log('🎲 상품에 당첨자 설정 완료');
       
       // 당첨자들을 큐에 넣고 슬롯머신 시작
       if (winners.length > 0) {
@@ -236,7 +252,9 @@ export default function AdminRafflePage() {
         setWinnerQueue(winners);
         setCurrentWinnerIndex(0);
         setCurrentWinner(winners[0]);
+        console.log('🎰 runSlotMachineForPopup 호출');
         runSlotMachineForPopup(winners[0]);
+        console.log('🎰 runSlotMachineForPopup 호출 완료');
       }
 
     } catch (error) {
@@ -306,6 +324,9 @@ export default function AdminRafflePage() {
     setShowWinnerPopup(false);
     setWinnerQueue([]);
     setCurrentWinnerIndex(0);
+    setIsSlotMachine(false);
+    setSlotName('');
+    setSlotPhone('');
   };
 
   // 현재 상품 정보 가져오기
@@ -315,6 +336,7 @@ export default function AdminRafflePage() {
 
   // 슬롯머신 애니메이션 (팝업용 - 자동 종료 없음)
   const runSlotMachineForPopup = (targetWinner: RaffleParticipant) => {
+    console.log('🎰 슬롯머신 애니메이션 시작:', targetWinner);
     setIsSlotMachine(true);
     let count = 0;
     const maxCount = 20; // 슬롯머신이 돌아가는 횟수
@@ -330,6 +352,7 @@ export default function AdminRafflePage() {
         setSlotName(maskName(targetWinner.name));
         setSlotPhone(targetWinner.phone ? targetWinner.phone.slice(-4) : '0000');
         setIsSlotMachine(false);
+        console.log('🎰 슬롯머신 애니메이션 완료');
         // 팝업에서는 자동 종료하지 않음
       }
     }, 100); // 100ms마다 변경
@@ -367,6 +390,7 @@ export default function AdminRafflePage() {
     setCurrentWinner(null);
     setSlotName('');
     setSlotPhone('');
+    setIsSlotMachine(false);
     setPrizes(prev => prev.map(prize => ({ ...prize, isDrawn: false, winners: [] })));
     setShowWinnerPopup(false);
     setWinnerQueue([]);
@@ -534,19 +558,20 @@ export default function AdminRafflePage() {
                     <div className="text-3xl font-black text-white mb-6 drop-shadow-lg">
                       추첨을 시작하시겠습니까?
                     </div>
-                    <button
-                      onClick={() => {
-                        console.log('🔘 추첨 시작 버튼 클릭', { isPopupRaffling, currentPrizeId });
-                        alert('버튼이 클릭되었습니다!');
-                        runPopupRaffle();
-                      }}
-                      disabled={isPopupRaffling}
-                      className={`bg-white text-orange-600 font-black text-2xl py-4 px-8 rounded-2xl hover:bg-white/90 transition-all transform hover:scale-105 shadow-xl ${
-                        isPopupRaffling ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      {isPopupRaffling ? '추첨 중...' : '🎲 추첨 시작!'}
-                    </button>
+                     <button
+                       onClick={() => {
+                         console.log('🔘 추첨 시작 버튼 클릭', { isPopupRaffling, currentPrizeId });
+                         console.log('🔘 runPopupRaffle 함수 호출 시작');
+                         runPopupRaffle();
+                         console.log('🔘 runPopupRaffle 함수 호출 완료');
+                       }}
+                       disabled={isPopupRaffling}
+                       className={`bg-white text-orange-600 font-black text-2xl py-4 px-8 rounded-2xl hover:bg-white/90 transition-all transform hover:scale-105 shadow-xl ${
+                         isPopupRaffling ? 'opacity-50 cursor-not-allowed' : ''
+                       }`}
+                     >
+                       {isPopupRaffling ? '추첨 중...' : '🎲 추첨 시작!'}
+                     </button>
                   </div>
                 ) : (
                   // 추첨 후 화면
@@ -561,15 +586,15 @@ export default function AdminRafflePage() {
                 {currentWinner && (
                   <div className="mb-6">
                     <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 min-h-[80px] flex items-center justify-center">
-                      {isSlotMachine ? (
-                        <span className="text-4xl font-black text-white animate-pulse drop-shadow-lg">
-                          {generateRandomText('name')}
-                        </span>
-                      ) : (
-                        <span className="text-5xl font-black text-white animate-fadeIn drop-shadow-lg">
-                          {maskName(currentWinner.name)}
-                        </span>
-                      )}
+                       {isSlotMachine ? (
+                         <span className="text-4xl font-black text-white animate-pulse drop-shadow-lg">
+                           {slotName}
+                         </span>
+                       ) : (
+                         <span className="text-5xl font-black text-white animate-fadeIn drop-shadow-lg">
+                           {maskName(currentWinner.name)}
+                         </span>
+                       )}
                     </div>
                   </div>
                 )}
@@ -578,15 +603,15 @@ export default function AdminRafflePage() {
                 {currentWinner && (
                   <div className="mb-8">
                     <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 min-h-[70px] flex items-center justify-center">
-                      {isSlotMachine ? (
-                        <span className="text-3xl font-black text-white animate-pulse drop-shadow-lg">
-                          ****-****-{generateRandomText('phone')}
-                        </span>
-                      ) : (
-                        <span className="text-4xl font-black text-white animate-fadeIn drop-shadow-lg">
-                          ****-****-{currentWinner.phone ? currentWinner.phone.slice(-4) : '0000'}
-                        </span>
-                      )}
+                       {isSlotMachine ? (
+                         <span className="text-3xl font-black text-white animate-pulse drop-shadow-lg">
+                           ****-****-{slotPhone}
+                         </span>
+                       ) : (
+                         <span className="text-4xl font-black text-white animate-fadeIn drop-shadow-lg">
+                           ****-****-{currentWinner.phone ? currentWinner.phone.slice(-4) : '0000'}
+                         </span>
+                       )}
                     </div>
                   </div>
                 )}
