@@ -29,7 +29,7 @@ export default function EventRaffle({ raffle, eventId }: EventRaffleProps) {
           }}
         >
           {/* 래플 제목과 아이콘 */}
-          <div className="flex items-start justify-center space-x-3 mb-1 mt-4">
+          <div className="flex items-start justify-center space-x-3 mb-4 mt-4">
             <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
               <img 
                 src="/images/img_giftbox.png" 
@@ -79,7 +79,7 @@ export default function EventRaffle({ raffle, eventId }: EventRaffleProps) {
             </div>
           ) : (
             <button
-              className="w-full px-8 py-3 text-white rounded-lg font-bold shadow-lg"
+              className="w-full px-8 py-3 text-white rounded-lg font-bold shadow-lg mb-2"
               style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
                 border: '1px solid rgba(255, 255, 255, 0.1)'
