@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { RaffleItem } from "@/types/api";
-import { useState, useEffect, useRef } from "react";
 
 interface EventRaffleProps {
   raffle: RaffleItem;
@@ -11,63 +10,7 @@ interface EventRaffleProps {
 
 export default function EventRaffle({ raffle, eventId }: EventRaffleProps) {
   const router = useRouter();
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [rotation, setRotation] = useState({ x: 0, y: 0 });
   
-  // 3D 카드 효과
-  useEffect(() => {
-    const card = cardRef.current;
-    if (!card) return;
-
-    const handleMove = (clientX: number, clientY: number) => {
-      const rect = card.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      
-      const moveX = clientX - centerX;
-      const moveY = clientY - centerY;
-      
-      const rotateX = (moveY / (rect.height / 2)) * -10;
-      const rotateY = (moveX / (rect.width / 2)) * 10;
-      
-      setRotation({ x: rotateX, y: rotateY });
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      handleMove(e.clientX, e.clientY);
-    };
-
-    const handleMouseLeave = () => {
-      setRotation({ x: 0, y: 0 });
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      if (e.touches.length > 0) {
-        const touch = e.touches[0];
-        handleMove(touch.clientX, touch.clientY);
-      }
-    };
-
-    const handleTouchEnd = () => {
-      setRotation({ x: 0, y: 0 });
-    };
-
-    // 마우스 이벤트
-    card.addEventListener('mousemove', handleMouseMove);
-    card.addEventListener('mouseleave', handleMouseLeave);
-
-    // 터치 이벤트
-    card.addEventListener('touchmove', handleTouchMove, { passive: false });
-    card.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      card.removeEventListener('mousemove', handleMouseMove);
-      card.removeEventListener('mouseleave', handleMouseLeave);
-      card.removeEventListener('touchmove', handleTouchMove);
-      card.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, []);
 
   return (
     <div 
@@ -75,12 +18,9 @@ export default function EventRaffle({ raffle, eventId }: EventRaffleProps) {
     >
               {/* 카드 내용 */}
         <div 
-          ref={cardRef}
-          className="relative z-10 p-4 rounded-xl transition-transform duration-200 ease-out cursor-pointer"
+          className="relative z-10 p-4 rounded-xl cursor-pointer"
           style={{
             background: 'linear-gradient(135deg, #7c3aed 0%, #be185d 100%)',
-            transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-            transformStyle: 'preserve-3d',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05)'
           }}
           onClick={() => {

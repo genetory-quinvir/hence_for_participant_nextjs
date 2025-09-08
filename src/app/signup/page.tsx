@@ -34,6 +34,78 @@ function SignupContent() {
     goBack();
   };
 
+  // 비밀번호 정책 검증 함수
+  const validatePassword = (password: string) => {
+    // 최소 길이 8자
+    if (password.length < 8) {
+      return {
+        isValid: false,
+        message: "비밀번호는 8자 이상이어야 합니다."
+      };
+    }
+
+    // 최대 길이 20자
+    if (password.length > 20) {
+      return {
+        isValid: false,
+        message: "비밀번호는 20자 이하여야 합니다."
+      };
+    }
+
+    // 영문자 포함 여부
+    if (!/[a-zA-Z]/.test(password)) {
+      return {
+        isValid: false,
+        message: "비밀번호에 영문자가 포함되어야 합니다."
+      };
+    }
+
+    // 숫자 포함 여부
+    if (!/\d/.test(password)) {
+      return {
+        isValid: false,
+        message: "비밀번호에 숫자가 포함되어야 합니다."
+      };
+    }
+
+    // 특수문자 포함 여부
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return {
+        isValid: false,
+        message: "비밀번호에 특수문자가 포함되어야 합니다."
+      };
+    }
+
+    // 연속된 문자 3개 이상 금지
+    if (/(.)\1{2,}/.test(password)) {
+      return {
+        isValid: false,
+        message: "비밀번호에 연속된 문자 3개 이상은 사용할 수 없습니다."
+      };
+    }
+
+    // 연속된 숫자 3개 이상 금지 (123, 456 등)
+    if (/(012|123|234|345|456|567|678|789|890|987|876|765|654|543|432|321|210)/.test(password)) {
+      return {
+        isValid: false,
+        message: "비밀번호에 연속된 숫자는 사용할 수 없습니다."
+      };
+    }
+
+    // 공백 포함 여부
+    if (/\s/.test(password)) {
+      return {
+        isValid: false,
+        message: "비밀번호에 공백은 포함할 수 없습니다."
+      };
+    }
+
+    return {
+      isValid: true,
+      message: "비밀번호가 정책에 맞습니다."
+    };
+  };
+
   const handleSignup = async (e?: React.FormEvent) => {
     if (e) {
       e.preventDefault(); // 폼 제출 기본 동작 방지
@@ -58,9 +130,10 @@ function SignupContent() {
       return;
     }
 
-    // 비밀번호 길이 검증
-    if (password.length < 6) {
-      showToast("비밀번호는 6자 이상이어야 합니다.", "error");
+    // 비밀번호 정책 검증
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      showToast(passwordValidation.message, "error");
       return;
     }
 
@@ -224,12 +297,13 @@ function SignupContent() {
                 <label className="block text-black text-sm mb-2" style={{ opacity: 0.8 }}>
                   비밀번호
                 </label>
+                {/* 비밀번호 정책 안내 */}
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
                     autoComplete="new-password"
-                    placeholder="비밀번호를 입력하세요 (6자 이상)"
+                    placeholder="비밀번호를 입력하세요 (8-20자, 영문+숫자+특수문자)"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 pr-12 rounded-xl bg-gray-100 text-black focus:outline-none transition-all h-14"
