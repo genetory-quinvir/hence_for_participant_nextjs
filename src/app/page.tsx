@@ -86,7 +86,7 @@ export default function HomePage() {
       <div 
         className="fixed inset-0 w-full h-full"
         style={{
-          backgroundImage: 'url(/images/bg_entrance.png)',
+          backgroundImage: 'url(/images/bg_entrance.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
