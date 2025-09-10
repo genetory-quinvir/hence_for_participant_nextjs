@@ -22,6 +22,7 @@ function TimelineListContent() {
 
   const [selectedDay, setSelectedDay] = useState(currentDay);
   const [availableDays, setAvailableDays] = useState<number[]>([1, 2]); // Day 1, 2만 제공
+  const [timelineStatusEnabled, setTimelineStatusEnabled] = useState(false); // 타임라인 상태 변경 on/off
 
   // 이벤트 ID 가져오기
   const eventId = searchParams.get('eventId') || 'default-event';
@@ -41,6 +42,12 @@ function TimelineListContent() {
 
   // 시간에 따라 상태를 계산하는 함수
   const getTimelineStatus = (timeline: TimelineItem, index: number) => {
+    // 타임라인 상태가 비활성화되어 있으면 모든 타임라인을 예정중으로 처리
+    if (!timelineStatusEnabled) {
+      console.log('타임라인 상태 비활성화됨, PENDING 반환:', timeline.title);
+      return 'PENDING';
+    }
+
     // 시간 정보가 없으면 PENDING으로 처리
     if (!timeline.time) {
       return 'PENDING';
@@ -64,37 +71,22 @@ function TimelineListContent() {
         }
       }
 
-      // Day별 상태 로직
-      if (currentDay === 1) {
-        // Day 1일 때
-        if (selectedDay === 1) {
-          // Day 1의 타임라인: 시간대로 상태 진행
-          if (currentTimeString < timelineTimeString) {
-            return 'PENDING';
-          } else if (currentTimeString >= timelineTimeString && (!nextTimelineTimeString || currentTimeString < nextTimelineTimeString)) {
-            return 'ACTIVE';
-          } else {
-            return 'COMPLETED';
-          }
-        } else if (selectedDay === 2) {
-          // Day 2의 타임라인: 모두 예정중 (PENDING)
+      // Day별 상태 로직 - 당일에만 상태 변경 작동
+      if (selectedDay === currentDay) {
+        // 당일 타임라인: 시간대로 상태 진행
+        if (currentTimeString < timelineTimeString) {
           return 'PENDING';
-        }
-      } else if (currentDay === 2) {
-        // Day 2일 때
-        if (selectedDay === 1) {
-          // Day 1의 타임라인: 모두 종료 (COMPLETED)
+        } else if (currentTimeString >= timelineTimeString && (!nextTimelineTimeString || currentTimeString < nextTimelineTimeString)) {
+          return 'ACTIVE';
+        } else {
           return 'COMPLETED';
-        } else if (selectedDay === 2) {
-          // Day 2의 타임라인: 시간대로 상태 진행
-          if (currentTimeString < timelineTimeString) {
-            return 'PENDING';
-          } else if (currentTimeString >= timelineTimeString && (!nextTimelineTimeString || currentTimeString < nextTimelineTimeString)) {
-            return 'ACTIVE';
-          } else {
-            return 'COMPLETED';
-          }
         }
+      } else if (selectedDay < currentDay) {
+        // 과거 Day의 타임라인: 모두 종료 (COMPLETED)
+        return 'COMPLETED';
+      } else {
+        // 미래 Day의 타임라인: 모두 예정중 (PENDING)
+        return 'PENDING';
       }
       
       // 기본값
@@ -357,9 +349,6 @@ function TimelineListContent() {
                 }`}
               >
                 Day-{day}
-                {isCurrentDay && (
-                  <span className="ml-1 text-xs">(오늘)</span>
-                )}
               </button>
             );
           })}

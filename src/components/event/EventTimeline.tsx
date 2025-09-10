@@ -5,9 +5,10 @@ import { useState, useEffect } from "react";
 
 interface EventTimelineProps {
   timelines: TimelineItem[];
+  timelineStatusEnabled?: boolean; // 타임라인 상태 변경 on/off (기본값: false)
 }
 
-export default function EventTimeline({ timelines }: EventTimelineProps) {
+export default function EventTimeline({ timelines, timelineStatusEnabled = false }: EventTimelineProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // 현재 시간을 1분마다 업데이트 (로컬 시간 사용)
@@ -25,6 +26,11 @@ export default function EventTimeline({ timelines }: EventTimelineProps) {
 
   // 시간에 따라 상태를 계산하는 함수
   const getTimelineStatus = (timeline: TimelineItem, index: number) => {
+    // 타임라인 상태가 비활성화되어 있으면 모든 타임라인을 예정중으로 처리
+    if (!timelineStatusEnabled) {
+      return 'PENDING';
+    }
+
     // 시간 정보가 없으면 PENDING으로 처리
     if (!timeline.time) {
       return 'PENDING';
