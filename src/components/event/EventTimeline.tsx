@@ -11,7 +11,7 @@ interface EventTimelineProps {
 export default function EventTimeline({ timelines, timelineStatusEnabled = false }: EventTimelineProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // 현재 시간을 1분마다 업데이트 (로컬 시간 사용)
+  // 현재 시간을 10초마다 업데이트 (로컬 시간 사용)
   useEffect(() => {
     const updateTime = () => {
       const now = new Date(); // 브라우저의 로컬 시간 사용
@@ -19,7 +19,7 @@ export default function EventTimeline({ timelines, timelineStatusEnabled = false
     };
 
     updateTime(); // 초기 실행
-    const interval = setInterval(updateTime, 60000); // 1분마다 업데이트
+    const interval = setInterval(updateTime, 10000); // 10초마다 업데이트 (더 자주)
 
     return () => clearInterval(interval);
   }, []);
@@ -28,11 +28,13 @@ export default function EventTimeline({ timelines, timelineStatusEnabled = false
   const getTimelineStatus = (timeline: TimelineItem, index: number) => {
     // 타임라인 상태가 비활성화되어 있으면 모든 타임라인을 예정중으로 처리
     if (!timelineStatusEnabled) {
+      console.log('EventTimeline: 타임라인 상태 비활성화됨, PENDING 반환:', timeline.title);
       return 'PENDING';
     }
 
     // 시간 정보가 없으면 PENDING으로 처리
     if (!timeline.time) {
+      console.log('EventTimeline: 타임라인 시간 정보 없음, PENDING 반환:', timeline.title);
       return 'PENDING';
     }
 
@@ -44,6 +46,13 @@ export default function EventTimeline({ timelines, timelineStatusEnabled = false
       
       // timeline.time과 현재 시간 문자열 비교
       const timelineTimeString = timeline.time;
+      
+      console.log('EventTimeline: 타임라인 상태 계산:', {
+        title: timeline.title,
+        timelineTime: timelineTimeString,
+        currentTime: currentTimeString,
+        index: index
+      });
       
       // 다음 타임라인의 시간 찾기
       let nextTimelineTimeString: string | null = null;
@@ -57,14 +66,17 @@ export default function EventTimeline({ timelines, timelineStatusEnabled = false
       // 시간 문자열 비교 (HH:MM 형식)
       // 현재 시간이 타임라인 시간보다 작으면 PENDING
       if (currentTimeString < timelineTimeString) {
+        console.log('EventTimeline: ⏰ PENDING:', timeline.title, '- 현재시간이 타임라인 시간보다 이전');
         return 'PENDING';
       }
       // 현재 시간이 타임라인 시간과 같거나 크고, 다음 타임라인이 없거나 다음 타임라인 시간보다 작으면 ACTIVE
       else if (currentTimeString >= timelineTimeString && (!nextTimelineTimeString || currentTimeString < nextTimelineTimeString)) {
+        console.log('EventTimeline: 🔥 ACTIVE:', timeline.title, '- 현재시간이 타임라인 시간과 일치하거나 다음 타임라인 이전');
         return 'ACTIVE';
       }
       // 그 외의 경우 (다음 타임라인이 시작된 경우) COMPLETED
       else {
+        console.log('EventTimeline: ✅ COMPLETED:', timeline.title, '- 현재시간이 다음 타임라인 시간 이후');
         return 'COMPLETED';
       }
     } catch (error) {
@@ -73,6 +85,12 @@ export default function EventTimeline({ timelines, timelineStatusEnabled = false
       return 'PENDING';
     }
   };
+
+  // 현재 시간이 변경될 때마다 타임라인 상태 재계산을 위한 의존성
+  useEffect(() => {
+    // currentTime이 변경되면 타임라인 상태가 자동으로 재계산됨
+    console.log('EventTimeline: ⏰ 현재 시간 업데이트:', currentTime.toLocaleTimeString());
+  }, [currentTime]);
 
   // 시간 기반으로 상태를 계산한 타임라인 생성 (원본 status 무시)
   const updatedTimelines = timelines.map((timeline, index) => ({

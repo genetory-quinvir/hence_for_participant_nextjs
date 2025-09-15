@@ -1679,6 +1679,14 @@ export async function participateRaffle(eventId: string, raffleId: string, data:
         success: true,
       };
     } else {
+      // 400 에러인 경우 서버 메시지 사용
+      if (result.status === 400) {
+        return {
+          success: false,
+          error: result.error || '응모 가능한 상태가 아닙니다.',
+        };
+      }
+      
       return {
         success: false,
         error: result.error || '래플 응모에 실패했습니다.',

@@ -546,7 +546,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
               onClick: handleNavigateToTimeline
             }}
           > 
-            <EventTimeline timelines={featuredData.timelines} />
+            <EventTimeline timelines={featuredData.timelines} timelineStatusEnabled={true} />
           </EventSection>
         )}
 

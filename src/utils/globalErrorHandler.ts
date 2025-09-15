@@ -224,11 +224,27 @@ export function setupGlobalErrorHandling() {
   // 전역 에러 이벤트 리스너
   // 전역 에러 이벤트
   window.addEventListener('error', (event) => {
+    console.error('🚨 전역 에러 발생:', {
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+      error: event.error,
+      stack: event.error?.stack,
+      type: event.error?.name
+    });
     addGlobalError(event.error, 'unknown', 'Global Error Event');
   });
 
   // 전역 Promise rejection 이벤트
   window.addEventListener('unhandledrejection', (event) => {
+    console.error('🚨 처리되지 않은 Promise 거부:', {
+      reason: event.reason,
+      promise: event.promise,
+      type: typeof event.reason,
+      message: event.reason?.message,
+      stack: event.reason?.stack
+    });
     addGlobalError(event.reason, 'unknown', 'Unhandled Promise Rejection');
     event.preventDefault(); // 기본 동작 방지
   });

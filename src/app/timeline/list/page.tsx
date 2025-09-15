@@ -22,7 +22,7 @@ function TimelineListContent() {
 
   const [selectedDay, setSelectedDay] = useState(currentDay);
   const [availableDays, setAvailableDays] = useState<number[]>([1, 2]); // Day 1, 2만 제공
-  const [timelineStatusEnabled, setTimelineStatusEnabled] = useState(false); // 타임라인 상태 변경 on/off
+  const [timelineStatusEnabled, setTimelineStatusEnabled] = useState(true); // 타임라인 상태 변경 on/off
 
   // 이벤트 ID 가져오기
   const eventId = searchParams.get('eventId') || 'default-event';
@@ -35,7 +35,7 @@ function TimelineListContent() {
     };
 
     updateTime(); // 초기 실행
-    const interval = setInterval(updateTime, 60000); // 1분마다 업데이트
+    const interval = setInterval(updateTime, 10000); // 10초마다 업데이트 (더 자주)
 
     return () => clearInterval(interval);
   }, []);
@@ -50,6 +50,7 @@ function TimelineListContent() {
 
     // 시간 정보가 없으면 PENDING으로 처리
     if (!timeline.time) {
+      console.log('타임라인 시간 정보 없음, PENDING 반환:', timeline.title);
       return 'PENDING';
     }
 
@@ -61,6 +62,15 @@ function TimelineListContent() {
       
       // timeline.time과 현재 시간 문자열 비교
       const timelineTimeString = timeline.time;
+      
+      console.log('🕐 타임라인 상태 계산:', {
+        title: timeline.title,
+        timelineTime: timelineTimeString,
+        currentTime: currentTimeString,
+        currentDay: currentDay,
+        selectedDay: selectedDay,
+        index: index
+      });
       
       // 다음 타임라인의 시간 찾기
       let nextTimelineTimeString: string | null = null;
@@ -75,17 +85,22 @@ function TimelineListContent() {
       if (selectedDay === currentDay) {
         // 당일 타임라인: 시간대로 상태 진행
         if (currentTimeString < timelineTimeString) {
+          console.log('⏰ PENDING:', timeline.title, '- 현재시간이 타임라인 시간보다 이전');
           return 'PENDING';
         } else if (currentTimeString >= timelineTimeString && (!nextTimelineTimeString || currentTimeString < nextTimelineTimeString)) {
+          console.log('🔥 ACTIVE:', timeline.title, '- 현재시간이 타임라인 시간과 일치하거나 다음 타임라인 이전');
           return 'ACTIVE';
         } else {
+          console.log('✅ COMPLETED:', timeline.title, '- 현재시간이 다음 타임라인 시간 이후');
           return 'COMPLETED';
         }
       } else if (selectedDay < currentDay) {
         // 과거 Day의 타임라인: 모두 종료 (COMPLETED)
+        console.log('📅 COMPLETED (과거 Day):', timeline.title);
         return 'COMPLETED';
       } else {
         // 미래 Day의 타임라인: 모두 예정중 (PENDING)
+        console.log('📅 PENDING (미래 Day):', timeline.title);
         return 'PENDING';
       }
       
@@ -103,6 +118,12 @@ function TimelineListContent() {
     ...timeline,
     status: getTimelineStatus(timeline, index) // 원본 status 대신 시간 기반 status 사용
   }));
+
+  // 현재 시간이 변경될 때마다 타임라인 상태 재계산을 위한 의존성
+  useEffect(() => {
+    // currentTime이 변경되면 타임라인 상태가 자동으로 재계산됨
+    console.log('⏰ 현재 시간 업데이트:', currentTime.toLocaleTimeString());
+  }, [currentTime]);
 
   // 초기 데이터 로딩
   useEffect(() => {

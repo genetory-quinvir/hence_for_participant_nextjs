@@ -129,6 +129,7 @@ function RaffleContent() {
   const [isLoadingParticipation, setIsLoadingParticipation] = useState(true);
   const [participationError, setParticipationError] = useState<string | null>(null);
   const [raffleData, setRaffleData] = useState<any>(null);
+  const [raffleStatus, setRaffleStatus] = useState<'available' | 'unavailable' | 'unknown'>('unknown');
 
   // 전화번호 포맷팅 함수
   const formatPhoneNumber = (value: string) => {
@@ -171,6 +172,17 @@ function RaffleContent() {
           console.log('설정할 participated 값:', participated);
           setIsParticipated(participated);
           setRaffleData(result.raffle);
+          
+          // 래플 상태 확인 (래플 데이터에서 상태 정보 추출)
+          if (result.raffle) {
+            // 래플이 시작되었거나 종료된 경우 unavailable로 설정
+            // 실제 API 응답 구조에 따라 조정 필요
+            const isAvailable = result.raffle.status === 'active' || result.raffle.status === 'open';
+            setRaffleStatus(isAvailable ? 'available' : 'unavailable');
+          } else {
+            setRaffleStatus('unknown');
+          }
+          
           console.log('상태 업데이트 완료');
         } else {
           // 인증 오류인 경우 로그인 페이지로 리다이렉트
@@ -422,6 +434,27 @@ function RaffleContent() {
               </p>
             </div>
           </div>
+        ) : raffleStatus === 'unavailable' ? (
+          // 응모 불가능한 경우
+          <div className="mb-8 mt-8">
+            <div className="rounded-xl p-6 text-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+              <div className="flex items-center justify-center mb-2">
+                <img 
+                  src="/images/icon_time.png" 
+                  alt="시간 아이콘" 
+                  className="w-8 h-8"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <h3 className="text-black font-bold text-xl ml-2">응모 기간이 종료되었습니다</h3>
+              </div>
+              <p className="text-black text-sm" style={{ opacity: 0.7 }}>
+                현재 응모 가능한 상태가 아닙니다.<br />
+                다음 기회에 참여해주세요!
+              </p>
+            </div>
+          </div>
         ) : (
           // 응모하지 않은 경우 - 응모 폼 표시
           <>
@@ -508,9 +541,9 @@ function RaffleContent() {
             {/* 응모하기 버튼 */}
             <button
               onClick={handleSubmit}
-              disabled={!name.trim() || !phone.trim() || !agreed || isSubmitting}
+              disabled={!name.trim() || !phone.trim() || !agreed || isSubmitting || (raffleStatus as string) === 'unavailable'}
               className={`w-full py-3 rounded-lg font-medium transition-colors ${
-                name.trim() && phone.trim() && agreed && !isSubmitting
+                name.trim() && phone.trim() && agreed && !isSubmitting && (raffleStatus as string) !== 'unavailable'
                   ? "bg-purple-600 hover:bg-purple-700 text-white text-md"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}
