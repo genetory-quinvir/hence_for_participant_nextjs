@@ -668,6 +668,7 @@ export async function apiRequest<T>(
 
 
 
+
     // 안드로이드 크롬을 위한 타임아웃 설정
     const timeoutDuration = isAndroidChrome ? 10000 : 5000; // 안드로이드는 10초, 다른 기기는 5초
     
@@ -689,7 +690,6 @@ export async function apiRequest<T>(
       });
 
       clearTimeout(timeoutId);
-
 
 
       if (response.status === 401) {
@@ -1930,15 +1930,22 @@ export async function getCouponsList(eventId: string, limit: number = 20): Promi
 // 쿠폰 사용
 export async function useCoupon(eventId: string, couponId: string, vendorId?: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const body: any = {};
+    // vendor_id를 query parameter로 추가
+    let url = `${API_BASE_URL}/coupons/${eventId}/${couponId}/use`;
     if (vendorId) {
-      body.vendorId = vendorId;
+      url += `?vendor_id=${encodeURIComponent(vendorId)}`;
     }
 
-    const result = await apiRequest<any>(`${API_BASE_URL}/coupons/${eventId}/${couponId}/use`, {
-      method: 'POST',
-      body: JSON.stringify(body),
+    console.log('🎫 쿠폰 사용 요청:', {
+      url: url,
+      method: 'POST'
     });
+
+    const result = await apiRequest<any>(url, {
+      method: 'POST',
+    });
+
+    console.log('🎫 쿠폰 사용 응답:', result);
 
     if (result.success) {
       return { success: true };

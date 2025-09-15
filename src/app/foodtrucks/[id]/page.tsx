@@ -187,7 +187,6 @@ function FoodTruckDetailContent() {
         // 쿠폰 사용 성공 시 토스트 표시
         const successMessage = selectedCoupon.discountType === 'EXCHANGE' ? '교환권이 사용되었습니다!' : '쿠폰이 사용되었습니다!';
         showToast(successMessage, 'success');
-        console.log('✅ 쿠폰 사용 성공:', successMessage);
         
         // 쿠폰 사용 후 최신 상태를 위해 첫 번째 쿠폰을 다시 가져와서 업데이트
         try {
