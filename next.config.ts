@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@react-native-async-storage/async-storage'],
   
+  // 프로덕션에서 소스맵 비활성화 (CSP 문제 해결)
+  productionBrowserSourceMaps: false,
+  
   // 외부 이미지 도메인 설정
   images: {
     remotePatterns: [
@@ -26,7 +29,7 @@ const nextConfig: NextConfig = {
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net;",
           "img-src 'self' data: blob: https: https://www.google-analytics.com;",
           "font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com https://cdn.jsdelivr.net;",
-          "connect-src 'self' https://api-participant.hence.events https://api.hence.events https://www.google-analytics.com;",
+          "connect-src 'self' https://api-participant.hence.events https://api.hence.events https://www.google-analytics.com https://cdn.jsdelivr.net;",
           "frame-src 'self' https://www.googletagmanager.com;",
           "media-src 'self' blob:;",
           "object-src 'none';",
