@@ -23,7 +23,7 @@ interface DayProviderProps {
 
 export const DayProvider: React.FC<DayProviderProps> = ({ children }) => {
   // 하드코딩으로 현재 Day 설정 (1 또는 2)
-  const [currentDay, setCurrentDay] = useState(1);
+  const [currentDay, setCurrentDay] = useState(2);
 
   return (
     <DayContext.Provider value={{ currentDay, setCurrentDay }}>
