@@ -1964,6 +1964,93 @@ export async function useCoupon(eventId: string, couponId: string, vendorId?: st
   }
 }
 
+// 관리자 통계 API 함수들
+export async function getAdminStats(eventId: string): Promise<{
+  success: boolean;
+  data?: {
+    userStats: {
+      totalUsers: number;
+      newUsersToday: number;
+      newUsersThisWeek: number;
+      newUsersThisMonth: number;
+    };
+    couponStats: {
+      totalCoupons: number;
+      usedCoupons: number;
+      unusedCoupons: number;
+      usageRate: number;
+    };
+    vendorStats: {
+      totalVendors: number;
+      activeVendors: number;
+      topVendors: Array<{
+        id: string;
+        name: string;
+        usageCount: number;
+      }>;
+    };
+  };
+  error?: string;
+}> {
+  try {
+    // 임시로 목업 데이터 반환 (실제 API가 준비될 때까지)
+    const mockData = {
+      userStats: {
+        totalUsers: 1250,
+        newUsersToday: 45,
+        newUsersThisWeek: 320,
+        newUsersThisMonth: 1250,
+      },
+      couponStats: {
+        totalCoupons: 5000,
+        usedCoupons: 3200,
+        unusedCoupons: 1800,
+        usageRate: 64.0,
+      },
+      vendorStats: {
+        totalVendors: 15,
+        activeVendors: 12,
+        topVendors: [
+          { id: '1', name: '굿데이컴퍼니', usageCount: 156 },
+          { id: '2', name: '다온푸드', usageCount: 142 },
+          { id: '3', name: '맛있는집', usageCount: 128 },
+          { id: '4', name: '한식당', usageCount: 115 },
+          { id: '5', name: '중식당', usageCount: 98 },
+        ],
+      },
+    };
+
+    // 실제 API 호출 (현재는 주석 처리 - 405 에러로 인해)
+    // const result = await apiRequest<any>(`${API_BASE_URL}/admin/dashboard`, {
+    //   method: 'GET',
+    // });
+
+    // if (result.success) {
+    //   return {
+    //     success: true,
+    //     data: result.data,
+    //   };
+    // } else {
+    //   return {
+    //     success: false,
+    //     error: result.error || '통계 데이터를 가져오는데 실패했습니다.',
+    //   };
+    // }
+
+    // 목업 데이터 반환
+    return {
+      success: true,
+      data: mockData,
+    };
+  } catch (error) {
+    console.error('관리자 통계 오류:', error);
+    return {
+      success: false,
+      error: '통계 데이터를 가져오는데 실패했습니다.',
+    };
+  }
+}
+
 export async function getFeaturedEvent(eventId: string, day: number = 1, accessToken?: string): Promise<FeaturedResponse> {
   try {
     // 네트워크 상태 체크 (클라이언트 사이드에서만)

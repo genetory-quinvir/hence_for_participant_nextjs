@@ -115,11 +115,11 @@ export default function AdminRafflePage() {
       const data = result.data as any;
       console.log('✅ 래플 정보 로드 성공:', data);
       
-      if (data.data) {
+      if (data?.data) {
         setRaffleData(data.data);
         
         // 상품 정보를 prizes 상태로 변환 (꼴등부터 1등까지 순서로 정렬)
-        if (data.data.prizes && data.data.prizes.length > 0) {
+        if (data?.data?.prizes && Array.isArray(data.data.prizes) && data.data.prizes.length > 0) {
           const convertedPrizes = data.data.prizes.map((prize: any) => ({
             id: prize.id,
             name: prize.prizeName,
@@ -262,6 +262,9 @@ export default function AdminRafflePage() {
 
   // 이름 마스킹 함수
   const maskName = (name: string) => {
+    if (!name || typeof name !== 'string') {
+      return '***';
+    }
     if (name.length <= 2) {
       return name.charAt(0) + '*';
     } else {
@@ -271,6 +274,10 @@ export default function AdminRafflePage() {
 
   // 슬롯머신 애니메이션 함수
   const runSlotMachine = (finalWinner: { id: string; name: string; phone: string; }) => {
+    if (!finalWinner || !finalWinner.name || !finalWinner.phone) {
+      console.error('❌ runSlotMachine: finalWinner가 유효하지 않습니다:', finalWinner);
+      return;
+    }
     // 애니메이션용 목업 데이터 (실제 당첨자와는 별개)
     const mockParticipants = [
       { id: '1', name: '김철수', phone: '010-1234-5678' },
@@ -323,7 +330,7 @@ export default function AdminRafflePage() {
           setRaffleWinners(prev => [...prev, finalWinner]);
           
           // 마지막 당첨자인지 확인
-          const isLastWinner = raffleWinners.length + 1 >= (currentRafflePrize?.winnerCount || 0);
+          const isLastWinner = (raffleWinners?.length || 0) + 1 >= (currentRafflePrize?.winnerCount || 0);
           
           if (isLastWinner) {
             // 마지막 당첨자면 바로 완료 처리
@@ -426,7 +433,7 @@ export default function AdminRafflePage() {
       const data = result.data as any;
       console.log('✅ 추첨 API 응답:', data);
 
-      if (data.data && data.data.length > 0) {
+      if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
         // API에서 반환된 당첨자 중 첫 번째를 사용 (한 명씩 추첨)
         const newWinner = data.data[0];
         
@@ -562,6 +569,16 @@ export default function AdminRafflePage() {
         </p>
       </div>
 
+      {/* 통계 버튼 - 우측 상단 */}
+      <div className="fixed top-6 right-6 z-20">
+        <button
+          onClick={() => router.push('/admin/statistics')}
+          className="px-6 py-3 bg-white/20 backdrop-blur-lg text-white font-semibold text-lg rounded-full border border-white/30 hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl"
+        >
+          📊 통계
+        </button>
+      </div>
+
       {/* 초기화 버튼 - 우측 하단 (숨김) */}
       <div className="fixed bottom-6 right-6 z-20 opacity-20 hover:opacity-100 transition-opacity duration-300">
         <button
@@ -590,7 +607,7 @@ export default function AdminRafflePage() {
                 const isRaffling = result?.isRaffling || false;
                 const currentWinner = result?.currentWinner;
                 const winners = result?.winners || [];
-                const isCompleted = winners.length >= prize.winnerCount;
+                const isCompleted = (winners?.length || 0) >= (prize?.winnerCount || 0);
                 
                 return (
                   <div key={prize.id} className="bg-white rounded-3xl p-6 shadow-2xl border border-gray-100 hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2">
@@ -630,7 +647,7 @@ export default function AdminRafflePage() {
                       )}
                       
                       {/* 당첨자 목록 */}
-                      {winners.length > 0 && (
+                      {(winners?.length || 0) > 0 && (
                         <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                           <p className="text-xs text-blue-600 font-medium mb-2">당첨자 목록</p>
                           <div className="space-y-1">
@@ -671,7 +688,7 @@ export default function AdminRafflePage() {
                           ? '추첨 완료' 
                           : isRaffling 
                           ? '추첨 중...' 
-                          : winners.length === 0 
+                          : (winners?.length || 0) === 0 
                           ? '추첨하기' 
                           : '다음 추첨'
                         }
@@ -720,14 +737,14 @@ export default function AdminRafflePage() {
               <div className="text-center mb-12">
                 {raffleAnimation === 'idle' && (
                   <>
-                    {raffleWinners.length === 0 ? (
+                    {(raffleWinners?.length || 0) === 0 ? (
                       <>
                         <p className="text-3xl font-bold mb-4 drop-shadow-lg">추첨 준비 완료!</p>
                         <p className="text-xl text-white/80 drop-shadow-md">
                           {currentRafflePrize.winnerCount}명의 행운의 당첨자를 뽑아보세요!
                         </p>
                       </>
-                    ) : raffleWinners.length >= currentRafflePrize.winnerCount ? (
+                    ) : (raffleWinners?.length || 0) >= (currentRafflePrize?.winnerCount || 0) ? (
                       <>
                         <p className="text-3xl font-bold mb-4 drop-shadow-lg">추첨 완료!</p>
                         <p className="text-xl text-white/80 drop-shadow-md">
@@ -738,13 +755,13 @@ export default function AdminRafflePage() {
                       <>
                         <p className="text-3xl font-bold mb-4 drop-shadow-lg">추첨 진행 중!</p>
                         <p className="text-xl text-white/80 drop-shadow-md">
-                          {currentRafflePrize.winnerCount - raffleWinners.length}명의 당첨자를 더 뽑아보세요!
+                          {(currentRafflePrize?.winnerCount || 0) - (raffleWinners?.length || 0)}명의 당첨자를 더 뽑아보세요!
                         </p>
                       </>
                     )}
-                    {raffleWinners.length > 0 && (
+                    {(raffleWinners?.length || 0) > 0 && (
                       <div className="mt-6 bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30">
-                        <p className="text-2xl text-white/90 mb-4 font-bold">현재 당첨자 ({raffleWinners.length}/{currentRafflePrize.winnerCount})</p>
+                        <p className="text-2xl text-white/90 mb-4 font-bold">현재 당첨자 ({(raffleWinners?.length || 0)}/{currentRafflePrize?.winnerCount || 0})</p>
                         <div className="space-y-2">
                           {raffleWinners.map((winner, index) => (
                             <p key={winner.id} className="text-xl text-white/90 font-semibold">
@@ -783,7 +800,7 @@ export default function AdminRafflePage() {
                         {/* 진행 상황 */}
                         <div className="bg-white/50 rounded-2xl p-6 inline-block">
                           <p className="text-2xl text-gray-700 font-semibold">
-                            ({raffleWinners.length}/{currentRafflePrize.winnerCount})
+                            ({(raffleWinners?.length || 0)}/{currentRafflePrize.winnerCount})
                           </p>
                         </div>
                       </div>
@@ -816,7 +833,7 @@ export default function AdminRafflePage() {
                         {/* 진행 상황 */}
                         <div className="bg-white/50 rounded-2xl p-6 inline-block">
                           <p className="text-2xl text-gray-700 font-semibold">
-                            ({raffleWinners.length}/{currentRafflePrize.winnerCount})
+                            ({(raffleWinners?.length || 0)}/{currentRafflePrize.winnerCount})
                           </p>
                         </div>
                       </div>
@@ -840,7 +857,7 @@ export default function AdminRafflePage() {
                             추첨 완료!
                           </p>
                           <p className="text-xl text-gray-700">
-                            {getRankText(currentRafflePrize.rank)} • 총 {raffleWinners.length}명 당첨
+                            {getRankText(currentRafflePrize.rank)} • 총 {(raffleWinners?.length || 0)}명 당첨
                           </p>
                         </div>
                       </div>
@@ -875,9 +892,9 @@ export default function AdminRafflePage() {
                       onClick={runRaffle}
                       className="px-12 py-4 bg-white text-purple-600 font-bold text-2xl rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
                     >
-                      {raffleWinners.length === 0 ? '추첨 시작!' : '다음 추첨'}
+                      {(raffleWinners?.length || 0) === 0 ? '추첨 시작!' : '다음 추첨'}
                     </button>
-                    {raffleWinners.length > 0 && (
+                    {(raffleWinners?.length || 0) > 0 && (
                       <button
                         onClick={completeRaffle}
                         className="px-12 py-4 bg-yellow-400 text-yellow-900 font-bold text-2xl rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
@@ -891,7 +908,7 @@ export default function AdminRafflePage() {
                 {raffleAnimation === 'result' && (
                   <button
                     onClick={() => {
-                      if (raffleWinners.length >= currentRafflePrize.winnerCount) {
+                      if ((raffleWinners?.length || 0) >= currentRafflePrize.winnerCount) {
                         setRaffleAnimation('idle');
                       } else {
                         runRaffle();
@@ -902,7 +919,7 @@ export default function AdminRafflePage() {
                       background: 'linear-gradient(135deg, #7E5ADC 0%, #8552CB 50%, #934CB0 100%)'
                     }}
                   >
-                    {raffleWinners.length >= currentRafflePrize.winnerCount ? '완료' : '다음 발표'}
+                    {(raffleWinners?.length || 0) >= currentRafflePrize.winnerCount ? '완료' : '다음 발표'}
                   </button>
                 )}
 
