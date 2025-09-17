@@ -507,12 +507,12 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
         <EventInfo event={featuredData.event} />
 
         {/* 이벤트 경품 섹션 */}
-        {/* {featuredData.raffle && (
+        {featuredData.raffle && (
           <EventRaffle 
             raffle={featuredData.raffle} 
             eventId={safeEventId}
           />
-        )} */}
+        )}
 
         {/* 공지사항 섹션 */}
         {featuredData.notices && (
@@ -529,12 +529,12 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
         )}
 
         {/* 동아리 투표 랭킹 섹션 */}
-        {/* {featuredData.clubs && (
+        {featuredData.clubs && (
           <EventClubs 
             clubs={featuredData.clubs} 
             eventId={safeEventId}
           />
-        )} */}
+        )}
 
         {/* 타임라인 섹션 */}
         {featuredData.timelines && (
@@ -577,7 +577,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
         )}
 
         {/* 쿠폰 섹션 */}
-        {/* {featuredData.coupons && (
+        {featuredData.coupons && (
           <EventSection
             title="쿠폰"
             subtitle="이벤트 참여자만을 위한 특별한 쿠폰을 확인해보세요"
@@ -587,7 +587,7 @@ export default function EventPageContent({ onRequestNotificationPermission }: Ev
               eventId={safeEventId}
             />
           </EventSection>
-        )} */}
+        )}
 
         {/* 커뮤니티 섹션 */}
         {featuredData.freeBoard && (
